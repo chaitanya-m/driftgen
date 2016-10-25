@@ -27,7 +27,9 @@ import com.yahoo.labs.samoa.instances.InstancesHeader;
 public class AbruptDriftGenerator extends DriftGenerator{
 
     private static final long serialVersionUID = 1291115908166720203L;
-
+    /* TODO: Do we really need a serializable object, and to set the UID 
+     * explicitly rather than let JDK handle it?*/
+    
     protected InstancesHeader streamHeader;
 
     /**
@@ -52,6 +54,8 @@ public class AbruptDriftGenerator extends DriftGenerator{
 
     long nInstancesGeneratedSoFar;
 
+    // Do we need implementations for these?
+    
     @Override
     public long estimatedRemainingInstances() {
         return -1;

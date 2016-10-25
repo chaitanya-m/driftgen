@@ -6,13 +6,9 @@
 
 package moa.streams.generators.monash;
 
-import com.github.javacliparser.FlagOption;
-import com.github.javacliparser.FloatOption;
-import com.github.javacliparser.IntOption;
 import com.yahoo.labs.samoa.instances.Attribute;
 
 import moa.core.FastVector;
-import moa.options.AbstractOptionHandler;
 import moa.streams.InstanceStream;
 
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -21,32 +17,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class DriftGenerator extends AbstractOptionHandler implements InstanceStream {
+public abstract class DriftGenerator extends DriftOptionHandler implements InstanceStream {
 
-    public IntOption nAttributes = new IntOption("nAttributes", 'n',
-	    "Number of attributes as parents of the class", 2, 1, 10);
-    public IntOption nValuesPerAttribute = new IntOption("nValuesPerAttribute", 'v',
-	    "Number of values per attribute", 2, 2, 5);
-    public IntOption burnInNInstances = new IntOption("burnInNInstances", 'b',
-	    "Number of instances before the start of the drift", 10000, 0, Integer.MAX_VALUE);
-    public FloatOption driftMagnitudePrior = new FloatOption("driftMagnitudePrior", 'i',
-	    "Magnitude of the drift between the starting probability and the one after the drift."
-		    + " Magnitude is expressed as the Hellinger distance [0,1]", 0.5, 1e-20, 0.9);
-    public FloatOption driftMagnitudeConditional = new FloatOption("driftMagnitudeConditional",
-	    'o',
-	    "Magnitude of the drift between the starting probability and the one after the drift."
-		    + " Magnitude is expressed as the Hellinger distance [0,1]", 0.5, 1e-20, 0.9);
-    public FloatOption precisionDriftMagnitude = new FloatOption(
-	    "epsilon",
-	    'e',
-	    "Precision of the drift magnitude for p(x) (how far from the set magnitude is acceptable)",
-	    0.01, 1e-20, 1.0);
-    public FlagOption driftConditional = new FlagOption("driftConditional", 'c',
-	    "States if the drift should apply to the conditional distribution p(y|x).");
-    public FlagOption driftPriors = new FlagOption("driftPriors", 'p',
-	    "States if the drift should apply to the prior distribution p(x). ");
-    public IntOption seed = new IntOption("seed", 'r', "Seed for random number generator", -1,
-	    Integer.MIN_VALUE, Integer.MAX_VALUE);
+	/* Refactor: 
+	 * Should Generator extend OptionHandler, own one, or be composited with one?
+	 * MOA's design requires all classes with options to extend AbstractOptionHandler
+	 * ... extending DriftOptionHandler instead
+	 * All Drift Generators will implement InstanceStream, this is fine.
+	 * Will each Generator have it's own OptionHandler? That would make sense.
+	 * */
 
     FastVector<Attribute> getHeaderAttributes(int nAttributes, int nValuesPerAttribute) {
 

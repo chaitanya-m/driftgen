@@ -153,31 +153,31 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 
 	public static double computeMagnitudePX(int nbCombinationsOfValuesPX, double[][] base_px,
 			double[][] drift_px) {
+		
 		int[] indexes = new int[base_px.length];
 		double m = 0.0;
+		double[] baseCovariate = new double[nbCombinationsOfValuesPX]; //all possible attribute-value combinations... old method is far more space efficient
+		double[] driftCovariate = new double[nbCombinationsOfValuesPX];
+
 		for (int i = 0; i < nbCombinationsOfValuesPX; i++) {
+			
 			getIndexes(i, indexes, base_px[0].length);
-			double p = 1.0, q = 1.0;
+			baseCovariate[i] = 1.0;
+			driftCovariate[i] = 1.0;
+			
 			for (int a = 0; a < indexes.length; a++) {
-				p *= base_px[a][indexes[a]];
-				q *= drift_px[a][indexes[a]];
-			}
-			double diff = Math.sqrt(p) - Math.sqrt(q);
-			m += diff * diff;
+				baseCovariate[i] *= base_px[a][indexes[a]];
+				driftCovariate[i] *= drift_px[a][indexes[a]];
+			}			
 		}
-		m = Math.sqrt(m) / Math.sqrt(2);
-		return m;
+		return DriftMagnitude.getHellingerDistance(baseCovariate, driftCovariate);
 	}
 
 	public static double computeMagnitudePYGX(double[][] base_pygx, double[][] drift_pygx) {
 		double magnitude = 0.0;
 		for (int i = 0; i < base_pygx.length; i++) {
-			double partialM = 0.0;
-			for (int c = 0; c < base_pygx[i].length; c++) {
-				double diff = Math.sqrt(base_pygx[i][c]) - Math.sqrt(drift_pygx[i][c]);
-				partialM += diff * diff;
-			}
-			partialM = Math.sqrt(partialM) / Math.sqrt(2);
+			
+			double partialM = DriftMagnitude.getHellingerDistance(base_pygx[i], drift_pygx[i]);
 			assert (partialM == 0.0 || partialM == 1.0);
 			magnitude += partialM;
 		}
@@ -186,13 +186,8 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 	}
 
 	public static double computeMagnitudeClassPrior(double[] baseClassP, double[] driftClassP) {
-		double magnitude = 0.0;
-		for (int c = 0; c < baseClassP.length; c++) {
-			double diff = Math.sqrt(baseClassP[c]) - Math.sqrt(driftClassP[c]);
-			magnitude += diff * diff;
-		}
-		magnitude = Math.sqrt(magnitude) / Math.sqrt(2);
-		return magnitude;
+		
+		return DriftMagnitude.getHellingerDistance(baseClassP, driftClassP);
 	}
 
 

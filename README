@@ -1,0 +1,14 @@
+To get this working, do something like:
+
+cd src
+javac moa/streams/generators/categorical/AbruptDriftGenerator.java moa/streams/generators/categorical/CategoricalDriftGenerator.java -cp "../../moa-release-2016.04/moa.jar:../../moa-release-2016.04/commons-math3-3.6.1.jar"
+
+
+jar cvf cdgen.jar moa/streams/generators/categorical/CategoricalDriftGenerator.class moa/streams/generators/categorical/AbruptDriftGenerator.class
+
+
+mv cdgen.jar to the correct folder
+
+
+java -cp commons-math3-3.6.1.jar:moa.jar:cdgen.jar -javaagent:sizeofag-1.0.0.jar moa.gui.GUI
+

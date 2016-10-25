@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/home/mchait/moajars/dependency-jars/jama-1.0.3.jar"/>
+	<classpathentry kind="lib" path="/home/mchait/moajars/dependency-jars/java-cup-0.11a.jar"/>
+	<classpathentry kind="lib" path="/home/mchait/moajars/dependency-jars/meka-1.9.0.jar"/>
+	<classpathentry kind="lib" path="/home/mchait/moajars/dependency-jars/pentaho-package-manager-1.0.8.jar"/>
+	<classpathentry kind="lib" path="/home/mchait/moajars/dependency-jars/sizeofag-1.0.0.jar"/>
+	<classpathentry kind="lib" path="/home/mchait/moajars/dependency-jars/trove4j-3.0.3.jar"/>
+	<classpathentry kind="lib" path="/home/mchait/moajars/dependency-jars/weka-dev-3.7.12.jar"/>
+	<classpathentry kind="lib" path="/home/mchait/moajars/commons-math3-3.6.1.jar"/>
+	<classpathentry kind="lib" path="/home/mchait/moajars/moa.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

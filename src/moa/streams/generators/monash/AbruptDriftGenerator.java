@@ -26,232 +26,232 @@ import com.yahoo.labs.samoa.instances.InstancesHeader;
 
 public class AbruptDriftGenerator extends DriftGenerator{
 
-    private static final long serialVersionUID = 1291115908166720203L;
-    /* TODO: Do we really need a serializable object, and to set the UID 
-     * explicitly rather than let JDK handle it?*/
-    
-    protected InstancesHeader streamHeader;
+	private static final long serialVersionUID = 1291115908166720203L;
+	/* TODO: Do we really need a serializable object, and to set the UID 
+	 * explicitly rather than let JDK handle it?*/
 
-    /**
-     * p(x) before drift
-     */
-    double[][] pxbd;
-    /**
-     * p(y|x) before drift
-     */
-    double[][] pygxbd;
+	protected InstancesHeader streamHeader;
 
-    /**
-     * p(x) after drift
-     */
-    double[][] pxad;
-    /**
-     * p(y|x) after drift
-     */
-    double[][] pygxad;
+	/**
+	 * p(x) before drift
+	 */
+	double[][] pxbd;
+	/**
+	 * p(y|x) before drift
+	 */
+	double[][] pygxbd;
 
-    RandomDataGenerator r;
+	/**
+	 * p(x) after drift
+	 */
+	double[][] pxad;
+	/**
+	 * p(y|x) after drift
+	 */
+	double[][] pygxad;
 
-    long nInstancesGeneratedSoFar;
+	RandomDataGenerator r;
 
-    // Do we need implementations for these?
-    
-    @Override
-    public long estimatedRemainingInstances() {
-        return -1;
-    }
+	long nInstancesGeneratedSoFar;
 
-    @Override
-    public boolean hasMoreInstances() {
-        return true;
-    }
+	// Do we need implementations for these?
 
-    @Override
-    public boolean isRestartable() {
-        return true;
-    }
+	@Override
+	public long estimatedRemainingInstances() {
+		return -1;
+	}
 
-    @Override
-    public void restart() {
-	nInstancesGeneratedSoFar = 0L;
-    }
+	@Override
+	public boolean hasMoreInstances() {
+		return true;
+	}
 
-    @Override
-    public void getDescription(StringBuilder sb, int indent) {
+	@Override
+	public boolean isRestartable() {
+		return true;
+	}
 
-    }
+	@Override
+	public void restart() {
+		nInstancesGeneratedSoFar = 0L;
+	}
 
-    @Override
-    public String getPurposeString() {
-        return "Generates a stream with an abrupt drift of given magnitude.";
-    }
+	@Override
+	public void getDescription(StringBuilder sb, int indent) {
 
-    @Override
-    public InstancesHeader getHeader() {
-        return streamHeader;
-    }
+	}
 
-    protected void generateHeader() {
+	@Override
+	public String getPurposeString() {
+		return "Generates a stream with an abrupt drift of given magnitude.";
+	}
 
-        FastVector<Attribute> attributes = getHeaderAttributes(nAttributes
-                .getValue(), nValuesPerAttribute.getValue());
+	@Override
+	public InstancesHeader getHeader() {
+		return streamHeader;
+	}
 
-        this.streamHeader = new InstancesHeader(new Instances(
-                getCLICreationString(InstanceStream.class), attributes, 0));
-        this.streamHeader.setClassIndex(this.streamHeader.numAttributes() - 1);
-    }
+	protected void generateHeader() {
 
-    @Override
-    public InstanceExample nextInstance() {
-        double[][] px = (nInstancesGeneratedSoFar <= burnInNInstances
-                .getValue()) ? pxbd : pxad;
-        double[][] pygx = (nInstancesGeneratedSoFar <= burnInNInstances
-                .getValue()) ? pygxbd : pygxad;
+		FastVector<Attribute> attributes = getHeaderAttributes(nAttributes
+				.getValue(), nValuesPerAttribute.getValue());
 
-        Instance inst = new DenseInstance(streamHeader.numAttributes());
-        inst.setDataset(streamHeader);
+		this.streamHeader = new InstancesHeader(new Instances(
+				getCLICreationString(InstanceStream.class), attributes, 0));
+		this.streamHeader.setClassIndex(this.streamHeader.numAttributes() - 1);
+	}
 
-        int[] indexes = new int[nAttributes.getValue()];
+	@Override
+	public InstanceExample nextInstance() {
+		double[][] px = (nInstancesGeneratedSoFar <= burnInNInstances
+				.getValue()) ? pxbd : pxad;
+		double[][] pygx = (nInstancesGeneratedSoFar <= burnInNInstances
+				.getValue()) ? pygxbd : pygxad;
 
-        // setting values for x_1,...,x_n
-        for (int a = 0; a < indexes.length; a++) {
-            // choosing values of x_1,...,x_n
-            double rand = r.nextUniform(0.0, 1.0, true);
-            int chosenVal = 0;
-            double sumProba = px[a][chosenVal];
-            while (rand > sumProba) {
-                chosenVal++;
-                sumProba += px[a][chosenVal];
-            }
-            indexes[a] = chosenVal;
-            inst.setValue(a, chosenVal);
-        }
+		Instance inst = new DenseInstance(streamHeader.numAttributes());
+		inst.setDataset(streamHeader);
 
-        int lineNoCPT = getIndex(indexes);
+		int[] indexes = new int[nAttributes.getValue()];
 
-        int chosenClassValue = 0;
-        while (pygx[lineNoCPT][chosenClassValue] != 1.0) {
-            chosenClassValue++;
-        }
-        inst.setClassValue(chosenClassValue);
+		// setting values for x_1,...,x_n
+		for (int a = 0; a < indexes.length; a++) {
+			// choosing values of x_1,...,x_n
+			double rand = r.nextUniform(0.0, 1.0, true);
+			int chosenVal = 0;
+			double sumProba = px[a][chosenVal];
+			while (rand > sumProba) {
+				chosenVal++;
+				sumProba += px[a][chosenVal];
+			}
+			indexes[a] = chosenVal;
+			inst.setValue(a, chosenVal);
+		}
 
-        nInstancesGeneratedSoFar++;
-        // System.out.println("generated "+inst);
-        return new InstanceExample(inst);
-    }
+		int lineNoCPT = getIndex(indexes);
 
-    @Override
-    protected void prepareForUseImpl(TaskMonitor monitor,
-                                     ObjectRepository repository) {
-        System.out.println("burnIn=" + burnInNInstances.getValue());
-        generateHeader();
+		int chosenClassValue = 0;
+		while (pygx[lineNoCPT][chosenClassValue] != 1.0) {
+			chosenClassValue++;
+		}
+		inst.setClassValue(chosenClassValue);
 
-        int nCombinationsValuesForPX = 1;
-        for (int a = 0; a < nAttributes.getValue(); a++) {
-            nCombinationsValuesForPX *= nValuesPerAttribute.getValue();
-        }
+		nInstancesGeneratedSoFar++;
+		// System.out.println("generated "+inst);
+		return new InstanceExample(inst);
+	}
 
-        pxbd = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
-        pygxbd = new double[nCombinationsValuesForPX][nValuesPerAttribute.getValue()];
+	@Override
+	protected void prepareForUseImpl(TaskMonitor monitor,
+			ObjectRepository repository) {
+		System.out.println("burnIn=" + burnInNInstances.getValue());
+		generateHeader();
 
-        RandomGenerator rg = new JDKRandomGenerator();
-        rg.setSeed(seed.getValue());
-        r = new RandomDataGenerator(rg);
+		int nCombinationsValuesForPX = 1;
+		for (int a = 0; a < nAttributes.getValue(); a++) {
+			nCombinationsValuesForPX *= nValuesPerAttribute.getValue();
+		}
 
-        // generating distribution before drift
+		pxbd = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
+		pygxbd = new double[nCombinationsValuesForPX][nValuesPerAttribute.getValue()];
 
-        // p(x)
-        generateRandomPx(pxbd, r);
+		RandomGenerator rg = new JDKRandomGenerator();
+		rg.setSeed(seed.getValue());
+		r = new RandomDataGenerator(rg);
 
-        // p(y|x)
-        generateRandomPyGivenX(pygxbd, r);
+		// generating distribution before drift
 
-        // generating distribution after drift
+		// p(x)
+		generateRandomPx(pxbd, r);
 
-        if (driftPriors.isSet()) {
-            pxad = new double[nAttributes.getValue()][nValuesPerAttribute
-                    .getValue()];
-            double obtainedMagnitude;
-            System.out.println("Sampling p(x) for required magnitude...");
-            do {
-                if (driftMagnitudePrior.getValue() >= 0.2) {
-                    generateRandomPx(pxad, r);
-                } else if (driftMagnitudePrior.getValue() < 0.2) {
-                    generateRandomPxAfterCloseToBefore(driftMagnitudePrior.getValue(), pxbd, pxad, r);
-                }
-                //note this workaround so he doesn't explore a large number of random distributions!
-                obtainedMagnitude = computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad);
-            } while (Math.abs(obtainedMagnitude - driftMagnitudePrior.getValue()) > precisionDriftMagnitude
-                    .getValue());
+		// p(y|x)
+		generateRandomPyGivenX(pygxbd, r);
 
-            System.out.println("exact magnitude for p(x)="
-                    + computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad) + "\tasked="
-                    + driftMagnitudePrior.getValue());
-        } else {
-            pxad = pxbd;
-        }
+		// generating distribution after drift
 
-        // conditional
-        if (driftConditional.isSet()) {
-            pygxad = new double[nCombinationsValuesForPX][];
-            for (int line = 0; line < pygxad.length; line++) {
-                // default is same distrib
-                pygxad[line] = pygxbd[line];
-            }
+		if (driftPriors.isSet()) {
+			pxad = new double[nAttributes.getValue()][nValuesPerAttribute
+			                                          .getValue()];
+			double obtainedMagnitude;
+			System.out.println("Sampling p(x) for required magnitude...");
+			do {
+				if (driftMagnitudePrior.getValue() >= 0.2) {
+					generateRandomPx(pxad, r);
+				} else if (driftMagnitudePrior.getValue() < 0.2) {
+					generateRandomPxAfterCloseToBefore(driftMagnitudePrior.getValue(), pxbd, pxad, r);
+				}
+				//note this workaround so he doesn't explore a large number of random distributions!
+				obtainedMagnitude = computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad);
+			} while (Math.abs(obtainedMagnitude - driftMagnitudePrior.getValue()) > precisionDriftMagnitude
+					.getValue());
 
-            int nLinesToChange = (int) Math.round(driftMagnitudeConditional.getValue()
-                    * nCombinationsValuesForPX);
-            if (nLinesToChange == 0.0) {
-                System.out
-                        .println("Not enough drift to be noticeable in p(y|x) - unchanged");
-                pygxad = pygxbd;
+			System.out.println("exact magnitude for p(x)="
+					+ computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad) + "\tasked="
+					+ driftMagnitudePrior.getValue());
+		} else {
+			pxad = pxbd;
+		}
 
-            } else {
-                int[] linesToChange = r.nextPermutation(
-                        nCombinationsValuesForPX, nLinesToChange);
+		// conditional
+		if (driftConditional.isSet()) {
+			pygxad = new double[nCombinationsValuesForPX][];
+			for (int line = 0; line < pygxad.length; line++) {
+				// default is same distrib
+				pygxad[line] = pygxbd[line];
+			}
 
-                for (int line : linesToChange) {
-                    pygxad[line] = new double[nValuesPerAttribute.getValue()];
+			int nLinesToChange = (int) Math.round(driftMagnitudeConditional.getValue()
+					* nCombinationsValuesForPX);
+			if (nLinesToChange == 0.0) {
+				System.out
+				.println("Not enough drift to be noticeable in p(y|x) - unchanged");
+				pygxad = pygxbd;
 
-                    double[] lineCPT = pygxad[line];
-                    int chosenClass;
+			} else {
+				int[] linesToChange = r.nextPermutation(
+						nCombinationsValuesForPX, nLinesToChange);
 
-                    do {
-                        chosenClass = r.nextInt(0, lineCPT.length - 1);
-                        // making sure we choose a different class value
-                    } while (pygxbd[line][chosenClass] == 1.0);
+				for (int line : linesToChange) {
+					pygxad[line] = new double[nValuesPerAttribute.getValue()];
 
-                    for (int c = 0; c < lineCPT.length; c++) {
-                        if (c == chosenClass) {
-                            lineCPT[c] = 1.0;
-                        } else {
-                            lineCPT[c] = 0.0;
-                        }
-                    }
-                }
-                System.out.println("exact magnitude for p(y|x)="
-                        + computeMagnitudePYGX(pygxbd, pygxad) + "\tasked="
-                        + driftMagnitudeConditional.getValue());
-            }
-        } else {
-            pygxad = pygxbd;
-        }
+					double[] lineCPT = pygxad[line];
+					int chosenClass;
 
-        // System.out.println(Arrays.toString(pxbd));
-        // System.out.println(Arrays.toString(pxad));
+					do {
+						chosenClass = r.nextInt(0, lineCPT.length - 1);
+						// making sure we choose a different class value
+					} while (pygxbd[line][chosenClass] == 1.0);
 
-        nInstancesGeneratedSoFar = 0L;
+					for (int c = 0; c < lineCPT.length; c++) {
+						if (c == chosenClass) {
+							lineCPT[c] = 1.0;
+						} else {
+							lineCPT[c] = 0.0;
+						}
+					}
+				}
+				System.out.println("exact magnitude for p(y|x)="
+						+ computeMagnitudePYGX(pygxbd, pygxad) + "\tasked="
+						+ driftMagnitudeConditional.getValue());
+			}
+		} else {
+			pygxad = pygxbd;
+		}
 
-    }
+		// System.out.println(Arrays.toString(pxbd));
+		// System.out.println(Arrays.toString(pxad));
 
-    protected final int getIndex(int... indexes) {
-        int index = indexes[0];
-        for (int i = 1; i < indexes.length; i++) {
-            index *= nValuesPerAttribute.getValue();
-            index += indexes[i];
-        }
-        return index;
+		nInstancesGeneratedSoFar = 0L;
 
-    }
+	}
+
+	protected final int getIndex(int... indexes) {
+		int index = indexes[0];
+		for (int i = 1; i < indexes.length; i++) {
+			index *= nValuesPerAttribute.getValue();
+			index += indexes[i];
+		}
+		return index;
+
+	}
 
 }

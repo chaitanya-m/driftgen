@@ -19,7 +19,24 @@ import java.util.List;
 
 public abstract class DriftGenerator extends DriftOptionHandler implements InstanceStream {
 
-	/* Refactor: 
+	static DriftMagnitude driftMag;
+
+	public DriftGenerator() {
+		super();
+
+		if (distanceMeasure.getChosenLabel() == "Hellinger Distance"){
+			driftMag = new HellingerDistance();
+		}
+		else if (distanceMeasure.getChosenLabel() == "Total Variation Distance"){
+			driftMag = new TotalVariationDistance();
+		}
+	}
+	/**
+	 *
+	 */
+	private static final long serialVersionUID = 6853166101160277496L;
+
+	/* Refactor:
 	 * Should Generator extend OptionHandler, own one, or be composited with one?
 	 * MOA's design requires all classes with options to extend AbstractOptionHandler
 	 * ... extending DriftOptionHandler instead
@@ -28,6 +45,8 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 	 * */
 
 	FastVector<Attribute> getHeaderAttributes(int nAttributes, int nValuesPerAttribute) {
+
+		System.out.println(this.distanceMeasure.getChosenIndex());
 
 		FastVector<Attribute> attributes = new FastVector<>();
 		List<String> attributeValues = new ArrayList<String>();
@@ -153,31 +172,30 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 
 	public static double computeMagnitudePX(int nbCombinationsOfValuesPX, double[][] base_px,
 			double[][] drift_px) {
-		
+
 		int[] indexes = new int[base_px.length];
-		double m = 0.0;
 		double[] baseCovariate = new double[nbCombinationsOfValuesPX]; //all possible attribute-value combinations... old method is far more space efficient
 		double[] driftCovariate = new double[nbCombinationsOfValuesPX];
 
 		for (int i = 0; i < nbCombinationsOfValuesPX; i++) {
-			
+
 			getIndexes(i, indexes, base_px[0].length);
 			baseCovariate[i] = 1.0;
 			driftCovariate[i] = 1.0;
-			
+
 			for (int a = 0; a < indexes.length; a++) {
 				baseCovariate[i] *= base_px[a][indexes[a]];
 				driftCovariate[i] *= drift_px[a][indexes[a]];
-			}			
+			}
 		}
-		return DriftMagnitude.getHellingerDistance(baseCovariate, driftCovariate);
+		return driftMag.getValue(baseCovariate, driftCovariate);
 	}
 
 	public static double computeMagnitudePYGX(double[][] base_pygx, double[][] drift_pygx) {
 		double magnitude = 0.0;
 		for (int i = 0; i < base_pygx.length; i++) {
-			
-			double partialM = DriftMagnitude.getHellingerDistance(base_pygx[i], drift_pygx[i]);
+
+			double partialM = driftMag.getValue(base_pygx[i], drift_pygx[i]);
 			assert (partialM == 0.0 || partialM == 1.0);
 			magnitude += partialM;
 		}
@@ -186,10 +204,9 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 	}
 
 	public static double computeMagnitudeClassPrior(double[] baseClassP, double[] driftClassP) {
-		
-		return DriftMagnitude.getHellingerDistance(baseClassP, driftClassP);
-	}
 
+		return driftMag.getValue(baseClassP, driftClassP);
+	}
 
 	static void getIndexes(int index, int[] indexes, int nValuesPerAttribute) {
 		for (int i = indexes.length - 1; i > 0; i--) {
@@ -219,6 +236,6 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 		return classPrior;
 
 	}
-	
+
 
 }

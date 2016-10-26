@@ -1,13 +1,11 @@
 package moa.streams.generators.monash;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import moa.core.Example;
 import moa.core.FastVector;
 import moa.core.InstanceExample;
 import moa.core.ObjectRepository;
-import moa.options.AbstractOptionHandler;
 import moa.streams.InstanceStream;
 import moa.tasks.TaskMonitor;
 
@@ -15,9 +13,6 @@ import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
-import com.github.javacliparser.FlagOption;
-import com.github.javacliparser.FloatOption;
-import com.github.javacliparser.IntOption;
 import com.yahoo.labs.samoa.instances.Attribute;
 import com.yahoo.labs.samoa.instances.DenseInstance;
 import com.yahoo.labs.samoa.instances.Instance;
@@ -26,8 +21,13 @@ import com.yahoo.labs.samoa.instances.InstancesHeader;
 
 public class AbruptDriftGenerator extends DriftGenerator{
 
+	public AbruptDriftGenerator() {
+		super();
+
+	}
+
 	private static final long serialVersionUID = 1291115908166720203L;
-	/* TODO: Do we really need a serializable object, and to set the UID 
+	/* TODO: Do we really need a serializable object, and to set the UID
 	 * explicitly rather than let JDK handle it?*/
 
 	protected InstancesHeader streamHeader;

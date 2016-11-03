@@ -19,14 +19,15 @@ import com.yahoo.labs.samoa.instances.Instance;
 import com.yahoo.labs.samoa.instances.Instances;
 import com.yahoo.labs.samoa.instances.InstancesHeader;
 
-public class AbruptDriftGenerator extends DriftGenerator{
+public class GradualDriftGenerator extends DriftGenerator{
 
-	public AbruptDriftGenerator() {
+	private static final long serialVersionUID = -3513131640712137498L;
+
+	public GradualDriftGenerator() {
 		super();
 
 	}
 
-	private static final long serialVersionUID = 1291115908166720203L;
 	/* TODO: Do we really need a serializable object, and to set the UID
 	 * explicitly rather than let JDK handle it?*/
 
@@ -49,6 +50,11 @@ public class AbruptDriftGenerator extends DriftGenerator{
 	 * p(y|x) after drift
 	 */
 	double[][] pygxad;
+
+	/**
+	 * Are the cells drifting up or down?
+	 */
+	double cellDirection[][];
 
 	RandomDataGenerator r;
 
@@ -103,9 +109,10 @@ public class AbruptDriftGenerator extends DriftGenerator{
 
 	@Override
 	public InstanceExample nextInstance() {
-		// which distribution to draw from?? depending on timestep, modulate your gradual drift here.
-		// we are changing px. do we need to also update pygx?? Does it change??
-		// if we assume pure covariate drift, it doesn't...
+		// Put px gradual drift interpolation here
+		// i.e. actually generate intermediate px distributions here
+		// double[][] px = interpolate(). That gives the new px to pick from
+		// at every timestep- and that's it!! check if within the bounds of the drift period.
 
 		double[][] px = (nInstancesGeneratedSoFar <= burnInNInstances
 				.getValue()) ? pxbd : pxad;
@@ -123,20 +130,18 @@ public class AbruptDriftGenerator extends DriftGenerator{
 			double rand = r.nextUniform(0.0, 1.0, true);
 			int chosenVal = 0;
 			double sumProba = px[a][chosenVal];
-
-			while (rand > sumProba) { //pick one of the nAttributes based on the rand
+			while (rand > sumProba) {
 				chosenVal++;
 				sumProba += px[a][chosenVal];
 			}
 			indexes[a] = chosenVal;
-			inst.setValue(a, chosenVal); //set the a'th attribute to chosenVal
+			inst.setValue(a, chosenVal);
 		}
 
 		int lineNoCPT = getIndex(indexes);
 
 		int chosenClassValue = 0;
 		while (pygx[lineNoCPT][chosenClassValue] != 1.0) {
-			//find the index which corresponds to the class value of the data
 			chosenClassValue++;
 		}
 		inst.setClassValue(chosenClassValue);
@@ -149,6 +154,9 @@ public class AbruptDriftGenerator extends DriftGenerator{
 	@Override
 	protected void prepareForUseImpl(TaskMonitor monitor,
 			ObjectRepository repository) {
+		// prepare the start and end px's here
+
+
 		System.out.println("burnIn=" + burnInNInstances.getValue());
 		generateHeader();
 
@@ -174,31 +182,46 @@ public class AbruptDriftGenerator extends DriftGenerator{
 
 		// generating distribution after drift
 
+		// generating covariate drift
 		if (driftPriors.isSet()) {
 			pxad = new double[nAttributes.getValue()][nValuesPerAttribute
 			                                          .getValue()];
 			double obtainedMagnitude;
 
-			/*
-			 * don't sample p(x)!!
-			 * instead, pick some random distribution
-			 * Francois' code randomly perturbs the distribution if the required magnitude is less than 0.2,
-			 * by adding a random value from a gaussian with some deviation sigma centred at each cell value
-			 * but it doesn't take into account the relaionship between the Hellinger and the diff in prob. values... so more exploration
-			 * Then it normalises the obtained distribution.
-			 * Instead, can we "grow" the distribution by a certain magnitude at each timestep?
-			 * Let us first try this in the abrupt case. In a single timestep, we will grow the distribution
-			 * by some magnitude.
-			 * Pick some random throwaway distribution.
-			 * */
+			cellDirection = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
+			// if a cell grows, it is marked with a 1, otherwise 0. Let's have half the cells increasing in probability.
+			double increasingProportion = 0.5;
 
+			for(int i = 0; i < nAttributes.getValue(); i++) {
+				for(int j = 0; j < nValuesPerAttribute.getValue(); j++){
+					cellDirection[i][j] = 1; //increasing cell
+					if (r.nextUniform(0.0, 1.0, true) < increasingProportion ){
+						cellDirection[i][j] = -1; //decreasing cell
+					}
+				}
+			}
+			// we've set our cell movement directions.
+			// now we need to move our cells up or down in the nextInstance function until the drift mag is achieved.
+			generateRandomPx(pxad, r);
+
+			/* We really want a monotonous movement towards the final distribution in the gradual case...
+			 * we don't want a random walk (at least not yet... this can be generalised later)!!!
+			 *
+			 * If we split our set into increasers and decreasers, then pick an increase at random, we are adding
+			 * this sort of rule to the drift we generate; some points increase until they hit the target
+			 */
+
+
+			/* from that distribution, pick values at random from the cells
+			 * take the corresponding value in your starting distribution
+			 * replace it
+			 */
 			System.out.println("Sampling p(x) for required magnitude...");
 			do {
 				if (driftMagnitudePrior.getValue() >= 0.2) {
 					generateRandomPx(pxad, r);
 				} else if (driftMagnitudePrior.getValue() < 0.2) {
 					generateRandomPxAfterCloseToBefore(driftMagnitudePrior.getValue(), pxbd, pxad, r);
-					// This doesn't actually solve the problem in the Hellinger case where sqrt(p) + sqrt(q) > 1
 				}
 				//note this workaround so he doesn't explore a large number of random distributions!
 				obtainedMagnitude = computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad);
@@ -264,19 +287,15 @@ public class AbruptDriftGenerator extends DriftGenerator{
 		nInstancesGeneratedSoFar = 0L;
 
 	}
-	/**
-	 * Gets the index of a given instance-tuple
-	 */
-	protected final int getIndex(int... indexes) { //size of indexes is total number of attributes. It contains chosen nValues.
 
+	protected final int getIndex(int... indexes) {
 		int index = indexes[0];
 		for (int i = 1; i < indexes.length; i++) {
 			index *= nValuesPerAttribute.getValue();
 			index += indexes[i];
 		}
 		return index;
-		// multiply nValue for first attribute by numValuesPerAttribute. Add the nValue of the next attribute. repeat.
-		// then multiply whichever nValue you picked for 0th attribute by numAttributes
+
 	}
 
 }

@@ -82,7 +82,6 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 				// pxbd[a][v]);
 			}
 		}
-
 	}
 
 	public static void generateRandomPyGivenX(double[][] pygx, RandomDataGenerator r) {

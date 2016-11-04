@@ -43,21 +43,11 @@ public abstract class DriftOptionHandler extends AbstractOptionHandler {
 	public FloatOption driftMagnitudePrior = new FloatOption("driftMagnitudePrior", 'i',
 			"Magnitude of the drift between the starting probability and the one after the drift."
 					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
-	public FloatOption driftMagnitudeConditional = new FloatOption("driftMagnitudeConditional",
-			'o',
-			"Magnitude of the drift between the starting probability and the one after the drift."
-					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
 
 	public FloatOption precisionDriftMagnitude = new FloatOption(
 			"epsilon", 'e',
 			"Precision of the drift magnitude for p(x) (how far from the set magnitude is acceptable)",
 			0.01, 1e-20, 1.0);
-
-	public FlagOption driftConditional = new FlagOption("driftConditional", 'c',
-			"States if the drift should apply to the conditional distribution p(y|x).");
-
-	public FlagOption driftPriors = new FlagOption("driftPriors", 'p',
-			"States if the drift should apply to the prior distribution p(x). ");
 
 	public IntOption seed = new IntOption("seed", 'r', "Seed for random number generator", -1,
 			Integer.MIN_VALUE, Integer.MAX_VALUE);

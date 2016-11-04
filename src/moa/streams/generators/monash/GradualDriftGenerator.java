@@ -19,8 +19,6 @@ import com.yahoo.labs.samoa.instances.Instance;
 import com.yahoo.labs.samoa.instances.Instances;
 import com.yahoo.labs.samoa.instances.InstancesHeader;
 
-import cc.mallet.types.Multinomial;
-
 public class GradualDriftGenerator extends DriftGenerator{
 
 	private static final long serialVersionUID = -3513131640712137498L;
@@ -120,22 +118,21 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 		int[] indexes = new int[nAttributes.getValue()];
 
-		// choosing values of x_1,...,x_n, i.e. picking the attribute-value for each attribute
-		for (int a = 0; a < indexes.length; a++) {			// for each attribute
+		/* This for-loop contains an algorithm to sample from a multinomial distribution. It is
+		 * implemented correctly. See http://www.win.tue.nl/~marko/2WB05/lecture8.pdf
+		 * Pick U from the uniform distribution. Find the index where the sum of the independent
+		 * probability values exceeds the picked value. The smallest index that exceeds U is the outcome.
+		 */
+		for (int a = 0; a < indexes.length; a++) {
+			double rand = r.nextUniform(0.0, 1.0, true);
 
-			double rand = r.nextUniform(0.0, 1.0, true);	// generate some random number rand
-			double rand1 = r.
 			int chosenVal = 0;
-			double sumProba = px[a][chosenVal];		// sum up the probabilities until rand is less than their sum
+			double sumProba = px[a][chosenVal];
 			while (rand > sumProba) {
 				chosenVal++;
 				sumProba += px[a][chosenVal];
 			}
-			/* Then pick the nValue there... what? why?
-			 * This isn't picking the values with their respective probability
-			 * This actually greatly favours values with smaller indices
-			 * It induces quite a heavy bias in the distribution
-			 */
+
 			indexes[a] = chosenVal;
 			inst.setValue(a, chosenVal);
 		}

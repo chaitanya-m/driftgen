@@ -13,6 +13,9 @@ import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
+import com.github.javacliparser.FlagOption;
+import com.github.javacliparser.FloatOption;
+import com.github.javacliparser.IntOption;
 import com.yahoo.labs.samoa.instances.Attribute;
 import com.yahoo.labs.samoa.instances.DenseInstance;
 import com.yahoo.labs.samoa.instances.Instance;
@@ -20,6 +23,26 @@ import com.yahoo.labs.samoa.instances.Instances;
 import com.yahoo.labs.samoa.instances.InstancesHeader;
 
 public class AbruptDriftGenerator extends DriftGenerator{
+
+
+	public FloatOption driftMagnitudePrior = new FloatOption("driftMagnitudePrior", 'i',
+			"Magnitude of the drift between the starting probability and the one after the drift."
+					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
+
+	public FloatOption driftMagnitudeConditional = new FloatOption("driftMagnitudeConditional",
+			'o',
+			"Magnitude of the drift between the starting probability and the one after the drift."
+					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
+
+	public FlagOption driftPriors = new FlagOption("driftPriors", 'p',
+			"States if the drift should apply to the prior distribution p(x). ");
+
+	public FlagOption driftConditional = new FlagOption("driftConditional", 'c',
+			"States if the drift should apply to the conditional distribution p(y|x).");
+
+	public IntOption burnInNInstances = new IntOption("burnInNInstances", 'b',
+			"Number of instances before the start of the drift", 10000, 0, Integer.MAX_VALUE);
+
 
 	public AbruptDriftGenerator() {
 		super();

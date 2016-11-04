@@ -6,6 +6,9 @@
 
 package moa.streams.generators.monash;
 
+import com.github.javacliparser.FloatOption;
+import com.github.javacliparser.IntOption;
+import com.github.javacliparser.MultiChoiceOption;
 import com.yahoo.labs.samoa.instances.Attribute;
 
 import moa.core.FastVector;
@@ -18,6 +21,23 @@ import java.util.Arrays;
 import java.util.List;
 
 public abstract class DriftGenerator extends DriftOptionHandler implements InstanceStream {
+
+	public MultiChoiceOption distanceMeasure = new MultiChoiceOption("distanceType", 't',
+			"The distance measure used", new String[]{"Hellinger Distance", "Total Variation Distance"}, new String[]{"L2 distance", "L1 distance"}, 0 );
+
+	public IntOption nAttributes = new IntOption("nAttributes", 'n',
+			"Number of attributes as parents of the class", 2, 1, 10);
+
+	public IntOption nValuesPerAttribute = new IntOption("nValuesPerAttribute", 'v',
+			"Number of values per attribute", 2, 2, 5);
+
+	public FloatOption precisionDriftMagnitude = new FloatOption(
+			"epsilon", 'e',
+			"Precision of the drift magnitude for p(x) (how far from the set magnitude is acceptable)",
+			0.01, 1e-20, 1.0);
+
+	public IntOption seed = new IntOption("seed", 'r', "Seed for random number generator", -1,
+			Integer.MIN_VALUE, Integer.MAX_VALUE);
 
 	static DriftMagnitude driftMag;
 

@@ -11,5 +11,6 @@
 	<classpathentry kind="lib" path="/home/mchait/moajars/dependency-jars/weka-dev-3.7.12.jar"/>
 	<classpathentry kind="lib" path="/home/mchait/moajars/commons-math3-3.6.1.jar"/>
 	<classpathentry kind="lib" path="/home/mchait/moajars/moa.jar"/>
+	<classpathentry kind="lib" path="/home/mchait/moajars/dependency-jars/mallet.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -19,6 +19,8 @@ import com.yahoo.labs.samoa.instances.Instance;
 import com.yahoo.labs.samoa.instances.Instances;
 import com.yahoo.labs.samoa.instances.InstancesHeader;
 
+import cc.mallet.types.Multinomial;
+
 public class GradualDriftGenerator extends DriftGenerator{
 
 	private static final long serialVersionUID = -3513131640712137498L;
@@ -45,11 +47,7 @@ public class GradualDriftGenerator extends DriftGenerator{
 	/**
 	 * p(x) after drift
 	 */
-	double[][] pxad;
-	/**
-	 * p(y|x) after drift
-	 */
-	double[][] pygxad;
+	double[][] px_current;
 
 	/**
 	 * Are the cells drifting up or down?
@@ -114,26 +112,30 @@ public class GradualDriftGenerator extends DriftGenerator{
 		// double[][] px = interpolate(). That gives the new px to pick from
 		// at every timestep- and that's it!! check if within the bounds of the drift period.
 
-		double[][] px = (nInstancesGeneratedSoFar <= burnInNInstances
-				.getValue()) ? pxbd : pxad;
-		double[][] pygx = (nInstancesGeneratedSoFar <= burnInNInstances
-				.getValue()) ? pygxbd : pygxad;
+		double[][] px = px_current;
+		double[][] pygx = pygxbd;
 
 		Instance inst = new DenseInstance(streamHeader.numAttributes());
 		inst.setDataset(streamHeader);
 
 		int[] indexes = new int[nAttributes.getValue()];
 
-		// setting values for x_1,...,x_n
-		for (int a = 0; a < indexes.length; a++) {
-			// choosing values of x_1,...,x_n
-			double rand = r.nextUniform(0.0, 1.0, true);
+		// choosing values of x_1,...,x_n, i.e. picking the attribute-value for each attribute
+		for (int a = 0; a < indexes.length; a++) {			// for each attribute
+
+			double rand = r.nextUniform(0.0, 1.0, true);	// generate some random number rand
+			double rand1 = r.
 			int chosenVal = 0;
-			double sumProba = px[a][chosenVal];
+			double sumProba = px[a][chosenVal];		// sum up the probabilities until rand is less than their sum
 			while (rand > sumProba) {
 				chosenVal++;
 				sumProba += px[a][chosenVal];
 			}
+			/* Then pick the nValue there... what? why?
+			 * This isn't picking the values with their respective probability
+			 * This actually greatly favours values with smaller indices
+			 * It induces quite a heavy bias in the distribution
+			 */
 			indexes[a] = chosenVal;
 			inst.setValue(a, chosenVal);
 		}
@@ -143,7 +145,7 @@ public class GradualDriftGenerator extends DriftGenerator{
 		int chosenClassValue = 0;
 		while (pygx[lineNoCPT][chosenClassValue] != 1.0) {
 			chosenClassValue++;
-		}
+		}//finds the class Value in pygx, and sets the instance to it
 		inst.setClassValue(chosenClassValue);
 
 		nInstancesGeneratedSoFar++;
@@ -234,52 +236,8 @@ public class GradualDriftGenerator extends DriftGenerator{
 		} else {
 			pxad = pxbd;
 		}
-
-		// conditional
-		if (driftConditional.isSet()) {
-			pygxad = new double[nCombinationsValuesForPX][];
-			for (int line = 0; line < pygxad.length; line++) {
-				// default is same distrib
-				pygxad[line] = pygxbd[line];
-			}
-
-			int nLinesToChange = (int) Math.round(driftMagnitudeConditional.getValue()
-					* nCombinationsValuesForPX);
-			if (nLinesToChange == 0.0) {
-				System.out
-				.println("Not enough drift to be noticeable in p(y|x) - unchanged");
-				pygxad = pygxbd;
-
-			} else {
-				int[] linesToChange = r.nextPermutation(
-						nCombinationsValuesForPX, nLinesToChange);
-
-				for (int line : linesToChange) {
-					pygxad[line] = new double[nValuesPerAttribute.getValue()];
-
-					double[] lineCPT = pygxad[line];
-					int chosenClass;
-
-					do {
-						chosenClass = r.nextInt(0, lineCPT.length - 1);
-						// making sure we choose a different class value
-					} while (pygxbd[line][chosenClass] == 1.0);
-
-					for (int c = 0; c < lineCPT.length; c++) {
-						if (c == chosenClass) {
-							lineCPT[c] = 1.0;
-						} else {
-							lineCPT[c] = 0.0;
-						}
-					}
-				}
-				System.out.println("exact magnitude for p(y|x)="
-						+ computeMagnitudePYGX(pygxbd, pygxad) + "\tasked="
-						+ driftMagnitudeConditional.getValue());
-			}
-		} else {
-			pygxad = pygxbd;
-		}
+		//Drift conditional is never set... for now don't change pygx
+		//pygxad = pygxbd;
 
 		// System.out.println(Arrays.toString(pxbd));
 		// System.out.println(Arrays.toString(pxad));

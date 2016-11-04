@@ -46,8 +46,6 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 
 	FastVector<Attribute> getHeaderAttributes(int nAttributes, int nValuesPerAttribute) {
 
-		System.out.println(this.distanceMeasure.getChosenIndex());
-
 		FastVector<Attribute> attributes = new FastVector<>();
 		List<String> attributeValues = new ArrayList<String>();
 		for (int v = 0; v < nValuesPerAttribute; v++) {

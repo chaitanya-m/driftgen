@@ -13,6 +13,8 @@ import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
+import com.github.javacliparser.FloatOption;
+import com.github.javacliparser.IntOption;
 import com.yahoo.labs.samoa.instances.Attribute;
 import com.yahoo.labs.samoa.instances.DenseInstance;
 import com.yahoo.labs.samoa.instances.Instance;
@@ -22,6 +24,16 @@ import com.yahoo.labs.samoa.instances.InstancesHeader;
 public class GradualDriftGenerator extends DriftGenerator{
 
 	private static final long serialVersionUID = -3513131640712137498L;
+
+	public FloatOption driftMagnitudePrior = new FloatOption("driftMagnitudePrior", 'i',
+			"Magnitude of the drift between the starting probability and the one after the drift."
+					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
+
+	public IntOption burnInNInstances = new IntOption("burnInNInstances", 'b',
+			"Number of instances before the start of the drift", 10000, 0, Integer.MAX_VALUE);
+
+	public IntOption driftDuration = new IntOption("driftDuration", 'd',
+			"How long drift lasts", 10000, 0, Integer.MAX_VALUE);
 
 	public GradualDriftGenerator() {
 		super();
@@ -45,7 +57,7 @@ public class GradualDriftGenerator extends DriftGenerator{
 	/**
 	 * p(x) after drift
 	 */
-	double[][] px_current;
+	double[][] pxad;
 
 	/**
 	 * Are the cells drifting up or down?
@@ -182,9 +194,8 @@ public class GradualDriftGenerator extends DriftGenerator{
 		// generating distribution after drift
 
 		// generating covariate drift
-		if (driftPriors.isSet()) {
-			pxad = new double[nAttributes.getValue()][nValuesPerAttribute
-			                                          .getValue()];
+
+			pxad = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
 			double obtainedMagnitude;
 
 			cellDirection = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
@@ -201,7 +212,6 @@ public class GradualDriftGenerator extends DriftGenerator{
 			}
 			// we've set our cell movement directions.
 			// now we need to move our cells up or down in the nextInstance function until the drift mag is achieved.
-			generateRandomPx(pxad, r);
 
 			/* We really want a monotonous movement towards the final distribution in the gradual case...
 			 * we don't want a random walk (at least not yet... this can be generalised later)!!!
@@ -209,7 +219,6 @@ public class GradualDriftGenerator extends DriftGenerator{
 			 * If we split our set into increasers and decreasers, then pick an increase at random, we are adding
 			 * this sort of rule to the drift we generate; some points increase until they hit the target
 			 */
-
 
 			/* from that distribution, pick values at random from the cells
 			 * take the corresponding value in your starting distribution
@@ -230,9 +239,7 @@ public class GradualDriftGenerator extends DriftGenerator{
 			System.out.println("exact magnitude for p(x)="
 					+ computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad) + "\tasked="
 					+ driftMagnitudePrior.getValue());
-		} else {
-			pxad = pxbd;
-		}
+
 		//Drift conditional is never set... for now don't change pygx
 		//pygxad = pygxbd;
 

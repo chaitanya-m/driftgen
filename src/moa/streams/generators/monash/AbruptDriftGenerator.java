@@ -29,8 +29,7 @@ public class AbruptDriftGenerator extends DriftGenerator{
 			"Magnitude of the drift between the starting probability and the one after the drift."
 					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
 
-	public FloatOption driftMagnitudeConditional = new FloatOption("driftMagnitudeConditional",
-			'o',
+	public FloatOption driftMagnitudeConditional = new FloatOption("driftMagnitudeConditional", 'o',
 			"Magnitude of the drift between the starting probability and the one after the drift."
 					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
 

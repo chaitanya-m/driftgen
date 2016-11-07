@@ -43,7 +43,7 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 
 	public DriftGenerator() {
 		super();
-
+		// pick distance measure
 		if (distanceMeasure.getChosenLabel() == "Hellinger Distance"){
 			driftMag = new HellingerDistance();
 		}

@@ -1,5 +1,6 @@
 package moa.streams.generators.monash;
 
+import java.util.Arrays;
 import java.util.List;
 
 import moa.core.Example;
@@ -164,7 +165,6 @@ public class AbruptDriftGenerator extends DriftGenerator{
 		inst.setClassValue(chosenClassValue);
 
 		nInstancesGeneratedSoFar++;
-		// System.out.println("generated "+inst);
 		return new InstanceExample(inst);
 	}
 

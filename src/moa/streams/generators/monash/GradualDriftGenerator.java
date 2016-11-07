@@ -1,5 +1,6 @@
 package moa.streams.generators.monash;
 
+import java.util.Arrays;
 import java.util.List;
 
 import moa.core.Example;
@@ -60,9 +61,13 @@ public class GradualDriftGenerator extends DriftGenerator{
 	double[][] pxad;
 
 	/**
-	 * Are the cells drifting up or down?
+	 * interpolation factor
 	 */
-	double cellDirection[][];
+	double[][] pxdiff;
+	/**
+	 * Current px
+	 */
+	double[][] px;
 
 	RandomDataGenerator r;
 
@@ -117,12 +122,23 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 	@Override
 	public InstanceExample nextInstance() {
-		// Put px gradual drift interpolation here
-		// i.e. actually generate intermediate px distributions here
-		// double[][] px = interpolate(). That gives the new px to pick from
-		// at every timestep- and that's it!! check if within the bounds of the drift period.
 
-		double[][] px = px_current;
+
+		if(nInstancesGeneratedSoFar > burnInNInstances.getValue() && nInstancesGeneratedSoFar < driftDuration.getValue()){
+
+			for (int i = 0; i < nAttributes.getValue(); i++) {
+				for (int j =0; j < nValuesPerAttribute.getValue(); j++) {
+					px[i][j] = px[i][j] + pxdiff[i][j];
+				}
+			}
+		} else if (nInstancesGeneratedSoFar < burnInNInstances.getValue() + driftDuration.getValue()) {
+			px = pxbd;
+
+		} else {
+			//do nothing
+		}
+
+
 		double[][] pygx = pygxbd;
 
 		Instance inst = new DenseInstance(streamHeader.numAttributes());
@@ -137,10 +153,12 @@ public class GradualDriftGenerator extends DriftGenerator{
 		 */
 		for (int a = 0; a < indexes.length; a++) {
 			double rand = r.nextUniform(0.0, 1.0, true);
+			//System.out.println(Arrays.toString(px[a]));
 
 			int chosenVal = 0;
 			double sumProba = px[a][chosenVal];
 			while (rand > sumProba) {
+
 				chosenVal++;
 				sumProba += px[a][chosenVal];
 			}
@@ -191,39 +209,14 @@ public class GradualDriftGenerator extends DriftGenerator{
 		// p(y|x)
 		generateRandomPyGivenX(pygxbd, r);
 
-		// generating distribution after drift
-
 		// generating covariate drift
 
 			pxad = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
+			px = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
+			pxdiff = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
+
 			double obtainedMagnitude;
 
-			cellDirection = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
-			// if a cell grows, it is marked with a 1, otherwise 0. Let's have half the cells increasing in probability.
-			double increasingProportion = 0.5;
-
-			for(int i = 0; i < nAttributes.getValue(); i++) {
-				for(int j = 0; j < nValuesPerAttribute.getValue(); j++){
-					cellDirection[i][j] = 1; //increasing cell
-					if (r.nextUniform(0.0, 1.0, true) < increasingProportion ){
-						cellDirection[i][j] = -1; //decreasing cell
-					}
-				}
-			}
-			// we've set our cell movement directions.
-			// now we need to move our cells up or down in the nextInstance function until the drift mag is achieved.
-
-			/* We really want a monotonous movement towards the final distribution in the gradual case...
-			 * we don't want a random walk (at least not yet... this can be generalised later)!!!
-			 *
-			 * If we split our set into increasers and decreasers, then pick an increase at random, we are adding
-			 * this sort of rule to the drift we generate; some points increase until they hit the target
-			 */
-
-			/* from that distribution, pick values at random from the cells
-			 * take the corresponding value in your starting distribution
-			 * replace it
-			 */
 			System.out.println("Sampling p(x) for required magnitude...");
 			do {
 				if (driftMagnitudePrior.getValue() >= 0.2) {
@@ -239,9 +232,13 @@ public class GradualDriftGenerator extends DriftGenerator{
 			System.out.println("exact magnitude for p(x)="
 					+ computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad) + "\tasked="
 					+ driftMagnitudePrior.getValue());
-
-		//Drift conditional is never set... for now don't change pygx
-		//pygxad = pygxbd;
+			 //System.out.println(Arrays.toString(pxbd));
+			 //System.out.println(Arrays.toString(pxad));
+			for (int i = 0; i < nAttributes.getValue(); i++) {
+				for (int j =0; j < nValuesPerAttribute.getValue(); j++) {
+					pxdiff[i][j] = (pxad[i][j] - pxbd[i][j])/driftDuration.getValue();
+				}
+			}
 
 		// System.out.println(Arrays.toString(pxbd));
 		// System.out.println(Arrays.toString(pxad));

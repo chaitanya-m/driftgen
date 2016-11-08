@@ -177,8 +177,7 @@ public class GradualDriftGenerator extends DriftGenerator{
 			System.out.println("exact magnitude for p(x)="
 					+ computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad) + "\tasked="
 					+ driftMagnitudePrior.getValue());
-			 //System.out.println(Arrays.toString(pxbd));
-			 //System.out.println(Arrays.toString(pxad));
+
 			for (int i = 0; i < nAttributes.getValue(); i++) {
 				for (int j =0; j < nValuesPerAttribute.getValue(); j++) {
 					pxdiff[i][j] = (pxad[i][j] - pxbd[i][j])/driftDuration.getValue();
@@ -190,6 +189,28 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 		nInstancesGeneratedSoFar = 0L;
 
+	}
+
+	/**
+	 * Given a distribution, get the furthest possible distribution from it
+	 * This is a distribution with the previously least frequent outcome getting all the probability mass
+	 * @param furthestDist
+	 * @param inputDist
+	 */
+	public void getFurthestDistribution(double[] furthestDist, double[] inputDist){
+
+		assert(furthestDist.length == inputDist.length);
+
+		int minIndex = 0;
+
+		for (int i = 0; i < inputDist.length; i++) {
+			furthestDist[i] = 0.0; //initialize to 0
+
+			if (inputDist[i] < inputDist[minIndex]){ //find outcome with lowest probability
+				minIndex = i;
+			}
+		}
+		furthestDist[minIndex] = 1.0; //set it to 1
 	}
 
 }

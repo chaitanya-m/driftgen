@@ -10,6 +10,8 @@ import com.github.javacliparser.FloatOption;
 import com.github.javacliparser.IntOption;
 import com.github.javacliparser.MultiChoiceOption;
 import com.yahoo.labs.samoa.instances.Attribute;
+import com.yahoo.labs.samoa.instances.Instances;
+import com.yahoo.labs.samoa.instances.InstancesHeader;
 
 import moa.core.FastVector;
 import moa.streams.InstanceStream;
@@ -21,6 +23,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public abstract class DriftGenerator extends DriftOptionHandler implements InstanceStream {
+
+	private static final long serialVersionUID = 6853166101160277496L;
 
 	public MultiChoiceOption distanceMeasure = new MultiChoiceOption("distanceType", 't',
 			"The distance measure used", new String[]{"Hellinger Distance", "Total Variation Distance"}, new String[]{"L2 distance", "L1 distance"}, 0 );
@@ -39,6 +43,13 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 	public IntOption seed = new IntOption("seed", 'r', "Seed for random number generator", -1,
 			Integer.MIN_VALUE, Integer.MAX_VALUE);
 
+	public FloatOption driftMagnitudePrior = new FloatOption("driftMagnitudePrior", 'i',
+			"Magnitude of the drift between the starting probability and the one after the drift."
+					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
+
+	public IntOption burnInNInstances = new IntOption("burnInNInstances", 'b',
+			"Number of instances before the start of the drift", 10000, 0, Integer.MAX_VALUE);
+
 	static DriftMagnitude driftMag;
 
 	public DriftGenerator() {
@@ -51,10 +62,57 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 			driftMag = new TotalVariationDistance();
 		}
 	}
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 6853166101160277496L;
+
+	RandomDataGenerator r;
+
+	long nInstancesGeneratedSoFar;
+
+	// Do we need implementations for these?
+
+	@Override
+	public void getDescription(StringBuilder sb, int indent) {
+
+	}
+
+	@Override
+	public long estimatedRemainingInstances() {
+		return -1;
+	}
+
+	@Override
+	public boolean hasMoreInstances() {
+		return true;
+	}
+
+	@Override
+	public boolean isRestartable() {
+		return true;
+	}
+
+	@Override
+	public void restart() {
+		nInstancesGeneratedSoFar = 0L;
+	}
+
+
+	protected InstancesHeader streamHeader;
+
+	@Override
+	public InstancesHeader getHeader() {
+		return streamHeader;
+	}
+
+	protected void generateHeader() {
+
+		FastVector<Attribute> attributes = getHeaderAttributes(nAttributes
+				.getValue(), nValuesPerAttribute.getValue());
+
+		this.streamHeader = new InstancesHeader(new Instances(
+				getCLICreationString(InstanceStream.class), attributes, 0));
+		this.streamHeader.setClassIndex(this.streamHeader.numAttributes() - 1);
+	}
+
+
 
 	/* Refactor:
 	 * Should Generator extend OptionHandler, own one, or be composited with one?
@@ -252,6 +310,21 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 		}
 		return classPrior;
 
+	}
+
+	/**
+	 * Gets the index of a given instance-tuple
+	 */
+	protected final int getIndex(int... indexes) { //size of indexes is total number of attributes. It contains chosen nValues.
+
+		int index = indexes[0];
+		for (int i = 1; i < indexes.length; i++) {
+			index *= nValuesPerAttribute.getValue();
+			index += indexes[i];
+		}
+		return index;
+		// multiply nValue for first attribute by numValuesPerAttribute. Add the nValue of the next attribute. repeat.
+		// then multiply whichever nValue you picked for 0th attribute by numAttributes
 	}
 
 

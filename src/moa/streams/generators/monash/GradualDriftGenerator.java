@@ -26,13 +26,6 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 	private static final long serialVersionUID = -3513131640712137498L;
 
-	public FloatOption driftMagnitudePrior = new FloatOption("driftMagnitudePrior", 'i',
-			"Magnitude of the drift between the starting probability and the one after the drift."
-					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
-
-	public IntOption burnInNInstances = new IntOption("burnInNInstances", 'b',
-			"Number of instances before the start of the drift", 10000, 0, Integer.MAX_VALUE);
-
 	public IntOption driftDuration = new IntOption("driftDuration", 'd',
 			"How long drift lasts", 10000, 0, Integer.MAX_VALUE);
 
@@ -43,9 +36,6 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 	/* TODO: Do we really need a serializable object, and to set the UID
 	 * explicitly rather than let JDK handle it?*/
-
-	protected InstancesHeader streamHeader;
-
 	/**
 	 * p(x) before drift
 	 */
@@ -69,55 +59,10 @@ public class GradualDriftGenerator extends DriftGenerator{
 	 */
 	double[][] px;
 
-	RandomDataGenerator r;
-
-	long nInstancesGeneratedSoFar;
-
-	// Do we need implementations for these?
-
-	@Override
-	public long estimatedRemainingInstances() {
-		return -1;
-	}
-
-	@Override
-	public boolean hasMoreInstances() {
-		return true;
-	}
-
-	@Override
-	public boolean isRestartable() {
-		return true;
-	}
-
-	@Override
-	public void restart() {
-		nInstancesGeneratedSoFar = 0L;
-	}
-
-	@Override
-	public void getDescription(StringBuilder sb, int indent) {
-
-	}
 
 	@Override
 	public String getPurposeString() {
-		return "Generates a stream with an abrupt drift of given magnitude.";
-	}
-
-	@Override
-	public InstancesHeader getHeader() {
-		return streamHeader;
-	}
-
-	protected void generateHeader() {
-
-		FastVector<Attribute> attributes = getHeaderAttributes(nAttributes
-				.getValue(), nValuesPerAttribute.getValue());
-
-		this.streamHeader = new InstancesHeader(new Instances(
-				getCLICreationString(InstanceStream.class), attributes, 0));
-		this.streamHeader.setClassIndex(this.streamHeader.numAttributes() - 1);
+		return "Generates a stream with a gradual drift of given magnitude.";
 	}
 
 	@Override
@@ -128,7 +73,7 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 			for (int i = 0; i < nAttributes.getValue(); i++) {
 				for (int j =0; j < nValuesPerAttribute.getValue(); j++) {
-					px[i][j] = px[i][j] + pxdiff[i][j];
+					px[i][j] = px[i][j] + pxdiff[i][j];	//Add the interpolation step
 				}
 			}
 		} else if (nInstancesGeneratedSoFar < burnInNInstances.getValue() + driftDuration.getValue()) {
@@ -244,16 +189,6 @@ public class GradualDriftGenerator extends DriftGenerator{
 		// System.out.println(Arrays.toString(pxad));
 
 		nInstancesGeneratedSoFar = 0L;
-
-	}
-
-	protected final int getIndex(int... indexes) {
-		int index = indexes[0];
-		for (int i = 1; i < indexes.length; i++) {
-			index *= nValuesPerAttribute.getValue();
-			index += indexes[i];
-		}
-		return index;
 
 	}
 

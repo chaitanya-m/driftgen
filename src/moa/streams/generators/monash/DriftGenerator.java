@@ -114,7 +114,7 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 
 
 
-	/* Refactor:
+	/* Refactor?:
 	 * Should Generator extend OptionHandler, own one, or be composited with one?
 	 * MOA's design requires all classes with options to extend AbstractOptionHandler
 	 * ... extending DriftOptionHandler instead
@@ -245,24 +245,27 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 
 	}
 
+	/* nbCombinationsOfValuesPX is the number of all possible tuples.
+	 * find the probability of every single tuple before and after drift, and compute Hellinger distance
+	 * assume independent attributes
+	 * if each row is an independent distribution for an attribute
+	 * why doesn't each row get it's own Hellinger?
+	 * What does it mean for us to simply do this over multiple row distributions?
+	 * Does this make sense?
+	 * Yes. However many discrete distributions we have, it looks like if we multiply them
+	 * by each other, then just like in the continuous case, we will still get a sum of 1.
+	 * Here we are assuming independence between the distributions for each attribute and
+	 * computing values for all possible outcomes of their joint distributions.
+	 * The probability values for elements of the joint distribution should all sum up to 1.
+	 * So this is an already normalised distribution and we can compute the Hellinger.
+	 */
+
 	public static double computeMagnitudePX(int nbCombinationsOfValuesPX, double[][] base_px,
 			double[][] drift_px) {
 
-		int[] indexes = new int[base_px.length];
-		double[] baseCovariate = new double[nbCombinationsOfValuesPX]; //all possible attribute-value combinations... old method is far more space efficient
-		double[] driftCovariate = new double[nbCombinationsOfValuesPX];
+		double[] baseCovariate = PX2DTo1D(nbCombinationsOfValuesPX, base_px);
+		double[] driftCovariate = PX2DTo1D(nbCombinationsOfValuesPX, drift_px);
 
-		for (int i = 0; i < nbCombinationsOfValuesPX; i++) {
-
-			getIndexes(i, indexes, base_px[0].length);
-			baseCovariate[i] = 1.0;
-			driftCovariate[i] = 1.0;
-
-			for (int a = 0; a < indexes.length; a++) {
-				baseCovariate[i] *= base_px[a][indexes[a]];
-				driftCovariate[i] *= drift_px[a][indexes[a]];
-			}
-		}
 		return driftMag.getValue(baseCovariate, driftCovariate);
 	}
 
@@ -283,6 +286,13 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 		return driftMag.getValue(baseClassP, driftClassP);
 	}
 
+	/* index is the index of the instance tuple in pygx, i.e. row number
+	 * indexes.length is the number of attributes, which we have also chosen as the number of classes.
+	 * given an instance tuple index, this function extracts the indices of the attribute-values comprising the tuple
+	 * and stores them in an array
+	 * One can then use those indices to extract probability values from px
+	 * Refactor- make this more intuitive
+	 */
 	static void getIndexes(int index, int[] indexes, int nValuesPerAttribute) {
 		for (int i = indexes.length - 1; i > 0; i--) {
 			int dim = nValuesPerAttribute;
@@ -326,6 +336,64 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 		// multiply nValue for first attribute by numValuesPerAttribute. Add the nValue of the next attribute. repeat.
 		// then multiply whichever nValue you picked for 0th attribute by numAttributes
 	}
+
+	/**
+	 * Given a distribution, get the furthest possible distribution from it
+	 * This is a distribution with the previously least frequent outcome getting all the probability mass
+	 * @param furthestDist
+	 * @param inputDist
+	 */
+	public void getFurthestDistribution(double[] furthestDist, double[] inputDist){
+
+		assert(furthestDist.length == inputDist.length);
+
+		int minIndex = 0;
+
+		for (int i = 0; i < inputDist.length; i++) {
+			furthestDist[i] = 0.0; //initialize to 0
+
+			if (inputDist[i] < inputDist[minIndex]){ //find outcome with lowest probability
+				minIndex = i;
+			}
+		}
+		furthestDist[minIndex] = 1.0; //set it to 1 - give it all the probability mass
+	}
+
+	/**
+	 * Under assumptions of independence between attributes, take a 2-dimensional
+	 * PX and return its 1D version
+	 *
+	 * Example PX2D:
+	 *
+	 *       Val1  Val2  Val3 ...
+	 * Attr1  0.1  0.01  0.09 ...
+	 * Attr2
+	 * Attr3
+	 * .
+	 * .
+	 * .
+	 */
+	public static double[] PX2DTo1D(int nbCombinationsOfValuesPX, double[][] PX2D){
+
+		int[] indexes = new int[PX2D.length];
+
+		/* all possible attribute-value combinations... old method is far more space efficient
+		   Because it doesn't store all of them*/
+		double[] PX1D = new double[nbCombinationsOfValuesPX];
+
+		for (int i = 0; i < nbCombinationsOfValuesPX; i++) {
+
+			getIndexes(i, indexes, PX2D[0].length);
+			PX1D[i] = 1.0;
+
+			for (int a = 0; a < indexes.length; a++) {
+				PX1D[i] *= PX2D[a][indexes[a]];
+			}
+		}
+
+		return PX1D;
+	}
+
 
 
 }

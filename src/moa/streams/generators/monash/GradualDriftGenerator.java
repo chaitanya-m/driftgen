@@ -187,30 +187,10 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 		nInstancesGeneratedSoFar = 0L;
 
-		rg.setSeed(seed.getValue()); //reset the generator; different drift magnitudes generate sequences of different lengths during the search
+		//reset the generator; different drift magnitudes generate sequences of different lengths during the search
+		rg.setSeed(seed.getValue());
 		r = new RandomDataGenerator(rg);
 	}
 
-	/**
-	 * Given a distribution, get the furthest possible distribution from it
-	 * This is a distribution with the previously least frequent outcome getting all the probability mass
-	 * @param furthestDist
-	 * @param inputDist
-	 */
-	public void getFurthestDistribution(double[] furthestDist, double[] inputDist){
-
-		assert(furthestDist.length == inputDist.length);
-
-		int minIndex = 0;
-
-		for (int i = 0; i < inputDist.length; i++) {
-			furthestDist[i] = 0.0; //initialize to 0
-
-			if (inputDist[i] < inputDist[minIndex]){ //find outcome with lowest probability
-				minIndex = i;
-			}
-		}
-		furthestDist[minIndex] = 1.0; //set it to 1
-	}
 
 }

@@ -163,7 +163,7 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 	public static void generateRandomPyGivenX(double[][] pygx, RandomDataGenerator r) {
 		for (int i = 0; i < pygx.length; i++) {
 			double[] lineCPT = pygx[i];
-			int chosenClass = r.nextSecureInt(0, lineCPT.length - 1);
+			int chosenClass = r.nextInt(0, lineCPT.length - 1);
 
 			for (int c = 0; c < lineCPT.length; c++) {
 				if (c == chosenClass) {

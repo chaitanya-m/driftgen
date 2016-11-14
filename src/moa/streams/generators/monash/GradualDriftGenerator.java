@@ -59,6 +59,7 @@ public class GradualDriftGenerator extends DriftGenerator{
 	 */
 	double[][] px;
 
+	RandomGenerator rg = new JDKRandomGenerator();
 
 	@Override
 	public String getPurposeString() {
@@ -69,20 +70,18 @@ public class GradualDriftGenerator extends DriftGenerator{
 	public InstanceExample nextInstance() {
 
 
-		if(nInstancesGeneratedSoFar > burnInNInstances.getValue() && nInstancesGeneratedSoFar < driftDuration.getValue()){
+		if(nInstancesGeneratedSoFar > burnInNInstances.getValue() && nInstancesGeneratedSoFar < burnInNInstances.getValue() + driftDuration.getValue()){
 
 			for (int i = 0; i < nAttributes.getValue(); i++) {
 				for (int j =0; j < nValuesPerAttribute.getValue(); j++) {
 					px[i][j] = px[i][j] + pxdiff[i][j];	//Add the interpolation step
 				}
 			}
-		} else if (nInstancesGeneratedSoFar < burnInNInstances.getValue() + driftDuration.getValue()) {
+		} else if (nInstancesGeneratedSoFar < burnInNInstances.getValue()) {
 			px = pxbd;
-
 		} else {
-			//do nothing
-		}
 
+		}
 
 		double[][] pygx = pygxbd;
 
@@ -142,7 +141,6 @@ public class GradualDriftGenerator extends DriftGenerator{
 		pxbd = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
 		pygxbd = new double[nCombinationsValuesForPX][nValuesPerAttribute.getValue()];
 
-		RandomGenerator rg = new JDKRandomGenerator();
 		rg.setSeed(seed.getValue());
 		r = new RandomDataGenerator(rg);
 
@@ -189,6 +187,8 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 		nInstancesGeneratedSoFar = 0L;
 
+		rg.setSeed(seed.getValue()); //reset the generator; different drift magnitudes generate sequences of different lengths during the search
+		r = new RandomDataGenerator(rg);
 	}
 
 	/**

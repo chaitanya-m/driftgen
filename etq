@@ -1,0 +1,77 @@
+[33mcommit bdbc9bf284f027e6a25131fcc6b372dac1bd8226[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Fri Nov 4 10:13:55 2016 +1100
+
+    Let half the px table drift up, the rest drift down
+
+[33mcommit 02d59cf9575013c74ee1443b7882e61d37a87bad[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Thu Nov 3 15:59:08 2016 +1100
+
+    As a first step, create an efficient covariate drift generator
+
+[33mcommit e5c9fca57b3eb0ed9bbc803e0880fe5fe38c3800[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Wed Oct 26 15:26:35 2016 +1100
+
+    Java doesn't have function pointers... so added classes for Hellinger Distance and Total Variation Distance, which can be picked at runtime. An object of the appropriate type is then created to calculate distance. Added corresponding option.
+
+[33mcommit 523e75cd7af6aa96af17d0a823d6d2ab238f158a[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Wed Oct 26 00:58:19 2016 +1100
+
+    Using Hellinger as a stand-in for now; can either add interface or reflection after to have a uniform function call for distance
+
+[33mcommit 72af3e1422f1ad0938168bd8d07a9deb49d1c956[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Wed Oct 26 00:21:08 2016 +1100
+
+    DriftMagnitude class
+
+[33mcommit d73a18c343c1bc33752ef010e6ca96a3ff0893d7[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Wed Oct 26 00:20:42 2016 +1100
+
+    Indentation
+
+[33mcommit a7248375b880b26d492368c210a85c15b6676cb1[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Tue Oct 25 22:17:26 2016 +1100
+
+    Created a class for options; created the total variation option
+
+[33mcommit 834bb302afa495e84352c095fcb41fdd23570ae9[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Tue Oct 25 19:29:58 2016 +1100
+
+    Added Francois' code with workarounds for low magnitude covariate drift
+
+[33mcommit 0a143cd4e8ba0823c7a8ed99aa840dd492f06443[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Tue Oct 25 17:22:06 2016 +1100
+
+    Commented code
+
+[33mcommit 7fca854182346620172d97c05ecabf2e7598a05c[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Tue Oct 25 15:37:49 2016 +1100
+
+    Indented original code
+
+[33mcommit 79fd751afebfa44e7711914fafa471151c716a6f[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Tue Oct 25 15:24:09 2016 +1100
+
+    Adding local project settings- this is just a dev branchgit add .classpath .project .settings/*
+
+[33mcommit ce0c5fdcab93c649f5626134a332edd86cc3767a[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Tue Oct 25 15:15:40 2016 +1100
+
+    Added original files from Francois for class drift generation
+
+[33mcommit 52d0864770e61d5e480d5e10076b4cca8a6b7c50[m
+Author: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date:   Tue Oct 25 15:02:15 2016 +1100
+
+    Initial commit

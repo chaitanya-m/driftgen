@@ -141,15 +141,16 @@ public class GradualDriftGenerator extends DriftGenerator{
 		pxbd = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
 		pygxbd = new double[nCombinationsValuesForPX][nValuesPerAttribute.getValue()];
 
-		rg.setSeed(seed.getValue());
-		r = new RandomDataGenerator(rg);
-
 		// generating distribution before drift
 
 		// p(x)
+		rg.setSeed(seed.getValue());
+		r = new RandomDataGenerator(rg);
 		generateRandomPx(pxbd, r);
 
 		// p(y|x)
+		rg.setSeed(seed.getValue());
+		r = new RandomDataGenerator(rg);
 		generateRandomPyGivenX(pygxbd, r);
 
 		// generating covariate drift
@@ -158,19 +159,47 @@ public class GradualDriftGenerator extends DriftGenerator{
 			px = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
 			pxdiff = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
 
-			double obtainedMagnitude;
+			/* Let us first make a guess based on "proportion" of distance to the furthest distribution.*/
 
-			System.out.println("Sampling p(x) for required magnitude...");
-			do {
-				if (driftMagnitudePrior.getValue() >= 0.2) {
-					generateRandomPx(pxad, r);
-				} else if (driftMagnitudePrior.getValue() < 0.2) {
-					generateRandomPxAfterCloseToBefore(driftMagnitudePrior.getValue(), pxbd, pxad, r);
+			/* Actually, let's do this later. Let's first do a binary search.*/
+			double[][] startDist = pxbd;
+			double[][] furthestDist = getFurthestDistribution(nCombinationsValuesForPX, pxbd);
+			double[][] dist1 = startDist;
+			double[][] dist2 = furthestDist;
+			System.out.println("Searching p(x) for required magnitude...");
+
+//System.out.println("FURTHEST DISTANCE IS: " + Math.abs(computeMagnitudePX(nCombinationsValuesForPX, dist1, dist2)));
+//printMatrix(furthestDist);
+			//PX2DTo1D(nCombinationsValuesForPX
+			while (	Math.abs(computeMagnitudePX(nCombinationsValuesForPX, dist1, dist2) - driftMagnitudePrior.getValue())
+						> precisionDriftMagnitude.getValue() ) {
+
+				double[][] guessDist = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
+
+				for (int i =0; i < nAttributes.getValue(); i++) {
+					for (int j =0; j < nValuesPerAttribute.getValue(); j++) {
+						guessDist[i][j] = dist1[i][j] + 0.5 * (dist2[i][j] - dist1[i][j]); //this is a first guess distribution
+					}
 				}
-				//note this workaround so he doesn't explore a large number of random distributions!
-				obtainedMagnitude = computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad);
-			} while (Math.abs(obtainedMagnitude - driftMagnitudePrior.getValue()) > precisionDriftMagnitude
-					.getValue());
+
+				if (Math.abs(computeMagnitudePX(nCombinationsValuesForPX, startDist, guessDist) - driftMagnitudePrior.getValue())
+						<= precisionDriftMagnitude.getValue() ) {
+					dist2 = guessDist;
+					break;
+				}
+				else if ( Math.abs(computeMagnitudePX(nCombinationsValuesForPX, startDist, guessDist)) > driftMagnitudePrior.getValue()) {
+					dist2 = guessDist;
+				}
+				else{
+					dist1 = guessDist;
+				}
+
+			} //This should converge. But going back from 1D to 2D involves adding up all the marginals. So let's just do it in 2D.
+			pxad = dist2;
+
+			//precisionDriftMagnitude.getValue()
+
+//printMatrix(pxad);
 
 			System.out.println("exact magnitude for p(x)="
 					+ computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad) + "\tasked="
@@ -191,6 +220,5 @@ public class GradualDriftGenerator extends DriftGenerator{
 		rg.setSeed(seed.getValue());
 		r = new RandomDataGenerator(rg);
 	}
-
 
 }

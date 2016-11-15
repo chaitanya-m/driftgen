@@ -343,20 +343,32 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 	 * @param furthestDist
 	 * @param inputDist
 	 */
-	public void getFurthestDistribution(double[] furthestDist, double[] inputDist){
+	public double[][] getFurthestDistribution(int nbCombinationsOfValuesPX, double[][] inputDist){
 
-		assert(furthestDist.length == inputDist.length);
+		double[][] furthestDist = new double[inputDist.length][inputDist[0].length];
+		double[] inputDist1D = PX2DTo1D(nbCombinationsOfValuesPX, inputDist);
 
 		int minIndex = 0;
 
-		for (int i = 0; i < inputDist.length; i++) {
-			furthestDist[i] = 0.0; //initialize to 0
+		for (int i = 0; i < inputDist1D.length; i++) {
 
-			if (inputDist[i] < inputDist[minIndex]){ //find outcome with lowest probability
+			if (inputDist1D[i] < inputDist1D[minIndex]){ //find outcome with lowest probability
 				minIndex = i;
 			}
 		}
-		furthestDist[minIndex] = 1.0; //set it to 1 - give it all the probability mass
+		int[] lowestValueIndexes = new int[inputDist.length]; //As many as number of attributes
+		getIndexes(minIndex, lowestValueIndexes, inputDist[0].length); //convert the index of that outcome into it's px indices
+
+		for (int i =0; i < furthestDist.length; i++) {
+			for (int j = 0; j < furthestDist[0].length; j++) {
+				furthestDist[i][j] = 0.0;
+			}
+
+			furthestDist[i][lowestValueIndexes[i]] = 1.0; //set everything to zero except the corresponding attribute index
+			// this corresponds to giving the least frequent outcome all the probability mass
+		}
+
+		return furthestDist;
 	}
 
 	/**
@@ -394,6 +406,13 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 		return PX1D;
 	}
 
-
+	public static void printMatrix(double[][] matrix){
+		for (int i =0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[0].length; j++) {
+				System.out.print(matrix[i][j] + " ");
+			}
+			System.out.println();
+		}
+	}
 
 }

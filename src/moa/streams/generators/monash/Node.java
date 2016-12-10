@@ -12,15 +12,16 @@ public class Node {
 	private static int nValPerAttr;
 	private static int nClasses;
 
+	private static RandomDataGenerator r;
+
 	private static double precision;
 
 	private List<Node> children;
 	private List<Integer> availableAttr;
 	private List<Double> nodePY;
 
-	private static RandomDataGenerator r;
 
-	int level;
+	private int level;
 
 	void setPY (List<Double> givenPY) {
 		nodePY = givenPY;
@@ -35,7 +36,7 @@ public class Node {
         // recursion termination
         if (availableAttr.size() == 0){ return;} // no attributes left to split on
         for (Double p : nodePY){
-            if (1.0 - p < precision){return;}
+            if (1.0 - p.doubleValue() < precision){return;}
         } // low enough entropy achieved- one class dominates
 
 
@@ -71,7 +72,7 @@ public class Node {
         List<Double> rowTotals = new ArrayList<Double>();
         for(Double p : nodePY) {rowTotals.add(new Double(p));}
         Collections.sort(rowTotals); Collections.reverse(rowTotals);
-
+        System.err.println("Rowtotals level " + level + " " + rowTotals );
 
         // column totals: edgeweights sorted in descending order
         // generate edgeweights for this split
@@ -81,20 +82,20 @@ public class Node {
         for (double p : px1d) {edgeWeights.add(new Double(p));}
 
 
-        List<Double> colTotalsAscending = new ArrayList<Double>();
-        for(Double p : edgeWeights) {colTotalsAscending.add(new Double(p));} //deep copy from edgeweights
-        Collections.sort(colTotalsAscending);
+        List<Double> colTotalsOrig = new ArrayList<Double>();
+        for(Double p : edgeWeights) {colTotalsOrig.add(new Double(p));} //deep copy from edgeweights
+        Collections.sort(colTotalsOrig); Collections.reverse(colTotalsOrig);
         List<Double> colTotals = new ArrayList<Double>();
-        for (double p : colTotalsAscending) {colTotals.add(new Double(p));} // deep copy from colTotalsAscending
-        Collections.reverse(colTotals);
+        for (double p : colTotalsOrig) {colTotals.add(new Double(p));} // deep copy from colTotalsAscending
+        System.err.println("Coltotals level " + level + " " + colTotals );
 
 
         // pack the matrix using a greedy approach
         int i = 0, j = 0;
         while (i < rowTotals.size() && j < colTotals.size()) {
                 A[i][j] = rowTotals.get(i) < colTotals.get(j) ? rowTotals.get(i) : colTotals.get(j);
-                rowTotals.set(i, rowTotals.get(i) - A[i][j]);
-                colTotals.set(j, colTotals.get(j) - A[i][j]);
+                rowTotals.set(i, rowTotals.get(i).doubleValue() - A[i][j]);
+                colTotals.set(j, colTotals.get(j).doubleValue() - A[i][j]);
 
                 if (rowTotals.get(i) == 0.0) {i++;}
                 if (colTotals.get(j) == 0.0) {j++;}
@@ -102,7 +103,7 @@ public class Node {
         // divide by the original column totals (the copied ones are now zero)
         for (int c = 0; c < nClasses; c++){
             for (int k = 0; k < nValPerAttr; k++){
-                A[c][k] /= colTotalsAscending.get(k);
+                A[c][k] /= colTotalsOrig.get(k);
             }
         }
         // convert each column into a list- this is a PY for a child node
@@ -130,8 +131,9 @@ public class Node {
         }
 
         // recursively split on each child node
-
-
+        for (Node child : children){
+            child.printNode();
+        }
         for (Node child : children){
             child.split();
         }
@@ -139,6 +141,20 @@ public class Node {
     }
 
     void printNode() {
+        System.out.println( "\n\n ===== Node " + " level " + level + " ======= \n");
+        assert(nodePY!=null);
+        try {
+            System.out.println("PY is :");
+            System.out.println(nodePY);
+            System.out.println();
+            System.out.println("Available attributes are: ");
+            System.out.println(availableAttr);
+            System.out.println();
+        } catch (Exception e){
+
+        }
+
+        System.out.println(" ========================\n\n ");
 
     }
 
@@ -159,13 +175,19 @@ public class Node {
     	nodePY = pyList; // make the node's reference point to the new list
 
     	availableAttr = new ArrayList<Integer>();
-    	for(int i = 0; i < nAttr; i++) {availableAttr.add(i);} // add all possible attributes to list
+    	for(int i = 0; i < nAttr; i++) {availableAttr.add(new Integer(i));} // add all possible attributes to list
 
     }
 
     Node(List<Double> py_new, Integer lev, List<Integer> parent_avail_attr) {
-    	nodePY = py_new;
-    	lev = level + 1;
+    	// deep copy
+    	nodePY = new ArrayList<Double>();
+    	for (Double p : py_new){
+    		nodePY.add(new Double(p));
+    	}
+
+    	this.setLevel(lev);
+
     	// we want a new copy of the parent's available attributes- we do not want two references to the same memory location!!
     	// we want to create a copy of both the list and the object it contains- a deep copy
     	availableAttr = new ArrayList<Integer>();

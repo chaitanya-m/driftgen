@@ -212,6 +212,41 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 
 	}
 
+	public static void generateRandomPy1D(double[] py, RandomDataGenerator r,boolean verbose) {
+		double sum;
+		sum = 0.0;
+		for (int v = 0; v < py.length; v++) {
+			py[v] = r.nextGamma(1.0,1.0);
+			// The shape of this may need to change as per requirements
+			sum += py[v];
+		}
+		// normalizing
+		for (int v = 0; v < py.length; v++) {
+			py[v] /= sum;
+
+		}
+		if(verbose)System.out.println("p(y) " + Arrays.toString(py));
+	}
+
+
+	public static void generateRandomPx1D(double[] px, RandomDataGenerator r,boolean verbose) {
+		double sum;
+		sum = 0.0;
+		for (int v = 0; v < px.length; v++) {
+			px[v] = r.nextGamma(1.0,1.0);
+			// The shape of this may need to change as per requirements
+			sum += px[v];
+		}
+		// normalizing
+		for (int v = 0; v < px.length; v++) {
+			px[v] /= sum;
+
+		}
+		if(verbose)System.out.println("p(x) " + Arrays.toString(px));
+	}
+
+
+
 	public static void generateRandomPxWithMissing(double[][] px, RandomDataGenerator r,int nMissing,boolean verbose) {
 		double sum;
 		for (int a = 0; a < px.length; a++) {

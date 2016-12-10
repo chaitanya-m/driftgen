@@ -2,7 +2,13 @@ package moa.streams.generators.monash;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.apache.commons.math3.random.RandomDataGenerator;
 
@@ -12,7 +18,8 @@ public class Node {
 	private static double[][] pygx;
 	private static double[] py;
 
-	private static List<Double> px1dList;
+	private static SortedMap<Integer, Double> px1dMap;
+	private static List<List<Double>> pygxList;
 
 	private static int nAttr;
 	private static int nValPerAttr;
@@ -21,6 +28,9 @@ public class Node {
 	private static RandomDataGenerator r;
 
 	private static double precision;
+
+	private static int nodeCount;
+	private int nodeID;
 
 	private List<Node> children;
 	private List<Integer> availableAttr;
@@ -38,18 +48,26 @@ public class Node {
     }
 
     void postSplit() {
-    	assert( px1dList.size() == px1d.length);
-    	for (int i = 0; i < px1d.length; i++){
-    		px1d[i] = px1dList.get(i).doubleValue();
-    	}
-
+    	assert( px1dMap.size() == px1d.length);
+    	int i = 0;
+    	for (Iterator<Entry<Integer, Double>> iterator = px1dMap.entrySet().iterator(); iterator.hasNext();) {
+			Integer node_id = iterator.next().getKey();
+			px1d[i++] = px1dMap.get(node_id).doubleValue();
+		}
+    	System.out.println(px1dMap);
     }
 
     void split() {
 
         // recursion termination
         if (availableAttr.size() == 0){
-        	px1dList.add(new Double(this.pxVal));
+        	px1dMap.put(new Integer(nodeID), new Double(this.pxVal));
+
+        	List<Double> node_pygx = new ArrayList<Double>();
+        	//for (int k = 0; k < nodePY.size(); i++){
+
+        	//}
+
         	return;
         }
 
@@ -202,7 +220,8 @@ public class Node {
 		px1d = new double[nAttr * nValPerAttr];
 		pygx = new double[nAttr * nValPerAttr][nClasses];
 
-		px1dList = new ArrayList<Double>();
+		px1dMap = new TreeMap<Integer, Double>();
+		pygxList = new ArrayList<List<Double>>();
 
 		this.pxVal = 1.0;
 
@@ -216,9 +235,16 @@ public class Node {
     	availableAttr = new ArrayList<Integer>();
     	for(int i = 0; i < nAttr; i++) {availableAttr.add(new Integer(i));} // add all possible attributes to list
 
+    	nodeCount = 1;
+    	nodeID = nodeCount;
+
     }
 
     Node(List<Double> py_new, Integer lev, List<Integer> parent_avail_attr, double px_val) {
+
+    	nodeCount++;
+    	this.nodeID = nodeCount;
+
     	// deep copy
     	nodePY = new ArrayList<Double>();
     	for (Double p : py_new){

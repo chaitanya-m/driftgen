@@ -20,7 +20,10 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 public abstract class DriftGenerator extends DriftOptionHandler implements InstanceStream {
 
@@ -112,8 +115,6 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 		this.streamHeader.setClassIndex(this.streamHeader.numAttributes() - 1);
 	}
 
-
-
 	/* Refactor?:
 	 * Should Generator extend OptionHandler, own one, or be composited with one?
 	 * MOA's design requires all classes with options to extend AbstractOptionHandler
@@ -176,7 +177,7 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 
 	}
 
-	public static void generateRandomPyGivenX(double[][] pygx, RandomDataGenerator r,double alphaDirichlet) {
+	public static void generateRandomPyGivenX(double[][] pygx, RandomDataGenerator r, double alphaDirichlet) {
 		for (int i = 0; i < pygx.length; i++) {
 			double[] lineCPT = pygx[i];
 			double sum=0;
@@ -188,6 +189,45 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 				lineCPT[c] /= sum;
 			}
 		}
+	}
+	/**
+	 * Generates the "true" underlying model to learn. This is a random decision tree.
+	 *
+	 * Each Node will split on one attribute. That attribute will no longer be available to
+	 * split on further down the tree. The partition will be a simple partition of attribute values.
+	 *
+	 * Now, at each split we're saying that that attribute provides the partition with greatest information gain.
+	 *
+	 * We'll have to ensure that the tree is constantly increasing information gain.
+	 *
+	 * How do we do this? We want to make our instances collected more and more homogeneous at each level.
+	 *
+	 * Let's say that prior to the first split the instances have a uniform class distribution.
+	 *
+	 * After the first split,instances collected down one attribute-value edge should have a higher probability for a given class than others.
+	 *
+	 * If this is a Dirichlet spike, we may not need any more splits.
+	 *
+	 * But if this is somewhere in between, we would need more splits on the remaining attributes to get a better picture.
+	 *
+	 * Strategy: Pick first attribute. Split on it. For each attribute-value edge, pick a different class to "maximise" the probability of.
+	 * Now, it is quite possible that you could increase the same class for two different attribute-values... it's also possible that you're
+	 * not maximising entropy. But since we get to generate the "true" decision tree, we get to decide this. So let's pick a decision tree
+	 * in which each attribute value does lead to a different class having it's probability maximized.
+	 *
+	 *
+	 *
+	 * Note: ensure supplied randomgenerator has been reinitialized with the correct seed.
+	 * This prevents different objects drawing from different points in the stream.
+	 * This of course somewhat defeats the purpose of having a random sequence... use carefully.
+	 * @param pygx
+	 * @param r
+	 */
+	/*Perhaps don't reinitialize random as long as sequence lengths do not change between objects?*/
+
+	public static void generateDecisionTreeDist(double[][] px, double pygx[][], double[] py, RandomDataGenerator r) {
+		// Generate root node with  py[]
+
 	}
 
 	public static void generateRandomPx(double[][] px, RandomDataGenerator r) {

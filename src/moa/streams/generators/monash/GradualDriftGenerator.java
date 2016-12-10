@@ -94,6 +94,11 @@ public class GradualDriftGenerator extends DriftGenerator{
 		 * implemented correctly. See http://www.win.tue.nl/~marko/2WB05/lecture8.pdf
 		 * Pick U from the uniform distribution. Find the index where the sum of the independent
 		 * probability values exceeds the picked value. The smallest index that exceeds U is the outcome.
+		 * There are as many indexes as attributes. For each attribute, we need a value.
+		 * Each trial is picking a value for an attribute. Each trial draws from a categorical distribution- it picks one out of several available values.
+		 * If you have as many trials as attributes, you have to pick from a multinomial distribution with n = nAttributes and k = nValuesPerAttribute.
+		 * This happens to be the layout of the px matrix.
+		 * Each outcome is a combination of attribute-values, and each attribute corresponds to one categorical trial.
 		 */
 		for (int a = 0; a < indexes.length; a++) {
 			double rand = r.nextUniform(0.0, 1.0, true);
@@ -139,7 +144,7 @@ public class GradualDriftGenerator extends DriftGenerator{
 		}
 
 		pxbd = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
-		pygxbd = new double[nCombinationsValuesForPX][nValuesPerAttribute.getValue()];
+		pygxbd = new double[nCombinationsValuesForPX][nValuesPerAttribute.getValue()]; // number of class = nValuesPerAttributes
 
 		// generating distribution before drift
 
@@ -148,9 +153,16 @@ public class GradualDriftGenerator extends DriftGenerator{
 		r = new RandomDataGenerator(rg);
 		generateRandomPx(pxbd, r);
 
+
 		// p(y|x)
 		rg.setSeed(seed.getValue());
 		r = new RandomDataGenerator(rg);
+
+		/*
+		 * This totally randomly assigns a class to each instance. Let's replace this with something that
+		 * (a) has some distribution over classes
+		 * (b) has a dependency between attributes
+		 */
 		generateRandomPyGivenX(pygxbd, r);
 
 		// generating covariate drift

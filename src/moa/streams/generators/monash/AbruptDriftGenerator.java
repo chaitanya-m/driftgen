@@ -149,7 +149,7 @@ public class AbruptDriftGenerator extends DriftGenerator{
 			 * instead, pick some random distribution
 			 * Francois' code randomly perturbs the distribution if the required magnitude is less than 0.2,
 			 * by adding a random value from a gaussian with some deviation sigma centred at each cell value
-			 * but it doesn't take into account the relaionship between the Hellinger and the diff in prob. values... so more exploration
+			 * but it doesn't take into account the relationship between the Hellinger and the diff in prob. values... so more exploration
 			 * Then it normalises the obtained distribution.
 			 * Instead, can we "grow" the distribution by a certain magnitude at each timestep?
 			 * Let us first try this in the abrupt case. In a single timestep, we will grow the distribution

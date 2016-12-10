@@ -12,3 +12,52 @@ mv cdgen.jar to the correct folder
 
 java -cp commons-math3-3.6.1.jar:moa.jar:cdgen.jar -javaagent:sizeofag-1.0.0.jar moa.gui.GUI
 
+
+
+
+
+
+
+I thought about it in a different way: what if I started with the simplest possible (unusable) solution and added the constraints one by one?
+
+The simplest possible solution was just copying the original prior, and weighting all the edges as 1.
+i.e. the tree has learnt absolutely nothing.
+
+Now if I change the edge weights so that they still add up to 1 (Constraint 1, C1), the Law of Total Probability (LOTP) still holds (C2). So I now have created a random dist over the attribute values, and all my constraints apply (so far).
+
+Now I change one of the posteriors to decrease entropy after following one of the edges down to it; this breaks LOTP but still preserves add-to-1. Any increases in the change will have to be so that the total probability for that class at the parent node is not exceeded. (C3)
+
+So I adjust for each class, one at a time. Whichever classes in the just-adjusted high-information posterior (P1) have received a boost, I go decrease in the rest of the posteriors. This decrease may need to be spread among multiple posteriors, because some may go to zero.
+
+Now the ones that have decreased in P1 need to increase in the other posteriors, of course... which isn't an issue. We must constrain each decrease so that it is no greater than the total weight x value in the other posteriors. (C4)
+
+We have to spread as many units of decrease as we have units of increase, as long as all increases and decreases respect C3 and C4.
+
+We can think of this as the original prior having 1 unit of water separated into several compartments; this is constant. We then go fill that water in several replicas; an edge weight 1 leading to a replica get the same fill of water, a smaller edge weight gets a lower proportion. Since the edge weights have already been fixed, we've kept the water in the system constant. Still 1 unit. Each replica is a contained system. Let's say the edge-weights are 0.7, 0.2, 0.1; this stays constant for each replica.
+
+If we readjust one of the replicas, we've changed the amount of water in a compartment class. But note that the total amount in each compartment class is a constant across the replicas; We just have to redistribute. This is possible because the water in each replica is still a constant. If we take 400ml from a class compartment in the 700ml replica, we will never be able to add 400 ml in the remaining replicas because there isn't enough water.
+
+So as long as we obey the two additional constraints C3 and C4, we're good, C1 and C2 will hold.
+
+Now we have some skewed distributions, which we will again try to split on.
+
+Issues:
+
+1. This is a circular process. We could end up looping forever- but this should be easy to avoid by design
+
+2. Still need to design an algorithm...
+
+Here's an outline:
+
+Start with the highest value edge.
+Pick the highest valued class and increase it to near-possible fullness, allowing for C3.
+All other classes must be adjusted to satisfy C3 and C4
+
+
+
+
+
+
+
+
+

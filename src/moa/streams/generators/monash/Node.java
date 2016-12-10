@@ -35,10 +35,11 @@ public class Node {
 
         // recursion termination
         if (availableAttr.size() == 0){ return;} // no attributes left to split on
+        /*
         for (Double p : nodePY){
             if (1.0 - p.doubleValue() < precision){return;}
         } // low enough entropy achieved- one class dominates
-
+*/
 
         // randomly choose an attribute from those remaining to split on
         // attributes numbered from 0
@@ -54,7 +55,8 @@ public class Node {
         int chosenAttr = availableAttr.get(chosenAttrIndex);
         availableAttr.remove(chosenAttrIndex);
 
-        System.out.println( "splitting on attribute " + chosenAttr + "\n");
+
+        //System.out.println( "splitting on attribute " + chosenAttr + "\n");
 
         // This matrix will be filled greedily so that row totals equal class probabilities
         // And column totals equal edge probabilities
@@ -72,12 +74,12 @@ public class Node {
         List<Double> rowTotals = new ArrayList<Double>();
         for(Double p : nodePY) {rowTotals.add(new Double(p));}
         Collections.sort(rowTotals); Collections.reverse(rowTotals);
-        System.err.println("Rowtotals level " + level + " " + rowTotals );
+        //System.err.println("Rowtotals level " + level + " " + rowTotals );
 
         // column totals: edgeweights sorted in descending order
         // generate edgeweights for this split
         double[] px1d = new double[nValPerAttr];
-        DriftGenerator.generateRandomPx1D(px1d, r, true);
+        DriftGenerator.generateRandomPx1D(px1d, r, false);
         List<Double> edgeWeights = new ArrayList<Double>();
         for (double p : px1d) {edgeWeights.add(new Double(p));}
 
@@ -87,7 +89,7 @@ public class Node {
         Collections.sort(colTotalsOrig); Collections.reverse(colTotalsOrig);
         List<Double> colTotals = new ArrayList<Double>();
         for (double p : colTotalsOrig) {colTotals.add(new Double(p));} // deep copy from colTotalsAscending
-        System.err.println("Coltotals level " + level + " " + colTotals );
+        //System.err.println("Coltotals level " + level + " " + colTotals );
 
 
         // pack the matrix using a greedy approach
@@ -131,9 +133,9 @@ public class Node {
         }
 
         // recursively split on each child node
-        for (Node child : children){
+        /*for (Node child : children){
             child.printNode();
-        }
+        }*/
         for (Node child : children){
             child.split();
         }
@@ -167,7 +169,7 @@ public class Node {
 
 		double[] py = new double[nClasses];
 
-    	DriftGenerator.generateRandomPy1D(py, r, true); //generate random py at this node
+    	DriftGenerator.generateRandomPy1D(py, r, false); //generate random py at this node
 
     	ArrayList<Double> pyList = new ArrayList<Double>();
     	for(double p : py) {pyList.add(new Double(p));} //store it in a list

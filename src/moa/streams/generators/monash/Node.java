@@ -8,6 +8,12 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 
 public class Node {
 
+	private static double[] px1d;
+	private static double[][] pygx;
+	private static double[] py;
+
+	private static List<Double> px1dList;
+
 	private static int nAttr;
 	private static int nValPerAttr;
 	private static int nClasses;
@@ -20,8 +26,8 @@ public class Node {
 	private List<Integer> availableAttr;
 	private List<Double> nodePY;
 
-
 	private int level;
+	private double pxVal;
 
 	void setPY (List<Double> givenPY) {
 		nodePY = givenPY;
@@ -31,10 +37,23 @@ public class Node {
     	level = lev;
     }
 
+    void postSplit() {
+    	assert( px1dList.size() == px1d.length);
+    	for (int i = 0; i < px1d.length; i++){
+    		px1d[i] = px1dList.get(i).doubleValue();
+    	}
+
+    }
+
     void split() {
 
         // recursion termination
-        if (availableAttr.size() == 0){ return;} // no attributes left to split on
+        if (availableAttr.size() == 0){
+        	px1dList.add(new Double(this.pxVal));
+        	return;
+        }
+
+        // no attributes left to split on
         /*
         for (Double p : nodePY){
             if (1.0 - p.doubleValue() < precision){return;}
@@ -78,10 +97,10 @@ public class Node {
 
         // column totals: edgeweights sorted in descending order
         // generate edgeweights for this split
-        double[] px1d = new double[nValPerAttr];
-        DriftGenerator.generateRandomPx1D(px1d, r, false);
+        double[] node_px1d = new double[nValPerAttr];
+        DriftGenerator.generateRandomPx1D(node_px1d, r, false);
         List<Double> edgeWeights = new ArrayList<Double>();
-        for (double p : px1d) {edgeWeights.add(new Double(p));}
+        for (double p : node_px1d) {edgeWeights.add(new Double(p));}
 
 
         List<Double> colTotalsOrig = new ArrayList<Double>();
@@ -124,12 +143,17 @@ public class Node {
         }
 
         // create child nodes with the newly created py's
+        // each Node references the ArrayList<Double> objects in py_updated
+        // this is fine unless we need to evolve this objects differently
+        // for the two references for different uses
+
+        // colTotalsOrig are just the reverse sorted edgeweights corresponding to the child py's
+        // we're just multiplying all edge-weights to parent with that to child
+        // this gives us the ferquency of any sequence of attribute values
+
         children = new ArrayList<Node>();
-        for (ArrayList<Double> child_py : py_updated){
-            children.add(new Node(child_py, level+1, availableAttr));
-            // each Node references the ArrayList<Double> objects in py_updated
-            // this is fine unless we need to evolve this objects differently
-            // for the two references for different uses
+        for (int k = 0; k < py_updated.size(); k++){
+            children.add(new Node(py_updated.get(k), level+1, availableAttr, colTotalsOrig.get(k)*this.pxVal));
         }
 
         // recursively split on each child node
@@ -159,7 +183,14 @@ public class Node {
         System.out.println(" ========================\n\n ");
 
     }
-
+    /**
+     * Constructor for root node
+     * @param n_attr
+     * @param n_val_per_attr
+     * @param n_classes
+     * @param prec
+     * @param input_r
+     */
     Node(int n_attr, int n_val_per_attr, int n_classes, double prec, RandomDataGenerator input_r) {
     	nAttr = n_attr;
     	nValPerAttr = n_val_per_attr;
@@ -167,7 +198,13 @@ public class Node {
     	precision = prec;
     	r = input_r;
 
-		double[] py = new double[nClasses];
+		py = new double[nClasses];
+		px1d = new double[nAttr * nValPerAttr];
+		pygx = new double[nAttr * nValPerAttr][nClasses];
+
+		px1dList = new ArrayList<Double>();
+
+		this.pxVal = 1.0;
 
     	DriftGenerator.generateRandomPy1D(py, r, false); //generate random py at this node
 
@@ -181,7 +218,7 @@ public class Node {
 
     }
 
-    Node(List<Double> py_new, Integer lev, List<Integer> parent_avail_attr) {
+    Node(List<Double> py_new, Integer lev, List<Integer> parent_avail_attr, double px_val) {
     	// deep copy
     	nodePY = new ArrayList<Double>();
     	for (Double p : py_new){
@@ -189,6 +226,7 @@ public class Node {
     	}
 
     	this.setLevel(lev);
+    	this.pxVal = px_val;
 
     	// we want a new copy of the parent's available attributes- we do not want two references to the same memory location!!
     	// we want to create a copy of both the list and the object it contains- a deep copy

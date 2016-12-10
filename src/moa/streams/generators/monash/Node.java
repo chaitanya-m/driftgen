@@ -1,6 +1,7 @@
 package moa.streams.generators.monash;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,7 +20,7 @@ public class Node {
 	private static double[] py;
 
 	private static SortedMap<Integer, Double> px1dMap;
-	private static List<List<Double>> pygxList;
+	private static SortedMap<Integer, List<Double>> pygxMap;
 
 	private static int nAttr;
 	private static int nValPerAttr;
@@ -48,26 +49,37 @@ public class Node {
     }
 
     void postSplit() {
-    	assert( px1dMap.size() == px1d.length);
+    	System.out.println(px1dMap.size() + " " + px1d.length);
+    	assert(px1dMap.size() == px1d.length);
+    	assert( px1dMap.size() == pygxMap.size());
+    	assert( px1dMap.keySet().size() == pygxMap.keySet().size());
+
     	int i = 0;
-    	for (Iterator<Entry<Integer, Double>> iterator = px1dMap.entrySet().iterator(); iterator.hasNext();) {
-			Integer node_id = iterator.next().getKey();
-			px1d[i++] = px1dMap.get(node_id).doubleValue();
+    	for (Iterator<Integer> iterator = px1dMap.keySet().iterator(); iterator.hasNext();) {
+			Integer node_id = iterator.next();
+
+			px1d[i] = px1dMap.get(node_id).doubleValue();
+
+			for(int k = 0; k < nClasses; k++){
+				pygx[i][k] = pygxMap.get(node_id).get(k).doubleValue();
+			}
+
+			i++;
+
+			System.out.print(node_id.intValue() + ": " + px1d[i-1] + " " + Arrays.toString(pygx[i-1]));
+			System.out.println();
 		}
-    	System.out.println(px1dMap);
     }
 
     void split() {
 
         // recursion termination
         if (availableAttr.size() == 0){
-        	px1dMap.put(new Integer(nodeID), new Double(this.pxVal));
+        	Integer node_ID = new Integer(nodeID);
+        	px1dMap.put(node_ID, new Double(this.pxVal));
+        	pygxMap.put(node_ID, nodePY);
 
-        	List<Double> node_pygx = new ArrayList<Double>();
-        	//for (int k = 0; k < nodePY.size(); i++){
-
-        	//}
-
+        	//create new key object or share between maps??
         	return;
         }
 
@@ -216,12 +228,19 @@ public class Node {
     	precision = prec;
     	r = input_r;
 
+    	// refactor! redundant code
+		int nCombinationsValuesForPX = 1;
+		for (int a = 0; a < nAttr; a++) {
+			nCombinationsValuesForPX *= nValPerAttr;
+		}
+
+
 		py = new double[nClasses];
-		px1d = new double[nAttr * nValPerAttr];
-		pygx = new double[nAttr * nValPerAttr][nClasses];
+		px1d = new double[nCombinationsValuesForPX];
+		pygx = new double[nCombinationsValuesForPX][nClasses];
 
 		px1dMap = new TreeMap<Integer, Double>();
-		pygxList = new ArrayList<List<Double>>();
+		pygxMap = new TreeMap<Integer, List<Double>>();
 
 		this.pxVal = 1.0;
 

@@ -1,5 +1,6 @@
 package moa.streams.generators.monash;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,7 +29,8 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 	public IntOption driftDuration = new IntOption("driftDuration", 'd',
 			"How long drift lasts", 10000, 0, Integer.MAX_VALUE);
-
+	public IntOption nClasses = new IntOption("numClasses", 'z',
+			"How many classes?", 4, 0, Integer.MAX_VALUE);
 	public GradualDriftGenerator() {
 		super();
 
@@ -36,10 +38,15 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 	/* TODO: Do we really need a serializable object, and to set the UID
 	 * explicitly rather than let JDK handle it?*/
+
+	ArrayList<ArrayList<AttrVal>> attr_val;
+
 	/**
 	 * p(x) before drift
 	 */
-	double[][] pxbd;
+	//double[][] pxbd;
+	double[] pxbd1d;
+
 	/**
 	 * p(y|x) before drift
 	 */
@@ -48,16 +55,27 @@ public class GradualDriftGenerator extends DriftGenerator{
 	/**
 	 * p(x) after drift
 	 */
-	double[][] pxad;
+	//double[][] pxad;
+	double[] pxad1d;
+
 
 	/**
 	 * interpolation factor
 	 */
-	double[][] pxdiff;
+	//double[][] pxdiff;
+	double[] pxdiff1d;
 	/**
 	 * Current px
 	 */
-	double[][] px;
+	//double[][] px;
+	double[] px1d;
+
+	/**
+	 * pybd
+	 */
+	double pybd[];
+
+	private static int nCombinationsValuesForPX = -1;
 
 	RandomGenerator rg = new JDKRandomGenerator();
 
@@ -72,13 +90,11 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 		if(nInstancesGeneratedSoFar > burnInNInstances.getValue() && nInstancesGeneratedSoFar < burnInNInstances.getValue() + driftDuration.getValue()){
 
-			for (int i = 0; i < nAttributes.getValue(); i++) {
-				for (int j =0; j < nValuesPerAttribute.getValue(); j++) {
-					px[i][j] = px[i][j] + pxdiff[i][j];	//Add the interpolation step
-				}
+			for (int i = 0; i < nCombinationsValuesForPX; i++) {
+					px1d[i] = px1d[i] + pxdiff1d[i];	//Add the interpolation step
 			}
 		} else if (nInstancesGeneratedSoFar < burnInNInstances.getValue()) {
-			px = pxbd;
+			px1d = pxbd1d;
 		} else {
 
 		}
@@ -88,7 +104,7 @@ public class GradualDriftGenerator extends DriftGenerator{
 		Instance inst = new DenseInstance(streamHeader.numAttributes());
 		inst.setDataset(streamHeader);
 
-		int[] indexes = new int[nAttributes.getValue()];
+		double[] px1d_cdf = new double[nCombinationsValuesForPX];
 
 		/* This for-loop contains an algorithm to sample from a multinomial distribution. It is
 		 * implemented correctly. See http://www.win.tue.nl/~marko/2WB05/lecture8.pdf
@@ -99,30 +115,43 @@ public class GradualDriftGenerator extends DriftGenerator{
 		 * If you have as many trials as attributes, you have to pick from a multinomial distribution with n = nAttributes and k = nValuesPerAttribute.
 		 * This happens to be the layout of the px matrix.
 		 * Each outcome is a combination of attribute-values, and each attribute corresponds to one categorical trial.
+		 * Note: Bernoulli applies to a single trial over a categorical distribution with 2 categories
+		 * Binomial applies to multiple trials over a categorical distribution with 2 categories- multiple Bernoulli's are binomially distributed
+		 * Multinomial applies to multiple trials over a categorical distribution with greater than 2 categories-
+		 * multiple categorical trials are multinomially distributed
 		 */
-		for (int a = 0; a < indexes.length; a++) {
-			double rand = r.nextUniform(0.0, 1.0, true);
-			//System.out.println(Arrays.toString(px[a]));
+		/*
+		 * Since we are moving from a 2-d array to a 1-d one, we no longer have multiple trials(one per attribute) over a
+		 * categorical distribution(attribute-values)
+		 * Each generating instance at each timestep is now equivalent to drawing from a single categorical distribution
+		 *
+		 * To sample from this, we first convert it into a CDF; then we pick a uniformly distributed number between 0 and 1; then we find the greatest index that has a cumulative probability less than the number from the uniform
+		 * */
 
-			int chosenVal = 0;
-			double sumProba = px[a][chosenVal];
-			while (rand > sumProba) {
-
-				chosenVal++;
-				sumProba += px[a][chosenVal];
+		for (int i = 0; i < px1d_cdf.length; i++) {	px1d_cdf[i] = 0.0;} //initialize
+		for (int i = 0; i < px1d_cdf.length; i++) {
+			if(i == 0){	px1d_cdf[i] = px1d[i];}
+			else{
+				px1d_cdf[i] = px1d_cdf[i-1] + px1d[i];
 			}
-
-			indexes[a] = chosenVal;
-			inst.setValue(a, chosenVal);
+		}// cdf created
+		double rand = r.nextUniform(0.0, 1.0, true);
+		int chosenIndex = 0;
+		while (rand > px1d_cdf[chosenIndex]) { chosenIndex++; }
+		if(chosenIndex > 0) {chosenIndex--;}
+		// we need a mapping from indices to attributes and values! We already have the class.
+		for ( AttrVal x : attr_val.get(chosenIndex)) {
+		     inst.setValue(x.getAttr(), x.getVal());
 		}
-
-		int lineNoCPT = getIndex(indexes);
-
-		int chosenClassValue = 0;
-		while (pygx[lineNoCPT][chosenClassValue] != 1.0) {
-			chosenClassValue++;
-		}//finds the class Value in pygx, and sets the instance to it
-		inst.setClassValue(chosenClassValue);
+		//finds the class Value in pygx, and sets the instance to it
+		int i = 0;
+		double max = 0.0;
+		int chosenClass = 0;
+		while (i < pygx[chosenIndex].length) {
+			if (pygx[chosenIndex][i] > max) { chosenClass = i;}
+			i++;
+		}
+		inst.setClassValue(chosenClass);
 
 		nInstancesGeneratedSoFar++;
 		// System.out.println("generated "+inst);
@@ -138,16 +167,22 @@ public class GradualDriftGenerator extends DriftGenerator{
 		System.out.println("burnIn=" + burnInNInstances.getValue());
 		generateHeader();
 
-		int nCombinationsValuesForPX = 1;
+		nCombinationsValuesForPX = 1;
 		for (int a = 0; a < nAttributes.getValue(); a++) {
 			nCombinationsValuesForPX *= nValuesPerAttribute.getValue();
 		}
 
-		pxbd = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
-		pygxbd = new double[nCombinationsValuesForPX][nValuesPerAttribute.getValue()]; // number of class = nValuesPerAttributes
+		pxbd1d = new double[nCombinationsValuesForPX];
+		pygxbd = new double[nCombinationsValuesForPX][nClasses.getValue()];
 
 		// generating distribution before drift
+		rg.setSeed(seed.getValue());
+		r = new RandomDataGenerator(rg);
+		pybd = new double[nClasses.getValue()]; //TODO:  should be numClasses
+		assert(pygxbd !=null);
+		attr_val = Node.buildTree(nAttributes.getValue(), nValuesPerAttribute.getValue(), nClasses.getValue(), 0.05, r, pxbd1d, pygxbd, pybd);
 
+/*
 		// p(x)
 		rg.setSeed(seed.getValue());
 		r = new RandomDataGenerator(rg);
@@ -157,49 +192,47 @@ public class GradualDriftGenerator extends DriftGenerator{
 		// p(y|x)
 		rg.setSeed(seed.getValue());
 		r = new RandomDataGenerator(rg);
-
+*/
 		/*
 		 * This totally randomly assigns a class to each instance. Let's replace this with something that
 		 * (a) has some distribution over classes
 		 * (b) has a dependency between attributes
 		 */
-		generateRandomPyGivenX(pygxbd, r);
+/*		generateRandomPyGivenX(pygxbd, r);*/
 
 		// generating covariate drift
 
-			pxad = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
-			px = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
-			pxdiff = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
+			pxad1d = new double[nCombinationsValuesForPX];
+			px1d = new double[nCombinationsValuesForPX];
+			pxdiff1d = new double[nCombinationsValuesForPX];
 
 			/* Let us first make a guess based on "proportion" of distance to the furthest distribution.*/
 
 			/* Actually, let's do this later. Let's first do a binary search.*/
-			double[][] startDist = pxbd;
-			double[][] furthestDist = getFurthestDistribution(nCombinationsValuesForPX, pxbd);
-			double[][] dist1 = startDist;
-			double[][] dist2 = furthestDist;
+			double[] startDist = pxbd1d;
+			double[] furthestDist = getFurthestDistribution(pxbd1d);
+			double[] dist1 = startDist;
+			double[] dist2 = furthestDist;
 			System.out.println("Searching p(x) for required magnitude...");
 
 //System.out.println("FURTHEST DISTANCE IS: " + Math.abs(computeMagnitudePX(nCombinationsValuesForPX, dist1, dist2)));
 //printMatrix(furthestDist);
 			//PX2DTo1D(nCombinationsValuesForPX
-			while (	Math.abs(computeMagnitudePX(nCombinationsValuesForPX, dist1, dist2) - driftMagnitudePrior.getValue())
+			while (	Math.abs(computeMagnitudePX(dist1, dist2) - driftMagnitudePrior.getValue())
 						> precisionDriftMagnitude.getValue() ) {
 
-				double[][] guessDist = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
+				double[] guessDist = new double[nCombinationsValuesForPX];
 
-				for (int i =0; i < nAttributes.getValue(); i++) {
-					for (int j =0; j < nValuesPerAttribute.getValue(); j++) {
-						guessDist[i][j] = dist1[i][j] + 0.5 * (dist2[i][j] - dist1[i][j]); //this is a first guess distribution
-					}
+				for (int i =0; i < nCombinationsValuesForPX; i++) {
+						guessDist[i] = dist1[i] + 0.5 * (dist2[i] - dist1[i]); //this is a first guess distribution
 				}
 
-				if (Math.abs(computeMagnitudePX(nCombinationsValuesForPX, startDist, guessDist) - driftMagnitudePrior.getValue())
+				if (Math.abs(computeMagnitudePX(startDist, guessDist) - driftMagnitudePrior.getValue())
 						<= precisionDriftMagnitude.getValue() ) {
 					dist2 = guessDist;
 					break;
 				}
-				else if ( Math.abs(computeMagnitudePX(nCombinationsValuesForPX, startDist, guessDist)) > driftMagnitudePrior.getValue()) {
+				else if ( Math.abs(computeMagnitudePX(startDist, guessDist)) > driftMagnitudePrior.getValue()) {
 					dist2 = guessDist;
 				}
 				else{
@@ -207,20 +240,18 @@ public class GradualDriftGenerator extends DriftGenerator{
 				}
 
 			} //This should converge. But going back from 1D to 2D involves adding up all the marginals. So let's just do it in 2D.
-			pxad = dist2;
+			pxad1d = dist2;
 
 			//precisionDriftMagnitude.getValue()
 
 //printMatrix(pxad);
 
 			System.out.println("exact magnitude for p(x)="
-					+ computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad) + "\tasked="
+					+ computeMagnitudePX(pxbd1d, pxad1d) + "\tasked="
 					+ driftMagnitudePrior.getValue());
 
-			for (int i = 0; i < nAttributes.getValue(); i++) {
-				for (int j =0; j < nValuesPerAttribute.getValue(); j++) {
-					pxdiff[i][j] = (pxad[i][j] - pxbd[i][j])/driftDuration.getValue();
-				}
+			for (int i = 0; i < nCombinationsValuesForPX; i++) {
+					pxdiff1d[i] = (pxad1d[i] - pxbd1d[i])/driftDuration.getValue();
 			}
 
 		// System.out.println(Arrays.toString(pxbd));

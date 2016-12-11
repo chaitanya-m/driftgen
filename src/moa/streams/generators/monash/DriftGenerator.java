@@ -335,11 +335,10 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 	 * So this is an already normalised distribution and we can compute the Hellinger.
 	 */
 
-	public static double computeMagnitudePX(int nbCombinationsOfValuesPX, double[][] base_px,
-			double[][] drift_px) {
+	public static double computeMagnitudePX(double[] base_px, double[] drift_px) {
 
-		double[] baseCovariate = PX2DTo1D(nbCombinationsOfValuesPX, base_px);
-		double[] driftCovariate = PX2DTo1D(nbCombinationsOfValuesPX, drift_px);
+		double[] baseCovariate = base_px;
+		double[] driftCovariate = drift_px;
 
 		return driftMag.getValue(baseCovariate, driftCovariate);
 	}
@@ -418,30 +417,24 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 	 * @param furthestDist
 	 * @param inputDist
 	 */
-	public double[][] getFurthestDistribution(int nbCombinationsOfValuesPX, double[][] inputDist){
+	public double[] getFurthestDistribution(double[] inputDist){
 
-		double[][] furthestDist = new double[inputDist.length][inputDist[0].length];
-		double[] inputDist1D = PX2DTo1D(nbCombinationsOfValuesPX, inputDist);
+		double[] furthestDist = new double[inputDist.length];
 
 		int minIndex = 0;
 
-		for (int i = 0; i < inputDist1D.length; i++) {
+		for (int i = 0; i < inputDist.length; i++) {
 
-			if (inputDist1D[i] < inputDist1D[minIndex]){ //find outcome with lowest probability
+			if (inputDist[i] < inputDist[minIndex]){ //find outcome with lowest probability
 				minIndex = i;
 			}
 		}
-		int[] lowestValueIndexes = new int[inputDist.length]; //As many as number of attributes
-		getIndexes(minIndex, lowestValueIndexes, inputDist[0].length); //convert the index of that outcome into it's px indices
 
 		for (int i =0; i < furthestDist.length; i++) {
-			for (int j = 0; j < furthestDist[0].length; j++) {
-				furthestDist[i][j] = 0.0;
-			}
-
-			furthestDist[i][lowestValueIndexes[i]] = 1.0; //set everything to zero except the corresponding attribute index
-			// this corresponds to giving the least frequent outcome all the probability mass
+				furthestDist[i] = 0.0;
 		}
+		furthestDist[minIndex] = 1.0; //set everything to zero except index with lowest value
+			// this corresponds to giving the least frequent outcome all the probability mass
 
 		return furthestDist;
 	}

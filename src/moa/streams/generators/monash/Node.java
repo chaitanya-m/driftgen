@@ -18,7 +18,7 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 
 public class Node {
 
-	public static void buildTree(int n_attr, int n_val_per_attr, int n_classes, double prec, RandomDataGenerator input_r,
+	public static ArrayList<ArrayList<AttrVal>> buildTree(int n_attr, int n_val_per_attr, int n_classes, double prec, RandomDataGenerator input_r,
 									double px1d_in[], double pygx_in[][], double py_in[]) {
 		Node root = new Node(n_attr, n_val_per_attr, n_classes, prec, input_r);
 		root.setLevel(0);
@@ -27,10 +27,11 @@ public class Node {
 		System.arraycopy(root.getPX1D(), 0, px1d_in, 0, px1d_in.length);
 		System.arraycopy(root.getPY(), 0, py_in, 0, py_in.length);
 		double pygx_final[][] = root.getPYGX();
+
 		for (int i = 0; i < pygx_in.length; i++){
 			System.arraycopy(pygx_final[i], 0, pygx_in[i], 0, pygx_in[i].length);
 		}
-
+		return attrValLeaves;
 	}
 
 	private static double[] px1d;
@@ -39,6 +40,8 @@ public class Node {
 
 	private static SortedMap<Integer, Double> px1dMap;
 	private static SortedMap<Integer, List<Double>> pygxMap;
+
+	private static ArrayList<ArrayList<AttrVal>> attrValLeaves; // list of attributes and values at each leaf node
 
 	private static int nAttr;
 	private static int nValPerAttr;
@@ -54,6 +57,7 @@ public class Node {
 	private List<Node> children;
 	private List<Integer> availableAttr;
 	private List<Double> nodePY;
+	private ArrayList<AttrVal> attrVal;
 
 	private int level;
 	private double pxVal;
@@ -130,6 +134,9 @@ public class Node {
         	Integer node_ID = new Integer(nodeID);
         	px1dMap.put(node_ID, new Double(this.pxVal));
         	pygxMap.put(node_ID, nodePY);
+        	attrValLeaves.add(this.attrVal);
+        	assert(attrValLeaves != null);
+        	assert(attrVal != null);
 
         	//create new key object or share between maps??
         	return;
@@ -257,6 +264,8 @@ public class Node {
             }
         }
         // linked hashmap entryset iterator will return in insertion order
+        // Here we are recreating the final matrix with rows and columns back where they should be
+        // So attribute-values and classes correspond correctly again
         i = 0; j = 0;
         for(Iterator<Map.Entry<Integer, Double>> row_iter = rowTotalsDesc.entrySet().iterator(); row_iter.hasNext();){
         	j = 0;
@@ -284,6 +293,7 @@ public class Node {
 
         // convert each column into a list- this is a PY for a child node
         // first create empty py vectors- one per attribute value
+        // attributes are already rearranged in order, so create AttrVal objects here
         ArrayList<ArrayList<Double>> py_updated = new ArrayList<ArrayList<Double>>();
         for (int k = 0; k < nValPerAttr; k++){
             ArrayList<Double> py_ind = new ArrayList<Double>();
@@ -294,7 +304,7 @@ public class Node {
         // attribute by attribute, you are adding the class values one by one
         // iterate through all the attributes (across a row) adding the values (1st row, then 2nd row) to respective columns
         // these have to go to original indices
-        // the matrix with original indices for rows and columns- before the sort- will have to be contructed and values placed
+        // the matrix with original indices for rows and columns- before the sort- will have to be constructed and values placed
         // each element will have to go from A[i][j] -> A[i_orig][j_orig]
 
         for (int c = 0; c < nClasses; c++){
@@ -316,7 +326,7 @@ public class Node {
 
         children = new ArrayList<Node>();
         for (int k = 0; k < py_updated.size(); k++){
-            children.add(new Node(py_updated.get(k), level+1, availableAttr, colTotalsOrig.get(k)*this.pxVal));
+            children.add(new Node(py_updated.get(k), level+1, availableAttr, colTotalsOrig.get(k)*this.pxVal, chosenAttrIndex ,k, attrVal));
         }
 
         // recursively split on each child node
@@ -390,9 +400,11 @@ public class Node {
     	nodeCount = 1;
     	nodeID = nodeCount;
 
+    	attrVal = new ArrayList<AttrVal>(); //empty list for root- no parent attribute
+    	attrValLeaves = new ArrayList<ArrayList<AttrVal>>();
     }
 
-    Node(List<Double> py_new, Integer lev, List<Integer> parent_avail_attr, double px_val) {
+    Node(List<Double> py_new, Integer lev, List<Integer> parent_avail_attr, double px_val, int split_attr, int split_attr_val, List<AttrVal> parent_list) {
 
     	nodeCount++;
     	this.nodeID = nodeCount;
@@ -411,7 +423,13 @@ public class Node {
     	availableAttr = new ArrayList<Integer>();
     	for (Integer i : parent_avail_attr) {
     		  availableAttr.add(new Integer(i));
-    		}
+    	}
+
+    	// add attributes and their values seen so far down the tree- each node keeps a list of attributes and their values so far
+    	this.attrVal = new ArrayList<AttrVal>();
+    	attrVal.addAll(parent_list); // this is not a deep copy of the objects in the parent list!
+    	attrVal.add(new AttrVal(split_attr, split_attr_val));
+
     }
 
 }

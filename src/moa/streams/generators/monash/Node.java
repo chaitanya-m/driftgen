@@ -52,11 +52,27 @@ public class Node {
     }
 
     void postSplit() {
-    	System.out.println(px1dMap.size() + " " + px1d.length);
-    	System.out.println(Arrays.toString(py));
+    	//System.out.println(px1dMap.size() + " " + px1d.length);
+    	//System.out.println(Arrays.toString(py));
     	assert(px1dMap.size() == px1d.length);
     	assert( px1dMap.size() == pygxMap.size());
     	assert( px1dMap.keySet().size() == pygxMap.keySet().size());
+
+        //normalise. some values are slightly off, not quite 1, but other values are 0...
+        // sum will never be 0- should always be close to 1
+        for(  Entry<Integer, List<Double>> leaf : pygxMap.entrySet()){
+        	double sum = 0.0;
+        	List<Double> normalised = new ArrayList<Double>();
+
+        	for (Double p : leaf.getValue()){
+        		sum += p.doubleValue();
+        	}
+        	for (Double p : leaf.getValue()){
+        		normalised.add(p.doubleValue()/sum);
+        		//normalised.add(3.0);
+        	}
+        	leaf.setValue(normalised);
+        }
 
     	int i = 0;
     	for (Iterator<Integer> iterator = px1dMap.keySet().iterator(); iterator.hasNext();) {
@@ -255,8 +271,8 @@ public class Node {
             for (int k = 0; k < nValPerAttr; k++){
                 py_updated.get(k).add(new Double(A_orig[c][k]));
             }
-
         }
+
         //System.out.println(py_updated + " level " + level);
 
         // create child nodes with the newly created py's

@@ -16,7 +16,7 @@ public class TestingStub {
 		rg.setSeed(5);
 		r = new RandomDataGenerator(rg);
 
-		Node root = new Node(3, 3, 2, 0.05, r);
+		Node root = new Node(3, 3, 3, 0.05, r);
 		root.setLevel(0);
 		root.split();
 		root.postSplit();

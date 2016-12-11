@@ -3,13 +3,16 @@ package moa.streams.generators.monash;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.apache.commons.math3.random.RandomDataGenerator;
 
@@ -50,6 +53,7 @@ public class Node {
 
     void postSplit() {
     	System.out.println(px1dMap.size() + " " + px1d.length);
+    	System.out.println(Arrays.toString(py));
     	assert(px1dMap.size() == px1d.length);
     	assert( px1dMap.size() == pygxMap.size());
     	assert( px1dMap.keySet().size() == pygxMap.keySet().size());
@@ -72,6 +76,8 @@ public class Node {
     }
 
     void split() {
+
+    	int i = 0, j = 0;
 
         // recursion termination
         if (availableAttr.size() == 0){
@@ -111,18 +117,45 @@ public class Node {
         // And column totals equal edge probabilities
         // Then when each value is divided by the corresponding edge probability(column total)
         // one gets the new pygx conditioned on the first attribute
+        // but since we've sorted the rows and columns, the pygx will have to be reshuffled back!
+        // Create an integer indexed map for both column and row totals.
+        // Sort by value
+        // create the matrix and solve it
+        // copy in the values and sort by key to get back the original indices
+
         double A[][] = new double[nClasses][nValPerAttr];
-        for (int i = 0; i < nClasses; i++){
-            for (int j = 0; j < nValPerAttr; j++){
+        for (i = 0; i < nClasses; i++){
+            for (j = 0; j < nValPerAttr; j++){
                 A[i][j] = 0.0; // initialise
             }
         }
 
-        // row totals: nodePY sorted in descending order
+        // row totals: indexed nodePY
         // deep copy again
+
         List<Double> rowTotals = new ArrayList<Double>();
         for(Double p : nodePY) {rowTotals.add(new Double(p));}
         Collections.sort(rowTotals); Collections.reverse(rowTotals);
+        // row totals in descending order
+
+        // map the original indices to row totals in descending order
+        Map<Integer, Double> rowTotalsDesc = new LinkedHashMap<Integer, Double>();
+        i = 0;
+        for(Double p : nodePY) {rowTotalsDesc.put(new Integer(i), new Double(p)); i++;}
+        rowTotalsDesc = rowTotalsDesc.entrySet().stream()
+        .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+        .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (x,y)-> {throw new AssertionError();},
+                LinkedHashMap::new
+        ));
+        // we now have rowTotals in descending order by value, mapped to original indices
+        // the final values in the matrices should go to the appropriate indices for the new py's
+
+        //System.out.println("rowTotalsDesc " + rowTotalsDesc + " level " + level);
+        //System.out.println();
+
         //System.err.println("Rowtotals level " + level + " " + rowTotals );
 
         // column totals: edgeweights sorted in descending order
@@ -133,16 +166,29 @@ public class Node {
         for (double p : node_px1d) {edgeWeights.add(new Double(p));}
 
 
-        List<Double> colTotalsOrig = new ArrayList<Double>();
-        for(Double p : edgeWeights) {colTotalsOrig.add(new Double(p));} //deep copy from edgeweights
+        List<Double> colTotalsOrig = new ArrayList<Double>(); //original descending col totals
+        for(Double p : edgeWeights) {colTotalsOrig.add(new Double(p));} // deep copy from edgeweights
         Collections.sort(colTotalsOrig); Collections.reverse(colTotalsOrig);
         List<Double> colTotals = new ArrayList<Double>();
         for (double p : colTotalsOrig) {colTotals.add(new Double(p));} // deep copy from colTotalsAscending
         //System.err.println("Coltotals level " + level + " " + colTotals );
 
+        // map the original indices to col totals in descending order
+        Map<Integer, Double> colTotalsDesc = new LinkedHashMap<Integer, Double>();
+        i = 0;
+        for(Double p : edgeWeights) {colTotalsDesc.put(new Integer(i), new Double(p)); i++;}
+        colTotalsDesc = colTotalsDesc.entrySet().stream()
+        .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+        .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (x,y)-> {throw new AssertionError();},
+                LinkedHashMap::new
+        ));
+        //System.out.println("colTotalsDesc " + colTotalsDesc + " level " + level);
 
         // pack the matrix using a greedy approach
-        int i = 0, j = 0;
+        i = 0; j = 0;
         while (i < rowTotals.size() && j < colTotals.size()) {
                 A[i][j] = rowTotals.get(i) < colTotals.get(j) ? rowTotals.get(i) : colTotals.get(j);
                 rowTotals.set(i, rowTotals.get(i).doubleValue() - A[i][j]);
@@ -151,12 +197,45 @@ public class Node {
                 if (rowTotals.get(i) == 0.0) {i++;}
                 if (colTotals.get(j) == 0.0) {j++;}
         }
-        // divide by the original column totals (the copied ones are now zero)
+        // divide by the original descending column totals (the copied ones are now zero)
         for (int c = 0; c < nClasses; c++){
             for (int k = 0; k < nValPerAttr; k++){
                 A[c][k] /= colTotalsOrig.get(k);
             }
         }
+
+        double A_orig[][] = new double[nClasses][nValPerAttr];
+        for (i = 0; i < nClasses; i++){
+            for (j = 0; j < nValPerAttr; j++){
+                A_orig[i][j] = 0.0; // initialise
+            }
+        }
+        // linked hashmap entryset iterator will return in insertion order
+        i = 0; j = 0;
+        for(Iterator<Map.Entry<Integer, Double>> row_iter = rowTotalsDesc.entrySet().iterator(); row_iter.hasNext();){
+        	j = 0;
+        	int orig_row_index = row_iter.next().getKey().intValue();
+        	//System.out.println(orig_row_index);
+            for(Iterator<Map.Entry<Integer, Double>> col_iter = colTotalsDesc.entrySet().iterator(); col_iter.hasNext();){
+            	int orig_col_index = col_iter.next().getKey().intValue();
+            	//System.out.println(orig_col_index);
+
+            	A_orig[orig_row_index][orig_col_index] = A[i][j];
+            	j++;
+            }
+            i++;
+        }
+/*
+        for (i = 0; i < A.length; i++) {
+        	System.out.println(Arrays.toString(A_orig[i]));
+        }
+        System.out.println("=");
+        for (i = 0; i < A.length; i++) {
+        	System.out.println(Arrays.toString(A[i]));
+        }
+        System.out.println("============");
+*/
+
         // convert each column into a list- this is a PY for a child node
         // first create empty py vectors- one per attribute value
         ArrayList<ArrayList<Double>> py_updated = new ArrayList<ArrayList<Double>>();
@@ -166,11 +245,19 @@ public class Node {
         }
 
         // then traverse the matrix, adding the column elements to the corresponding py
+        // attribute by attribute, you are adding the class values one by one
+        // iterate through all the attributes (across a row) adding the values (1st row, then 2nd row) to respective columns
+        // these have to go to original indices
+        // the matrix with original indices for rows and columns- before the sort- will have to be contructed and values placed
+        // each element will have to go from A[i][j] -> A[i_orig][j_orig]
+
         for (int c = 0; c < nClasses; c++){
             for (int k = 0; k < nValPerAttr; k++){
-                py_updated.get(k).add(new Double(A[c][k]));
+                py_updated.get(k).add(new Double(A_orig[c][k]));
             }
+
         }
+        //System.out.println(py_updated + " level " + level);
 
         // create child nodes with the newly created py's
         // each Node references the ArrayList<Double> objects in py_updated

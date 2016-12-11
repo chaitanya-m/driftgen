@@ -18,6 +18,21 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 
 public class Node {
 
+	public static void buildTree(int n_attr, int n_val_per_attr, int n_classes, double prec, RandomDataGenerator input_r,
+									double px1d_in[], double pygx_in[][], double py_in[]) {
+		Node root = new Node(n_attr, n_val_per_attr, n_classes, prec, input_r);
+		root.setLevel(0);
+		root.split();
+		root.postSplit();
+		System.arraycopy(root.getPX1D(), 0, px1d_in, 0, px1d_in.length);
+		System.arraycopy(root.getPY(), 0, py_in, 0, py_in.length);
+		double pygx_final[][] = root.getPYGX();
+		for (int i = 0; i < pygx_in.length; i++){
+			System.arraycopy(pygx_final[i], 0, pygx_in[i], 0, pygx_in[i].length);
+		}
+
+	}
+
 	private static double[] px1d;
 	private static double[][] pygx;
 	private static double[] py;
@@ -101,8 +116,8 @@ public class Node {
 
 			i++;
 
-			System.out.print(node_id.intValue() + ": " + px1d[i-1] + " " + Arrays.toString(pygx[i-1]));
-			System.out.println();
+			//System.out.print(node_id.intValue() + ": " + px1d[i-1] + " " + Arrays.toString(pygx[i-1]));
+			//System.out.println();
 		}
     }
 

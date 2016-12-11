@@ -43,6 +43,21 @@ public class Node {
 	private int level;
 	private double pxVal;
 
+	public double[] getPX1D(){
+		assert(px1d != null);
+		return px1d;
+	}
+
+	public double[][] getPYGX(){
+		assert(pygx != null);
+		return pygx;
+	}
+
+	public double[] getPY(){
+		assert(py != null);
+		return py;
+	}
+
 	void setPY (List<Double> givenPY) {
 		nodePY = givenPY;
 	}

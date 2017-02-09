@@ -14,7 +14,8 @@ public class HellingerDistance implements DriftMagnitude{
 			diff = Math.sqrt(probDist1[i]) - Math.sqrt(probDist2[i]);
 			magnitude += diff * diff;
 		}
-		magnitude = magnitude/Math.sqrt(2);
+		magnitude = Math.sqrt(magnitude)/Math.sqrt(2);
+
 		return magnitude;
 	}
 

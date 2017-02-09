@@ -348,7 +348,10 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 		for (int i = 0; i < base_pygx.length; i++) {
 
 			double partialM = driftMag.getValue(base_pygx[i], drift_pygx[i]);
-			assert (partialM == 0.0 || partialM == 1.0);
+
+			// assert (partialM == 0.0 || partialM == 1.0);
+			// this assert makes sense only if only one class is chosen at a time and Hellinger is used
+			// otherwise it doesn't make sense
 			magnitude += partialM;
 		}
 		magnitude /= base_pygx.length;

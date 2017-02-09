@@ -166,12 +166,16 @@ public class AbruptDriftGenerator extends DriftGenerator{
 					// This doesn't actually solve the problem in the Hellinger case where sqrt(p) + sqrt(q) > 1
 				}
 				//note this workaround so he doesn't explore a large number of random distributions!
-				obtainedMagnitude = computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad);
+				obtainedMagnitude = computeMagnitudePX(PX2DTo1D(nCombinationsValuesForPX, pxbd),
+						PX2DTo1D(nCombinationsValuesForPX, pxad));
+
 			} while (Math.abs(obtainedMagnitude - driftMagnitudePrior.getValue()) > precisionDriftMagnitude
 					.getValue());
 
 			System.out.println("exact magnitude for p(x)="
-					+ computeMagnitudePX(nCombinationsValuesForPX, pxbd, pxad) + "\tasked="
+					+ computeMagnitudePX(
+							PX2DTo1D(nCombinationsValuesForPX, pxbd),
+							PX2DTo1D(nCombinationsValuesForPX, pxad)) + "\tasked="
 					+ driftMagnitudePrior.getValue());
 		} else {
 			pxad = pxbd;

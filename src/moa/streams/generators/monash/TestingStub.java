@@ -1,5 +1,6 @@
 package moa.streams.generators.monash;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.math3.random.JDKRandomGenerator;
@@ -30,7 +31,7 @@ public class TestingStub {
 		double pygx[][] = new double[nCombinationsValuesForPX][nClasses];
 		double py[] = new double[nClasses];
 
-		Node.buildTree(nAttr, nValPerAttr, nClasses, precision, r, px1d, pygx, py);
+		ArrayList<ArrayList<AttrVal>> attr_val = Node.buildTree(nAttr, nValPerAttr, nClasses, precision, r, px1d, pygx, py);
 
 		Arrays.stream(py).forEach(i->System.out.print(i + " "));
 		System.out.println();

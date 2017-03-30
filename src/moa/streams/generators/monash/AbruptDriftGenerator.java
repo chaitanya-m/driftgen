@@ -37,7 +37,6 @@ public class AbruptDriftGenerator extends DriftGenerator{
 
 	public AbruptDriftGenerator() {
 		super();
-
 	}
 
 	private static final long serialVersionUID = 1291115908166720203L;
@@ -61,6 +60,8 @@ public class AbruptDriftGenerator extends DriftGenerator{
 	 * p(y|x) after drift
 	 */
 	double[][] pygxad;
+
+	RandomGenerator rg = new JDKRandomGenerator();
 
 	@Override
 	public String getPurposeString() {
@@ -232,6 +233,8 @@ public class AbruptDriftGenerator extends DriftGenerator{
 
 		nInstancesGeneratedSoFar = 0L;
 
+		rg.setSeed(seed.getValue()); //reset the generator- different magnitudes generate sequences of different lengths during search
+		r = new RandomDataGenerator(rg);
 	}
 
 }

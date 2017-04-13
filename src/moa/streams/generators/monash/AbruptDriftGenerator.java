@@ -233,8 +233,13 @@ public class AbruptDriftGenerator extends DriftGenerator{
 
 		nInstancesGeneratedSoFar = 0L;
 
-		rg.setSeed(seed.getValue()); //reset the generator- different magnitudes generate sequences of different lengths during search
+		rg.setSeed(seed.getValue());
 		r = new RandomDataGenerator(rg);
+		// reset the generator- different magnitudes generate sequences of different lengths during search
+		// however, this sort of fix is only useful for my own gradual drift generator. it was made particularly for my own gradual drift generator.
+		// in the case of a blip... or a moa conceptDrift... do I still need to create a new RandomDataGenerator?
+		// that is leading to streams being twice as long...
+
 	}
 
 }

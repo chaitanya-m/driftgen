@@ -46,13 +46,14 @@ package moa.classifiers.meta;
 
 import moa.classifiers.AbstractClassifier;
 import moa.classifiers.Classifier;
+
 import moa.core.DoubleVector;
 import moa.core.Measurement;
 import moa.core.MiscUtils;
-import moa.options.ClassOption;
-import com.github.javacliparser.*;
 
-import weka.core.Instance;
+import moa.options.ClassOption;
+import com.github.javacliparser.*; // for options
+import com.yahoo.labs.samoa.instances.Instance;
 
 public class BOLE extends AbstractClassifier {
     private static final long serialVersionUID = -3099808642980080785L;
@@ -67,7 +68,9 @@ public class BOLE extends AbstractClassifier {
 
     public ClassOption baseLearnerOption = new ClassOption("baseLearner",
             'l', "Classifier to train.", Classifier.class,
-            "drift.SingleClassifierDrift -l trees.HoeffdingTree -d (DDM -n 7 -w 1.2 -o 1.95)");
+            "trees.HoeffdingTree");
+
+//            "drift.SingleClassifierDrift -l trees.HoeffdingTree -d (DDM -n 7 -w 1.2 -o 1.95)");
 
     public IntOption ensembleSizeOption = new IntOption("ensembleSize",
             's', "The size of the ensemble - number of models to boost.",
@@ -157,7 +160,7 @@ public class BOLE extends AbstractClassifier {
                 k = MiscUtils.poisson(lambda_d, this.classifierRandom);
 
             if (k > 0.0) {
-                Instance weightedInst = (Instance) inst.copy();
+                Instance weightedInst = inst.copy();
                 weightedInst.setWeight(inst.weight() * k);
                 this.ensemble[pos].trainOnInstance(weightedInst);
             }
@@ -189,7 +192,8 @@ public class BOLE extends AbstractClassifier {
         return 0.0;
     }
 
-    public double[] getVotesForInstance(Instance inst) {
+    @Override
+	public double[] getVotesForInstance(Instance inst) {
         DoubleVector combinedVote = new DoubleVector();
         for (i = 0; i < ensembleSize; i++) {
             memberWeight = getEnsembleMemberWeight(i) + this.weightShiftOption.getValue();
@@ -229,4 +233,6 @@ public class BOLE extends AbstractClassifier {
     public Classifier[] getSubClassifiers() {
         return this.ensemble.clone();
     }
+
+
 }

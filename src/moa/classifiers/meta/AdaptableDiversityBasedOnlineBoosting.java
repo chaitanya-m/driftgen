@@ -22,13 +22,14 @@ package moa.classifiers.meta;
 
 import moa.classifiers.AbstractClassifier;
 import moa.classifiers.Classifier;
-import weka.core.Instance;
 
 import moa.core.DoubleVector;
 import moa.core.Measurement;
 import moa.core.MiscUtils;
+
 import moa.options.ClassOption;
-import com.github.javacliparser.*;
+import com.github.javacliparser.*; // for options
+import com.yahoo.labs.samoa.instances.Instance;
 
 /**
  * Adaptable Diversity-based Online Boosting (ADOB) is a modified version
@@ -82,6 +83,7 @@ public class AdaptableDiversityBasedOnlineBoosting extends AbstractClassifier {
         this.swms = new double[ensembleSize];
     }
 
+    @Override
     public void trainOnInstanceImpl(Instance inst) {
 	// Calculates current accuracy of experts
         double[] acc = new double[ensembleSize];
@@ -126,13 +128,13 @@ public class AdaptableDiversityBasedOnlineBoosting extends AbstractClassifier {
             }
 
             if (k > 0.0) {
-                Instance weightedInst = (Instance) inst.copy();
+                Instance weightedInst = inst.copy();
                 weightedInst.setWeight(inst.weight() * k);
-                this.ensemble[pos].trainOnInstance((com.yahoo.labs.samoa.instances.Instance) weightedInst);
+                this.ensemble[pos].trainOnInstance(weightedInst);
             }
 
 	    // Increases or decreases lambda based on the prediction of instance
-            if (this.ensemble[pos].correctlyClassifies((com.yahoo.labs.samoa.instances.Instance) inst)) {
+            if (this.ensemble[pos].correctlyClassifies(inst)) {
                 this.scms[pos] += lambda_d;
                 lambda_d *= this.trainingWeightSeenByModel / (2 * this.scms[pos]);
                 correct = true;
@@ -155,12 +157,13 @@ public class AdaptableDiversityBasedOnlineBoosting extends AbstractClassifier {
         return 0.0;
     }
 
-    public double[] getVotesForInstance(Instance inst) {
+    @Override
+	public double[] getVotesForInstance(Instance inst) {
         DoubleVector combinedVote = new DoubleVector();
         for (int i = 0; i < ensembleSize; i++) {
             double memberWeight = getEnsembleMemberWeight(i);
             if (memberWeight > 0.0) {
-                DoubleVector vote = new DoubleVector(this.ensemble[i].getVotesForInstance((com.yahoo.labs.samoa.instances.Instance) inst));
+                DoubleVector vote = new DoubleVector(this.ensemble[i].getVotesForInstance(inst));
                 if (vote.sumOfValues() > 0.0) {
                     vote.normalize();
                     vote.scaleValues(memberWeight);
@@ -195,15 +198,4 @@ public class AdaptableDiversityBasedOnlineBoosting extends AbstractClassifier {
         return this.ensemble.clone();
     }
 
-	@Override
-	public double[] getVotesForInstance(com.yahoo.labs.samoa.instances.Instance arg0) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void trainOnInstanceImpl(com.yahoo.labs.samoa.instances.Instance arg0) {
-		// TODO Auto-generated method stub
-
-	}
 }

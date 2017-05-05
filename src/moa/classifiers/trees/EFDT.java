@@ -641,10 +641,13 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
-                if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
+                // we just want to split on current best attribute
+                shouldSplit = true;
+
+                /*if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
                     shouldSplit = true;
-                }
+                }*/
                 // }
                 if ((this.removePoorAttsOption != null)
                         && this.removePoorAttsOption.isSet()) {

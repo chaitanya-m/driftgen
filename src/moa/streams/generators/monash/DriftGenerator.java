@@ -36,7 +36,7 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 			"Number of attributes as parents of the class", 2, 1, 10);
 
 	public IntOption nValuesPerAttribute = new IntOption("nValuesPerAttribute", 'v',
-			"Number of values per attribute", 2, 2, 5);
+			"Number of values per attribute", 2, 2, 10);
 
 	public FloatOption precisionDriftMagnitude = new FloatOption(
 			"epsilon", 'e',

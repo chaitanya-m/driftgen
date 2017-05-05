@@ -33,7 +33,7 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 			"The distance measure used", new String[]{"Hellinger Distance", "Total Variation Distance"}, new String[]{"L2 distance", "L1 distance"}, 0 );
 
 	public IntOption nAttributes = new IntOption("nAttributes", 'n',
-			"Number of attributes as parents of the class", 2, 1, 10);
+			"Number of attributes as parents of the class", 2, 1, 20);
 
 	public IntOption nValuesPerAttribute = new IntOption("nValuesPerAttribute", 'v',
 			"Number of values per attribute", 2, 2, 10);

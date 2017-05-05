@@ -1,5 +1,9 @@
 /*
- *    ADWIN.java
+ *    ADWINMonotone.java
+ *    Modified by Chaitanya M from code by Albert Bifet.
+ *    Original License included.
+ */
+/*
  *    Copyright (C) 2008 UPC-Barcelona Tech, Catalonia
  *    @author Albert Bifet (abifet at cs dot waikato dot ac dot nz)
  *
@@ -17,6 +21,9 @@
  *    along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+/*
+ * Modified by Chaitanya M
+ * */
 
 package moa.classifiers.core.driftdetection;
 
@@ -33,7 +40,7 @@ import moa.AbstractMOAObject;
  * @author Albert Bifet (abifet at cs dot waikato dot ac dot nz)
  * @version $Revision: 7 $
  */
-public class ADWIN extends AbstractMOAObject {
+public class ADWINMonotone extends AbstractMOAObject {
 
     private class List extends AbstractMOAObject {
 
@@ -521,10 +528,11 @@ public class ADWIN extends AbstractMOAObject {
                             blnExit = true;
                             break;
                         }
-                        double absvalue = u0 / n0 - (u1 / n1);       //n1<WIDTH-mintMinWinLength-1
+                        //double absvalue = u0 / n0 - (u1 / n1);       //n1<WIDTH-mintMinWinLength-1
+                        double meandiff = u1 / n1 - (u0 / n0);
                         if ((n1 > mintMinWinLength + 1 && n0 > mintMinWinLength + 1) && // Diference NEGATIVE
                                 //if(
-                                blnCutexpression(n0, n1, u0, u1, v0, v1, absvalue, delta)) {
+                                blnCutexpression(n0, n1, u0, u1, v0, v1, meandiff, delta)) {
                             blnBucketDeleted = true;
                             Detect = mintTime;
 
@@ -559,7 +567,7 @@ public class ADWIN extends AbstractMOAObject {
         return blnChange;
     }
 
-    private boolean blnCutexpression(int n0, int n1, double u0, double u1, double v0, double v1, double absvalue, double delta) {
+    private boolean blnCutexpression(int n0, int n1, double u0, double u1, double v0, double v1, double meandiff, double delta) {
         int n = getWidth();
         double dd = Math.log(2 * Math.log(n) / delta);     // -- ull perque el ln n va al numerador.
         // Formula Gener 2008
@@ -567,10 +575,11 @@ public class ADWIN extends AbstractMOAObject {
         double m = ((double) 1 / ((n0 - mintMinWinLength + 1))) + ((double) 1 / ((n1 - mintMinWinLength + 1)));
         double epsilon = Math.sqrt(2 * m * v * dd) + (double) 2 / 3 * dd * m;
 
-        return (Math.abs(absvalue) > epsilon);
+        //return (Math.abs(absvalue) > epsilon);
+        return meandiff > epsilon;
     }
 
-    public ADWIN() {
+    public ADWINMonotone() {
         mdbldelta = DELTA;
         initBuckets();
         Detect = 0;
@@ -579,7 +588,7 @@ public class ADWIN extends AbstractMOAObject {
 
     }
 
-    public ADWIN(double d) {
+    public ADWINMonotone(double d) {
         mdbldelta = d;
         initBuckets();
         Detect = 0;
@@ -587,7 +596,7 @@ public class ADWIN extends AbstractMOAObject {
         DetectTwice = 0;
     }
 
-    public ADWIN(int cl) {
+    public ADWINMonotone(int cl) {
         mdbldelta = DELTA;
         initBuckets();
         Detect = 0;

@@ -34,7 +34,8 @@ public class AbruptDriftGenerator extends DriftGenerator{
 
 	public FlagOption driftConditional = new FlagOption("driftConditional", 'c',
 			"States if the drift should apply to the conditional distribution p(y|x).");
-
+	public IntOption numClasses = new IntOption("numClasses", 'z',
+			"How many classes?", 4, 2, Integer.MAX_VALUE);
 	public AbruptDriftGenerator() {
 		super();
 	}
@@ -124,7 +125,7 @@ public class AbruptDriftGenerator extends DriftGenerator{
 		}
 
 		pxbd = new double[nAttributes.getValue()][nValuesPerAttribute.getValue()];
-		pygxbd = new double[nCombinationsValuesForPX][nValuesPerAttribute.getValue()];
+		pygxbd = new double[nCombinationsValuesForPX][numClasses.getValue()];// this used to default to the number of values per attribute
 
 		RandomGenerator rg = new JDKRandomGenerator();
 		rg.setSeed(seed.getValue());
@@ -202,7 +203,7 @@ public class AbruptDriftGenerator extends DriftGenerator{
 						nCombinationsValuesForPX, nLinesToChange);
 
 				for (int line : linesToChange) {
-					pygxad[line] = new double[nValuesPerAttribute.getValue()];
+					pygxad[line] = new double[numClasses.getValue()];
 
 					double[] lineCPT = pygxad[line];
 					int chosenClass;

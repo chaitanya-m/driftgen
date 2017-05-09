@@ -156,7 +156,7 @@ public class EFDT extends AbstractClassifier {
             't', "Threshold below which a split will be forced to break ties.",
             0.05, 0.0, 1.0);
 
-public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
+    public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
         "Only allow binary splits.");
 
     public FlagOption stopMemManagementOption = new FlagOption(
@@ -382,6 +382,8 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
 
         @Override
         public void learnFromInstance(Instance inst, EFDT ht) {
+        	//maintains a DoubleVector containing observed class dist; adds the weight from a single instance
+        	// to the corresponding class
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
         }
@@ -415,11 +417,18 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                 this.attributeObservers = new AutoExpandVector<AttributeClassObserver>(inst.numAttributes());
                 this.isInitialized = true;
             }
-            this.observedClassDistribution.addToValue((int) inst.classValue(),
-                    inst.weight());
+
+        	// adds the weight from a single instance to the corresponding class in double vector
+            this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
+
             for (int i = 0; i < inst.numAttributes() - 1; i++) {
+
+                // i is index in learner. instAttIndex is index in instance.
                 int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
+
                 AttributeClassObserver obs = this.attributeObservers.get(i);
+
+                // if no observer exists for this attribute, create one
                 if (obs == null) {
                     obs = inst.attribute(instAttIndex).isNominal() ? ht.newNominalClassObserver() : ht.newNumericClassObserver();
                     this.attributeObservers.set(i, obs);
@@ -442,20 +451,35 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
 
         public AttributeSplitSuggestion[] getBestSplitSuggestions(
                 SplitCriterion criterion, EFDT ht) {
+
             List<AttributeSplitSuggestion> bestSuggestions = new LinkedList<AttributeSplitSuggestion>();
             double[] preSplitDist = this.observedClassDistribution.getArrayCopy();
+
+
+            /*
+             add null split as an option
+        	 so if prepruning is allowed, null split is an option
+        	 given the fact that a list of exactly one suggestion always gets split on
+        	 it might be worthwhile taking out the null from a list of two to force a split on the first
+        	 however, what if the list doesn't contain the current attribute? then we would force a split on the new one... this shouldn't happen
+        	 so this is not the place to do this
+        	*/
+
             if (!ht.noPrePruneOption.isSet()) {
-                // add null split as an option
                 bestSuggestions.add(new AttributeSplitSuggestion(null,
                         new double[0][], criterion.getMeritOfSplit(
                         preSplitDist,
                         new double[][]{preSplitDist})));
             }
+
             for (int i = 0; i < this.attributeObservers.size(); i++) {
                 AttributeClassObserver obs = this.attributeObservers.get(i);
                 if (obs != null) {
                     AttributeSplitSuggestion bestSuggestion = obs.getBestEvaluatedSplitSuggestion(criterion,
                             preSplitDist, i, ht.binarySplitsOption.isSet());
+                    // is there a threshold here? i.e. are only some splits considered? What if the current split doesn't get considered?
+                    // if so, there is an edge case in which the top two attributes are different to the current attribute, and there is
+                    // enough distance from the current attribute to have an update
                     if (bestSuggestion != null) {
                         bestSuggestions.add(bestSuggestion);
                     }
@@ -520,25 +544,35 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
             this.treeRoot = newLearningNode();
             this.activeLeafNodeCount = 1;
         }
+
+        // filter the instance down the tree. Return the node found as a FoundNode.
+        // FoundNode contains a splitParent and the found node.
         FoundNode foundNode = this.treeRoot.filterInstanceToLeaf(inst, null, -1);
+
+        // The found node must be a leaf. Is it null?
         Node leafNode = foundNode.node;
         if (leafNode == null) {
             leafNode = newLearningNode();
             foundNode.parent.setChild(foundNode.parentBranch, leafNode);
             this.activeLeafNodeCount++;
         }
+
+        //why wouldn't it be a learning node?? it can't be a split node can it??
+        //more interesting is that split attempts only happen at leaves.
+        //so... for a higher level node to reset... does it have to become a leaf again?
         if (leafNode instanceof LearningNode) {
             LearningNode learningNode = (LearningNode) leafNode;
             learningNode.learnFromInstance(inst, this);
             if (this.growthAllowed
-                    && (learningNode instanceof ActiveLearningNode)) {
+                    && (learningNode instanceof ActiveLearningNode)) { //could've been deactivated...
                 ActiveLearningNode activeLearningNode = (ActiveLearningNode) learningNode;
                 double weightSeen = activeLearningNode.getWeightSeen();
                 if (weightSeen
                         - activeLearningNode.getWeightSeenAtLastSplitEvaluation() >= this.gracePeriodOption.getValue()) {
+                	//because weight at each timestep is 1... adds up over grace period timesteps
                     attemptToSplit(activeLearningNode, foundNode.parent,
                             foundNode.parentBranch);
-                    activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen);
+                    activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen); //update weight last seen
                 }
             }
         }
@@ -616,7 +650,6 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
         return new SplitNode(splitTest, classObservations);
     }
 
-
     protected AttributeClassObserver newNominalClassObserver() {
         AttributeClassObserver nominalClassObserver = (AttributeClassObserver) getPreparedClassOption(this.nominalEstimatorOption);
         return (AttributeClassObserver) nominalClassObserver.copy();
@@ -630,10 +663,20 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
     protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
             int parentIndex) {
         if (!node.observedClassDistributionIsPure()) {
+
             SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
             AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
             Arrays.sort(bestSplitSuggestions);
             boolean shouldSplit = false;
+
+
+            /* we want to split on current best attribute only if no split currently exists
+               will the null split be a suggestion? only if nopreprune is not turned on. if prepruning allowed, yes.
+               shouldSplit = bestSplitSuggestions.length >= 0;
+               in the preprune case, bestSplitSuggestions.length == 1 => only null split is suggested.
+               What if the top two attributes are tied, but neither is the current attribute, and Hoeffding allows one of them to replace current?
+               They should be compared with current.
+               */
             if (bestSplitSuggestions.length < 2) {
                 shouldSplit = bestSplitSuggestions.length > 0;
             } else {
@@ -641,21 +684,26 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
-                // we just want to split on current best attribute
-                shouldSplit = true;
 
-                /*if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
+              //if (node.){              }
+
+
+                if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
                     shouldSplit = true;
-                }*/
-                // }
+                }
+
                 if ((this.removePoorAttsOption != null)
                         && this.removePoorAttsOption.isSet()) {
                     Set<Integer> poorAtts = new HashSet<Integer>();
                     // scan 1 - add any poor to set
                     for (int i = 0; i < bestSplitSuggestions.length; i++) {
                         if (bestSplitSuggestions[i].splitTest != null) {
-                            int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
+
+                            // I guess the original author intended to make the code extensible in future
+                            // we only deal with one attr per split, but he's allowed leeway for having multi-attr splits
+
+                            int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn(); // each splitTest corresponds to an attribute or set of attributes
                             if (splitAtts.length == 1) {
                                 if (bestSuggestion.merit
                                         - bestSplitSuggestions[i].merit > hoeffdingBound) {
@@ -664,9 +712,14 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                             }
                         }
                     }
+
+                    // it's looking like the poorAtts list ensures we disable observing poor attributes. but this is an option not set by default.
+
+
                     // scan 2 - remove good ones from set
                     for (int i = 0; i < bestSplitSuggestions.length; i++) {
                         if (bestSplitSuggestions[i].splitTest != null) {
+
                             int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
                             if (splitAtts.length == 1) {
                                 if (bestSuggestion.merit
@@ -685,6 +738,8 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins
+                	// if preprune is on, null either wins because it's the only attribute, or because it's better
+
                     deactivateLearningNode(node, parent, parentIndex);
                 } else {
                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,

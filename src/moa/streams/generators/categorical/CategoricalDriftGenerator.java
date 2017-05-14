@@ -6,6 +6,12 @@
 
 package moa.streams.generators.categorical;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.math3.random.RandomDataGenerator;
+
 import com.github.javacliparser.FlagOption;
 import com.github.javacliparser.FloatOption;
 import com.github.javacliparser.IntOption;
@@ -14,12 +20,6 @@ import com.yahoo.labs.samoa.instances.Attribute;
 import moa.core.FastVector;
 import moa.options.AbstractOptionHandler;
 import moa.streams.InstanceStream;
-
-import org.apache.commons.math3.random.RandomDataGenerator;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public abstract class CategoricalDriftGenerator extends AbstractOptionHandler implements InstanceStream {
 

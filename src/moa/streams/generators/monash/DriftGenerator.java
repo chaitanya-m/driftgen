@@ -6,6 +6,12 @@
 
 package moa.streams.generators.monash;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.math3.random.RandomDataGenerator;
+
 import com.github.javacliparser.FloatOption;
 import com.github.javacliparser.IntOption;
 import com.github.javacliparser.MultiChoiceOption;
@@ -15,15 +21,6 @@ import com.yahoo.labs.samoa.instances.InstancesHeader;
 
 import moa.core.FastVector;
 import moa.streams.InstanceStream;
-
-import org.apache.commons.math3.random.RandomDataGenerator;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.IntStream;
 
 public abstract class DriftGenerator extends DriftOptionHandler implements InstanceStream {
 

@@ -1,16 +1,5 @@
 package moa.streams.generators.monash;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.commons.math3.ml.distance.DistanceMeasure;
-
-import com.github.javacliparser.FlagOption;
-import com.github.javacliparser.FloatOption;
-import com.github.javacliparser.IntOption;
-import com.github.javacliparser.MultiChoiceOption;
-
-
 import moa.core.ObjectRepository;
 import moa.options.AbstractOptionHandler;
 import moa.tasks.TaskMonitor;

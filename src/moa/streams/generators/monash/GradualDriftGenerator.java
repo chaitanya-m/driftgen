@@ -1,27 +1,18 @@
 package moa.streams.generators.monash;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import moa.core.Example;
-import moa.core.FastVector;
-import moa.core.InstanceExample;
-import moa.core.ObjectRepository;
-import moa.streams.InstanceStream;
-import moa.tasks.TaskMonitor;
 
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
-import com.github.javacliparser.FloatOption;
 import com.github.javacliparser.IntOption;
-import com.yahoo.labs.samoa.instances.Attribute;
 import com.yahoo.labs.samoa.instances.DenseInstance;
 import com.yahoo.labs.samoa.instances.Instance;
-import com.yahoo.labs.samoa.instances.Instances;
-import com.yahoo.labs.samoa.instances.InstancesHeader;
+
+import moa.core.InstanceExample;
+import moa.core.ObjectRepository;
+import moa.tasks.TaskMonitor;
 
 public class GradualDriftGenerator extends DriftGenerator{
 

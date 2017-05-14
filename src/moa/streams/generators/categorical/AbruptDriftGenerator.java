@@ -1,11 +1,5 @@
 package moa.streams.generators.categorical;
 
-import moa.core.FastVector;
-import moa.core.InstanceExample;
-import moa.core.ObjectRepository;
-import moa.streams.InstanceStream;
-import moa.tasks.TaskMonitor;
-
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -15,6 +9,12 @@ import com.yahoo.labs.samoa.instances.DenseInstance;
 import com.yahoo.labs.samoa.instances.Instance;
 import com.yahoo.labs.samoa.instances.Instances;
 import com.yahoo.labs.samoa.instances.InstancesHeader;
+
+import moa.core.FastVector;
+import moa.core.InstanceExample;
+import moa.core.ObjectRepository;
+import moa.streams.InstanceStream;
+import moa.tasks.TaskMonitor;
 
 /**
  * Generate categorial synthetic data with an abrupt drift of given magnitude. 

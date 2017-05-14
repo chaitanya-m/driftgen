@@ -32,10 +32,13 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
 import com.github.javacliparser.FlagOption;
 import com.github.javacliparser.FloatOption;
 import com.github.javacliparser.IntOption;
 import com.github.javacliparser.MultiChoiceOption;
+import com.yahoo.labs.samoa.instances.Instance;
+
 import moa.AbstractMOAObject;
 import moa.classifiers.AbstractClassifier;
 import moa.classifiers.bayes.NaiveBayes;
@@ -53,7 +56,6 @@ import moa.core.SizeOf;
 import moa.core.StringUtils;
 import moa.core.Utils;
 import moa.options.ClassOption;
-import com.yahoo.labs.samoa.instances.Instance;
 
 /**
  * Hoeffding Tree or VFDT.

@@ -1,0 +1,23 @@
+
+It looks like the way tasks work in MOA are to have a primary evaluation task with several measures 
+(e.g. EvaluatePrequential) with several added measures (e.g. BasicClassificationPerformance)..
+
+Now, there's a function called getVotesForInstance which outputs a an array of predictions.
+
+What EvaluateConceptDrift does is... it expects this return value to have been hacked to return a one array string: drift or no drift.
+
+I will need to use both pieces of information.
+
+I used meld to compare EvaluateConceptDrift and EvaluatePrequential; they are not hugely different.
+
+            double[] prediction = learner.getVotesForInstance(testInst);
+
+This is a line that has different meanings in EvaluateConceptDrift and EvaluatePrequential.
+            
+I will need both the prediction accuracy and information about whether a change has been detected.
+
+I need to meld the change detection columns into my existing outputs.
+
+I suppose cumulative detected drifts would be a good enough measure to start with. 
+
+It would also be a reasonable graph.

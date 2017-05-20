@@ -171,9 +171,7 @@ public class SubConceptTree extends HoeffdingTree {
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
-            if (k > 0) {
-                //weightedInst.setWeight(inst.weight() * k);
-            }
+
             //Compute ClassPrediction using filterInstanceToLeaf
             //int ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, null, -1).node.getClassVotes(inst, ht));
             int ClassPrediction = 0;
@@ -189,32 +187,46 @@ public class SubConceptTree extends HoeffdingTree {
             double oldError = this.getErrorEstimation();
 
             this.errorHasChanged = this.adwin.setInput(correctlyClassified == true ? 0.0 : 1.0);
-            //setInput really returns a boolean: change detected or not.
+            //setInput really returns a boolean: change detected or not. This is the input to ADWIN.
 
             if (this.errorHasChanged == true && oldError > this.getErrorEstimation()) {
                 //if error is decreasing, don't do anything
                 this.errorHasChanged = false;
             }
+            else if (this.errorHasChanged == true && oldError <= this.getErrorEstimation()){// && correctlyClassified == false){
+                if (k > 0) {
+                   // weightedInst.setWeight(inst.weight() * k);
+                }
+                //System.err.println("Weighted Instance weight is:" + weightedInst.weight());
+
+            }
 
             // Check condition to build a new alternate tree
             //if (this.isAlternateTree == false) {
             if (this.errorHasChanged == true) {//&& this.alternateTree == null) { //should this be an else-if?
+
                 //Start a new alternative tree : learning node
                 this.alternateTree = ht.newLearningNode();
                 //this.alternateTree.isAlternateTree = true;
                 ht.alternateTrees++; //but... looks like you can only have one at a time...
+
+                //System.err.println("=======New Alternate initialised====" + " Depth: " + this.subtreeDepth());
             } // Check condition to replace tree
 
             else if (this.alternateTree != null && ((NewNode) this.alternateTree).isNullError() == false) {
                 if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) {
                 	// you discard the alternate tree if your ADWIN buckets have over 300 instances in all
+                	// in other words, this is claiming that 300 instances should suffice to determine subtree performance
                     double oldErrorRate = this.getErrorEstimation();
                     double altErrorRate = ((NewNode) this.alternateTree).getErrorEstimation();
                     double fDelta = .05;
                     //if (gNumAlts>0) fDelta=fDelta/gNumAlts;
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
-                    if (Bound < oldErrorRate - altErrorRate) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
+                    if (Bound < oldErrorRate - altErrorRate /*&& this.subtreeDepth() < 2*/) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
+
+                        System.err.println("++++++++Alternate picked for tree of" + " Depth: " + this.subtreeDepth());
+
                         // Switch alternate tree
                         ht.activeLeafNodeCount -= this.numberLeaves();
                         ht.activeLeafNodeCount += ((NewNode) this.alternateTree).numberLeaves();
@@ -247,7 +259,7 @@ public class SubConceptTree extends HoeffdingTree {
             if (this.alternateTree != null) {
                 ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
             }
-            int childBranch = this.instanceChildIndex(inst);
+            int childBranch = this.instanceChildIndex(weightedInst);
             Node child = this.getChild(childBranch);
             if (child != null) {
                 ((NewNode) child).learnFromInstance(weightedInst, ht, this, childBranch);

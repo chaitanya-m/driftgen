@@ -101,6 +101,9 @@ public class AbruptDriftGenerator extends DriftGenerator{
 		inst.setClassValue(chosenClassValue);
 
 		nInstancesGeneratedSoFar++;
+
+		//if(nInstancesGeneratedSoFar % 100 == 0 && nInstancesGeneratedSoFar < 320000 && nInstancesGeneratedSoFar > 300000) {System.err.println(nInstancesGeneratedSoFar);}
+
 		return new InstanceExample(inst);
 	}
 

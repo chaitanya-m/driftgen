@@ -133,10 +133,57 @@ end up being reset(either to a higher level prior or a uniform prior).
 Bifet has this magic number 300 in HoeffdingAdaptiveTree
            if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) {
 
-WHAT??
+This is telling us to replace the current tree with the new one if it happens to be a better predictor 300 instances after drift is detected.
 ===
 
+I've tried a bunch of things today: I played around with the commented Poisson lambda; when set to a very large value, and the magic number is set to 30,000, 
+spurious drifts are detected at 700,000 (abrupt drift at 300,000) with 5x5x5 and driftmag 0.8 conditional. Strange behavior. I use it differently to Bifet- 
+he weights every example, but I tried weighting only misclassified examples only when change has been  detected.
 
+HAT-ADWIN straight up: drift is detected within the first 100 examples and a number of alternate trees are spawned. Only one replacement takes place... 
+within the first 400 examples after drift. The change detector is obviously pretty quick, but note that the alternate picked is for depth 5. 
+
+For a drift magnitude of 0.8 though... there is likely to be such great upheaval that the new tree is the preferred choice always.
+
+299800
+299900
+300000
+=======New Alternate initialised==== Depth: 5
+=======New Alternate initialised==== Depth: 2
+=======New Alternate initialised==== Depth: 5
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 5
+300100
+=======New Alternate initialised==== Depth: 1
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 1
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 3
+300200
+=======New Alternate initialised==== Depth: 1
+=======New Alternate initialised==== Depth: 2
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 2
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 2
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 2
+300300
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 1
+300400
+++++++++Alternate picked for tree of Depth: 5
+300500
+300600
+300700
+300800
+300900
+301000
 
 
 

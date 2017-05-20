@@ -79,6 +79,10 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 		return -1;
 	}
 
+	public long numInstancesGenerated() {
+		return nInstancesGeneratedSoFar;
+	}
+
 	@Override
 	public boolean hasMoreInstances() {
 		return true;

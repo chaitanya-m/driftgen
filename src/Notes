@@ -206,8 +206,17 @@ Weighting the instance with Poisson 1 iff misclassified and change detected at t
 
 ==================
 
+My original idea meant picking only the leaves with the greatest error when identified by a higher level change detection... using a higher
+level change detection for checking out lower level nodes which may not have registered change. My experiments are somewhat 
+more lax in this regard- I should probably increase the ADWIN-delta to compensate for the fact that higher level change might be ignored.
 
-
+==================
  
+Why does HAT-ADWIN with no subtree replacements outperform VFDT?
+
+Once the reason is found... perhaps try the CVFDT practice of using the current best attribute with HAT-ADWIN's base VFDT.
+
+==================
+
 
 

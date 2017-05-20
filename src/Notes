@@ -202,7 +202,9 @@ BOLE still does better (also takes forever)... how close can we get to BOLE?
 
 ==================
 
+Weighting the instance with Poisson 1 iff misclassified and change detected at this node raised accuracy marginally to 95.79 from 95.76
 
+==================
 
 
 

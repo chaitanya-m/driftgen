@@ -193,9 +193,9 @@ public class SubConceptTree extends HoeffdingTree {
                 //if error is decreasing, don't do anything
                 this.errorHasChanged = false;
             }
-            else if (this.errorHasChanged == true && oldError <= this.getErrorEstimation()){// && correctlyClassified == false){
+            else if (this.errorHasChanged == true && oldError <= this.getErrorEstimation() && correctlyClassified == false){
                 if (k > 0) {
-                   // weightedInst.setWeight(inst.weight() * k);
+                   weightedInst.setWeight(inst.weight() * k);
                 }
                 //System.err.println("Weighted Instance weight is:" + weightedInst.weight());
 
@@ -223,7 +223,7 @@ public class SubConceptTree extends HoeffdingTree {
                     //if (gNumAlts>0) fDelta=fDelta/gNumAlts;
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
-                    if (Bound < oldErrorRate - altErrorRate && this.subtreeDepth() < 0) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
+                    if (Bound < oldErrorRate - altErrorRate && this.subtreeDepth() < 3) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
 
                         System.err.println("++++++++Alternate picked for tree of" + " Depth: " + this.subtreeDepth());
 
@@ -259,10 +259,10 @@ public class SubConceptTree extends HoeffdingTree {
             if (this.alternateTree != null) {
                 ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
             }
-            int childBranch = this.instanceChildIndex(weightedInst);
+            int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);
             if (child != null) {
-                ((NewNode) child).learnFromInstance(weightedInst, ht, this, childBranch);
+                ((NewNode) child).learnFromInstance(inst, ht, this, childBranch);
             }
         }
 

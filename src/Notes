@@ -185,8 +185,27 @@ For a drift magnitude of 0.8 though... there is likely to be such great upheaval
 300900
 301000
 
+=============
+
+More experiments. 
+
+EvaluatePrequential -l trees.HoeffdingOptionTree -s (generators.monash.AbruptDriftGenerator -o 0.800001 -c -z 5 -n 5 -v 5 -r 1 -b 300000) -i 1000000 -f 1000
+
+With the code in this commit.
+
+It turns out that restricting subtree replacements to tree depths of < 3 is most effective vis-a-vis 2 or 4 or 5 for this example.
+
+Note that HAT-ADWIN with no tree replacements performs better than HAT-ADWIN that replaces the 5-deep tree. This lends credence to my theory
+that important information is forgotten when a replacement is made at such a high level.
+
+BOLE still does better (also takes forever)... how close can we get to BOLE?
+
+==================
 
 
 
+
+
+ 
 
 

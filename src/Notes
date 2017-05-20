@@ -218,5 +218,13 @@ Once the reason is found... perhaps try the CVFDT practice of using the current 
 
 ==================
 
+            if (k > 0) {
+                weightedInst.setWeight(inst.weight() * k);
+            }
+Bifet weights instances at the learning node... I don't think this is mentioned in the paper. It's a Poisson(1) weighting, it has nothing to do with 
+whether the current example was misclassified, and it has an effect of about 1% on accuracy under this setup.
+
+==================
+
 
 

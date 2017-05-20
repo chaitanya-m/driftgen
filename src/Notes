@@ -21,3 +21,125 @@ I need to meld the change detection columns into my existing outputs.
 I suppose cumulative detected drifts would be a good enough measure to start with. 
 
 It would also be a reasonable graph.
+
+===
+
+LearningEvaluation is a class that stores all the measurements. Measurements come from the task, the evaluator, and the 
+learning model. (This is why instances are often repeated- they are just concatenated.)
+
+LearningCurve Stores a history of measurements as a List of Double arrays (why doesn't it just store as a List of LearningEvaluations, why convert??)
+
+EvaluateModel corresponds roughly to the GUI learner/evaluator/generator config screen.
+
+At some point, the LearningEvaluations from EvaluatePrequential + BasicClassificationPerformanceEValuator etc must come together
+
+So the way to do this might be to add drift stuff to the evaluator of choice, without getting rid of prediction accuracy by doing so
+
+How can this be done?
+
+===
+
+With HAT-ADWIN, it must be possible to add a model measurement of drift detection.
+
+Can I get this working with Single Classifier drift in the first instance?
+
+===
+
+
+Using meld to compare BasicClassificationPerformanceEvaluator with BasicConceptDriftPerformanceEvaluator, I find that it really looks like the latter
+has a hacked dependency on the exact form of the instance- it seems designed just for ChangeDetector Learner.
+
+This obviously won't do for me. I'll need to rewrite EvaluatePrequential to bring in the change counter.
+
+===
+
+This is how DDM fixes the current error probability and deviation when a new instance is seen in the MOA code.
+
+	    m_p = m_p + (prediction - m_p) / (double) m_n;
+        m_s = Math.sqrt(m_p * (1 - m_p) / (double) m_n);
+
+Looks pretty ad hoc... bit it works well. Is this the correct way to do this?
+
+Confusingly, the 1-0 input is called "prediction" (a two class problem? or the 1-0 error for a multiclass problem also?).
+
+the comments:
+        // prediction must be 1 or 0
+        // It monitors the error rate
+
+
+I think you have to feed DDM (or other change detectors) the right inputs.
+
+Where is DDM usually fed inputs?
+
+What does ChangeDetectorLearner do? It trains on DDM, it gets outputs from DDM. DDM is doing everything. It must be intended for a bit stream!!!
+
+AbruptChangeGenerator only generates either 0.8 or 0.2... round that up and you get a nice bitstream.
+
+It actually looks like there is no rounding going on... with the current default setup, you are feeding 0.8 and 0.2 to your DDM while it should 
+receive 1 and 0. DDM doesn't cast to int.
+
+DDM works fine with double values, so this is what is happening. With the GradualChangeGenerator, after a burn in, the instance value changes from 0.2 
+to 1.0 with a fixed increment.
+
+===
+
+The correspondence is between ChangeDetectorLearner and, say, SingleClassifierDrift; BasicConceptDriftPerformanceEvaluator and 
+BasicClassificationPerformanceEvaluator; EvaluateConceptDrift and EvaluatePrequential.
+
+BasicClassificationPerformanceEvaluator needs to add on a change counter so it tracks both error and changes (since it's not all hardcoded for a given learner... 
+this is the way to do it). This will add a new Measure, which will be tagged on to EvaluatePrequential. We must ensure that the bucket size for error measure 
+matches the bucket for drift counts.
+
+Or... how about making the change in EvaluatePrequential instead: we feed the error stream into an ADWIN or DDM instance. This would allow us to determine whether 
+the bit stream of errors would trigger a change from the detector of choice.
+
+Of course, it would be better to get the information from the actual learners being used. For instance, HAT-ADWIN may signal several changes at several different
+nodes.
+
+This might be a good way to start off with. Let SingleClassifierDrift signal change. Catch it with EvaluatePrequential and add as a measure of changes per 1000 or 10,000 
+or whatever period evaluation is set to. This way we know that it is not a parallel detector that is determining likely changes, but actual changes signaled.
+
+This will be a little more involved for HAT-ADWIN as all ADWIN instances will need to be polled. But that is a different problem; we may be interested in changes 
+as well as the level in the tree at which they are signaled for HAT-ADWIN. It might be more efficient to simply develop a new algorithm that only takes into account 
+those P(Y|X) corresponding to nodes that have the most aberrant error behaviour.
+
+===
+
+If I call getModelMeasurementsImpl() at the right time, will change count be reset?
+
+
+        Measurement[] modelMeasurements = getModelMeasurementsImpl();
+
+This is in AbstractClassifier's     public Measurement[] getModelMeasurements() {
+
+getModelMeasurements() is called by getMeasurementsDescription() which is called by AbstractClassifier's getDescription().
+
+===
+
+Bifet has experimented with weighted instances in his commented code, but not quite how I envision using them.
+
+When a change is detected at a node, I intend to identify the leaves with the biggest error gains and spawn alternate subtrees as close to
+the leaf level as possible even if change has not been detected there. 
+
+The alternate tree has the disadvantage of forgetting real information. So I need multiple alternate trees; one being built from scratch, A0, 
+at the node with the change detection, and several lower level alternate trees closer to the leaves. I want the low level trees to replace their
+respective originals well before A0 has the chance to do any damage.
+
+A very large change may lead to A0 winning the race to better accuracy, but smaller changes should see A0 not having to be used. Instead, leaves will be 
+end up being reset(either to a higher level prior or a uniform prior).
+
+===
+
+Bifet has this magic number 300 in HoeffdingAdaptiveTree
+           if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) {
+
+WHAT??
+===
+
+
+
+
+
+
+
+

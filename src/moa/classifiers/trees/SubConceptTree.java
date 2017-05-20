@@ -91,10 +91,10 @@ public class SubConceptTree extends HoeffdingTree {
 
         protected Node alternateTree;
 
-        protected ADWIN estimationErrorWeight;
+        protected ADWIN adwin; // this was called estimationErrorWeight
         //public boolean isAlternateTree = false;
 
-        public boolean ErrorChange = false;
+        public boolean errorHasChanged = false;
 
         protected int randomSeed = 1;
 
@@ -109,8 +109,8 @@ public class SubConceptTree extends HoeffdingTree {
             if (alternateTree != null) {
                 byteSize += alternateTree.calcByteSizeIncludingSubtree();
             }
-            if (estimationErrorWeight != null) {
-                byteSize += estimationErrorWeight.measureByteSize();
+            if (adwin != null) {
+                byteSize += adwin.measureByteSize();
             }
             for (Node child : this.children) {
                 if (child != null) {
@@ -145,21 +145,21 @@ public class SubConceptTree extends HoeffdingTree {
 
         @Override
         public double getErrorEstimation() {
-            return this.estimationErrorWeight.getEstimation();
+            return this.adwin.getEstimation();
         }
 
         @Override
         public double getErrorWidth() {
             double w = 0.0;
             if (isNullError() == false) {
-                w = this.estimationErrorWeight.getWidth();
+                w = this.adwin.getWidth();
             }
             return w;
         }
 
         @Override
         public boolean isNullError() {
-            return (this.estimationErrorWeight == null);
+            return (this.adwin == null);
         }
 
         // SplitNodes can have alternative trees, but LearningNodes can't
@@ -181,35 +181,40 @@ public class SubConceptTree extends HoeffdingTree {
                 ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, parent, parentBranch).node.getClassVotes(inst, ht));
             }
 
-            boolean blCorrect = (trueClass == ClassPrediction);
+            boolean correctlyClassified = (trueClass == ClassPrediction);
 
-            if (this.estimationErrorWeight == null) {
-                this.estimationErrorWeight = new ADWIN();
+            if (this.adwin == null) {
+                this.adwin = new ADWIN();
             }
             double oldError = this.getErrorEstimation();
-            this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ? 0.0 : 1.0);
-            if (this.ErrorChange == true && oldError > this.getErrorEstimation()) {
+
+            this.errorHasChanged = this.adwin.setInput(correctlyClassified == true ? 0.0 : 1.0);
+            //setInput really returns a boolean: change detected or not.
+
+            if (this.errorHasChanged == true && oldError > this.getErrorEstimation()) {
                 //if error is decreasing, don't do anything
-                this.ErrorChange = false;
+                this.errorHasChanged = false;
             }
 
             // Check condition to build a new alternate tree
             //if (this.isAlternateTree == false) {
-            if (this.ErrorChange == true) {//&& this.alternateTree == null) {
+            if (this.errorHasChanged == true) {//&& this.alternateTree == null) { //should this be an else-if?
                 //Start a new alternative tree : learning node
                 this.alternateTree = ht.newLearningNode();
                 //this.alternateTree.isAlternateTree = true;
-                ht.alternateTrees++;
+                ht.alternateTrees++; //but... looks like you can only have one at a time...
             } // Check condition to replace tree
+
             else if (this.alternateTree != null && ((NewNode) this.alternateTree).isNullError() == false) {
                 if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) {
+                	// you discard the alternate tree if your ADWIN buckets have over 300 instances in all
                     double oldErrorRate = this.getErrorEstimation();
                     double altErrorRate = ((NewNode) this.alternateTree).getErrorEstimation();
                     double fDelta = .05;
                     //if (gNumAlts>0) fDelta=fDelta/gNumAlts;
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
-                    if (Bound < oldErrorRate - altErrorRate) {
+                    if (Bound < oldErrorRate - altErrorRate) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
                         // Switch alternate tree
                         ht.activeLeafNodeCount -= this.numberLeaves();
                         ht.activeLeafNodeCount += ((NewNode) this.alternateTree).numberLeaves();
@@ -221,8 +226,8 @@ public class SubConceptTree extends HoeffdingTree {
                             // Switch root tree
                             ht.treeRoot = ((AdaSplitNode) ht.treeRoot).alternateTree;
                         }
-                        ht.switchedAlternateTrees++;
-                    } else if (Bound < altErrorRate - oldErrorRate) {
+                        ht.switchedAlternateTrees++; //Never Initialised?
+                    } else if (Bound < altErrorRate - oldErrorRate) { // Once again, Bound is +ve.
                         // Erase alternate tree
                         if (this.alternateTree instanceof ActiveLearningNode) {
                             this.alternateTree = null;

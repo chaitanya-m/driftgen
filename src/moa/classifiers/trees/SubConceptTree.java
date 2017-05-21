@@ -206,7 +206,7 @@ public class SubConceptTree extends HoeffdingTree {
             if (this.errorHasChanged == true) {//&& this.alternateTree == null) { //should this be an else-if?
 
                 //Start a new alternative tree : learning node
-                this.alternateTree = ht.newLearningNode();
+                //this.alternateTree = ht.newLearningNode();
                 //this.alternateTree.isAlternateTree = true;
                 ht.alternateTrees++; //but... looks like you can only have one at a time...
 
@@ -223,7 +223,7 @@ public class SubConceptTree extends HoeffdingTree {
                     //if (gNumAlts>0) fDelta=fDelta/gNumAlts;
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
-                    if (Bound < oldErrorRate - altErrorRate && this.subtreeDepth() < 3) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
+                    if (Bound < oldErrorRate - altErrorRate && this.subtreeDepth() < 0) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
 
                         System.err.println("++++++++Alternate picked for tree of" + " Depth: " + this.subtreeDepth());
 

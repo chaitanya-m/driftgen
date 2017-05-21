@@ -258,7 +258,7 @@ public class SubConceptTree extends HoeffdingTree {
             //learnFromInstance alternate Tree and Child nodes
 
             if (this.alternateTree != null) {
-                //((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
+                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
             }
             int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);
@@ -311,8 +311,7 @@ public class SubConceptTree extends HoeffdingTree {
                 }
             }
             if (this.alternateTree != null) {
-                ((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999,
-                        foundNodes, updateSplitterCounts);
+                ((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
             }
         }
     }
@@ -494,6 +493,9 @@ public class SubConceptTree extends HoeffdingTree {
         return nodes.toArray(new FoundNode[nodes.size()]);
     }
 
+
+    // The behaviour of a HAT-ADWIN that doesn't allow alternate substitution but allows an alternate to be built
+    // being similar to HAT-ADWIN would indicate that the alternate is being allowed to vote...!
     @Override
     public double[] getVotesForInstance(Instance inst) {
         if (this.treeRoot != null) {

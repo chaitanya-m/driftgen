@@ -206,7 +206,7 @@ public class SubConceptTree extends HoeffdingTree {
             if (this.errorHasChanged == true) {//&& this.alternateTree == null) { //should this be an else-if?
 
                 //Start a new alternative tree : learning node
-                //this.alternateTree = ht.newLearningNode();
+                this.alternateTree = ht.newLearningNode();
                 //this.alternateTree.isAlternateTree = true;
                 ht.alternateTrees++; //but... looks like you can only have one at a time...
 
@@ -256,8 +256,9 @@ public class SubConceptTree extends HoeffdingTree {
             }
             //}
             //learnFromInstance alternate Tree and Child nodes
+
             if (this.alternateTree != null) {
-                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
+                //((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
             }
             int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);

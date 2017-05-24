@@ -300,13 +300,13 @@ public class SubConceptTree extends HoeffdingTree {
             //}
             //learnFromInstance alternate Tree and Child nodes
 
-            if (this.alternateTree != null) {
-                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
-            }
-            int childBranch = this.instanceChildIndex(inst);
-            Node child = this.getChild(childBranch);
-            if (child != null) {
-                ((NewNode) child).learnFromInstance(inst, ht, this, childBranch);
+            if (this.alternateTree != null) {//
+                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);// compare this- it uses parent
+            }//
+            int childBranch = this.instanceChildIndex(inst);//
+            Node child = this.getChild(childBranch);//
+            if (child != null) {//
+                ((NewNode) child).learnFromInstance(inst, ht, this, childBranch);//to this- it uses this
             }
         }
 

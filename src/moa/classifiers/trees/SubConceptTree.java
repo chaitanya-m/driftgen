@@ -247,7 +247,7 @@ public class SubConceptTree extends HoeffdingTree {
             if (this.errorHasChanged == true) {//&& this.alternateTree == null) { //should this be an else-if?
 
                 //Start a new alternative tree : learning node
-                this.alternateTree = ht.newLearningNode(); ((NewNode)this.alternateTree).setAlternate(true);
+                //this.alternateTree = ht.newLearningNode(); ((NewNode)this.alternateTree).setAlternate(true);
                 //this.alternateTree.isAlternateTree = true;
                 ht.alternateTrees++; //but... looks like you can only have one at a time...
 
@@ -344,7 +344,7 @@ public class SubConceptTree extends HoeffdingTree {
                 this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
             }
         	if (this.isAlternate()){
-        		System.err.println("Alternate node found even though filtering through alternates is turned off");
+        		//System.err.println("Alternate node found even though filtering through alternates is turned off");
         		//An alternate node has been found.
         	}
 
@@ -373,8 +373,9 @@ public class SubConceptTree extends HoeffdingTree {
                 }
             }
             if (this.alternateTree != null) {
-            	if (this.alternateTree.getClass() == AdaSplitNode.class){ // provide an alternate node as parent!
+            	if (this.alternateTree.getClass() == AdaSplitNode.class){
             		((NewNode) this.alternateTree).filterInstanceToLeaves(inst, (SplitNode)this.alternateTree, -999, foundNodes, updateSplitterCounts);
+            		// provide an alternate node as parent!
             	}
             }
 
@@ -534,8 +535,8 @@ public class SubConceptTree extends HoeffdingTree {
                 SplitNode splitparent, int parentBranch,
                 List<FoundNode> foundNodes, boolean updateSplitterCounts) {
         	if (this.isAlternate()){
-        		System.err.println("Alternate node found even though filtering through alternates is turned off");
-        		System.err.println("The parent is parentBranch " + parentBranch);
+        		//System.err.println("Alternate node found even though filtering through alternates is turned off");
+        		//System.err.println("The parent is parentBranch " + parentBranch);
         		//So... the alternate node comes from here, even before a split node ever creates an alternate.
         		// but only split nodes should be able to create alternates!
         	}
@@ -700,8 +701,8 @@ public class SubConceptTree extends HoeffdingTree {
             DoubleVector result = new DoubleVector();
             int predictionPaths = 0;
             for (FoundNode foundNode : foundNodes) {
-                if (foundNode.parentBranch != -999 ){
-            	 //(!((NewNode)foundNode.node).isAlternate()){
+                if //(foundNode.parentBranch != -999 ){
+            	 (!((NewNode)foundNode.node).isAlternate()){
 //(1>0){
                     Node leafNode = foundNode.node;
                     if (leafNode == null) {
@@ -712,7 +713,7 @@ public class SubConceptTree extends HoeffdingTree {
                     	System.err.println("An alternate node has voted. It is of " + leafNode.getClass()); // AdaLearningNode, as expected.
                     	StringBuilder out = new StringBuilder(); foundNode.parent.describeSubtree(this, out, 2);
                     	System.err.print(out);
-                    	System.exit(1);
+                    	//System.exit(1);
                     }
 
                     double[] dist = leafNode.getClassVotes(inst, this);
@@ -722,9 +723,11 @@ public class SubConceptTree extends HoeffdingTree {
                     //	Utils.normalize(dist, distSum);
                     //}
                     result.addValues(dist);
-                    //predictionPaths++;
+                    predictionPaths++;
                 }
             }
+
+            System.err.println("prediction paths = " + predictionPaths);
             //if (predictionPaths > this.maxPredictionPaths) {
             //	this.maxPredictionPaths++;
             //}

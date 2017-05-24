@@ -467,8 +467,7 @@ public class SubConceptTree extends HoeffdingTree {
             double weightSeen = this.getWeightSeen();
             if (weightSeen
                     - this.getWeightSeenAtLastSplitEvaluation() >= ht.gracePeriodOption.getValue()) {
-                ht.attemptToSplit(this, parent,
-                        parentBranch);
+                ht.attemptToSplit(this, parent, parentBranch);
                 this.setWeightSeenAtLastSplitEvaluation(weightSeen);
             }
 
@@ -550,6 +549,9 @@ public class SubConceptTree extends HoeffdingTree {
     @Override
     protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
             int parentIndex) {
+
+    	// pure nodes skip this whole function body. Why would that let them vote even if they're alternates?
+
         if (!node.observedClassDistributionIsPure()) {
             SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
             AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);

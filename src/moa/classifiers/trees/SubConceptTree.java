@@ -19,12 +19,21 @@
  */
 package moa.classifiers.trees;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+
 import moa.classifiers.bayes.NaiveBayes;
+import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
+import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.HoeffdingTree.ActiveLearningNode;
+import moa.classifiers.trees.HoeffdingTree.Node;
+import moa.classifiers.trees.HoeffdingTree.SplitNode;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
@@ -83,7 +92,11 @@ public class SubConceptTree extends HoeffdingTree {
 
         public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch, List<FoundNode> foundNodes,
                 boolean updateSplitterCounts);
-    }
+
+        public boolean isAlternate();
+
+        public void setAlternate(boolean isAlternate);
+        }
 
     public static class AdaSplitNode extends SplitNode implements NewNode {
 
@@ -99,6 +112,8 @@ public class SubConceptTree extends HoeffdingTree {
         protected int randomSeed = 1;
 
         protected Random classifierRandom;
+
+        public boolean isAlternate = false;
 
         //public boolean getErrorChange() {
         //		return ErrorChange;
@@ -207,6 +222,7 @@ public class SubConceptTree extends HoeffdingTree {
 
                 //Start a new alternative tree : learning node
                 this.alternateTree = ht.newLearningNode();
+                ((NewNode)this.alternateTree).setAlternate(true);
                 //this.alternateTree.isAlternateTree = true;
                 ht.alternateTrees++; //but... looks like you can only have one at a time...
 
@@ -224,7 +240,7 @@ public class SubConceptTree extends HoeffdingTree {
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
                     if (Bound < oldErrorRate - altErrorRate
-                    		//&& this.subtreeDepth() < 0
+                    		&& this.subtreeDepth() < 0
                     		) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
 
                         System.err.println("++++++++Alternate picked for tree of" + " Depth: " + this.subtreeDepth());
@@ -316,6 +332,16 @@ public class SubConceptTree extends HoeffdingTree {
                 ((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
             }
         }
+
+		@Override
+		public boolean isAlternate() {
+			return this.isAlternate;
+		}
+
+		@Override
+		public void setAlternate(boolean isAlternate) {
+			this.isAlternate = isAlternate;
+		}
     }
 
     public static class AdaLearningNode extends LearningNodeNBAdaptive implements NewNode {
@@ -329,6 +355,8 @@ public class SubConceptTree extends HoeffdingTree {
         protected int randomSeed = 1;
 
         protected Random classifierRandom;
+
+        public boolean isAlternate = false;
 
         @Override
         public int calcByteSize() {
@@ -419,6 +447,8 @@ public class SubConceptTree extends HoeffdingTree {
             }*/
         }
 
+
+
         @Override
         public double[] getClassVotes(Instance inst, HoeffdingTree ht) {
             double[] dist;
@@ -451,6 +481,16 @@ public class SubConceptTree extends HoeffdingTree {
                 List<FoundNode> foundNodes, boolean updateSplitterCounts) {
             foundNodes.add(new FoundNode(this, splitparent, parentBranch));
         }
+
+		@Override
+		public boolean isAlternate() {
+			return this.isAlternate;
+		}
+
+		@Override
+		public void setAlternate(boolean isAlternate) {
+			this.isAlternate = isAlternate;
+		}
     }
 
     protected int alternateTrees;
@@ -458,6 +498,91 @@ public class SubConceptTree extends HoeffdingTree {
     protected int prunedAlternateTrees;
 
     protected int switchedAlternateTrees;
+
+
+    @Override
+    protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
+            int parentIndex) {
+        if (!node.observedClassDistributionIsPure()) {
+            SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
+            AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
+            Arrays.sort(bestSplitSuggestions);
+            boolean shouldSplit = false;
+            if (bestSplitSuggestions.length < 2) {
+                shouldSplit = bestSplitSuggestions.length > 0;
+            } else {
+                double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
+                        this.splitConfidenceOption.getValue(), node.getWeightSeen());
+                AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+                AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
+                if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
+                        || (hoeffdingBound < this.tieThresholdOption.getValue())) {
+                    shouldSplit = true;
+                }
+                // }
+                if ((this.removePoorAttsOption != null)
+                        && this.removePoorAttsOption.isSet()) {
+                    Set<Integer> poorAtts = new HashSet<Integer>();
+                    // scan 1 - add any poor to set
+                    for (int i = 0; i < bestSplitSuggestions.length; i++) {
+                        if (bestSplitSuggestions[i].splitTest != null) {
+                            int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
+                            if (splitAtts.length == 1) {
+                                if (bestSuggestion.merit
+                                        - bestSplitSuggestions[i].merit > hoeffdingBound) {
+                                    poorAtts.add(new Integer(splitAtts[0]));
+                                }
+                            }
+                        }
+                    }
+                    // scan 2 - remove good ones from set
+                    for (int i = 0; i < bestSplitSuggestions.length; i++) {
+                        if (bestSplitSuggestions[i].splitTest != null) {
+                            int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
+                            if (splitAtts.length == 1) {
+                                if (bestSuggestion.merit
+                                        - bestSplitSuggestions[i].merit < hoeffdingBound) {
+                                    poorAtts.remove(new Integer(splitAtts[0]));
+                                }
+                            }
+                        }
+                    }
+                    for (int poorAtt : poorAtts) {
+                        node.disableAttribute(poorAtt);
+                    }
+                }
+            }
+            if (shouldSplit) {
+                AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+                if (splitDecision.splitTest == null) {
+                    // preprune - null wins
+                    deactivateLearningNode(node, parent, parentIndex);
+                } else {
+                    SplitNode newSplit = newSplitNode(splitDecision.splitTest,
+                            node.getObservedClassDistribution(),splitDecision.numSplits() );
+                    ((NewNode) newSplit).setAlternate(((NewNode)node).isAlternate()); // set alternate status to that of the learning node being split from
+                    for (int i = 0; i < splitDecision.numSplits(); i++) {
+                        Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
+                        ((NewNode) newChild).setAlternate(((NewNode)newSplit).isAlternate()); // set alternate status to that of the parent split node
+                        newSplit.setChild(i, newChild);
+                    }
+                    this.activeLeafNodeCount--;
+                    this.decisionNodeCount++;
+                    this.activeLeafNodeCount += splitDecision.numSplits();
+                    if (parent == null) {
+                        this.treeRoot = newSplit;
+                    } else {
+                        parent.setChild(parentIndex, newSplit);
+                    }
+                }
+                // manage memory
+                enforceTrackerLimit();
+            }
+        }
+    }
+
+
+
 
     @Override
     protected LearningNode newLearningNode(double[] initialClassObservations) {
@@ -482,6 +607,7 @@ public class SubConceptTree extends HoeffdingTree {
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode();
             this.activeLeafNodeCount = 1;
+            ((NewNode) this.treeRoot).setAlternate(false);// this is the only learning node class used...
         }
         ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
     }
@@ -507,10 +633,17 @@ public class SubConceptTree extends HoeffdingTree {
             int predictionPaths = 0;
             for (FoundNode foundNode : foundNodes) {
                 if (foundNode.parentBranch != -999) {
+
                     Node leafNode = foundNode.node;
                     if (leafNode == null) {
                         leafNode = foundNode.parent;
                     }
+
+                    if(((NewNode)leafNode).isAlternate()){
+                    	System.err.println("An alternate node has voted");
+                    	System.exit(1);
+                    }
+
                     double[] dist = leafNode.getClassVotes(inst, this);
                     //Albert: changed for weights
                     //double distSum = Utils.sum(dist);

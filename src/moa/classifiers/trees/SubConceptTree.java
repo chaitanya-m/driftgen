@@ -373,14 +373,19 @@ public class SubConceptTree extends HoeffdingTree {
                 }
             }
             if (this.alternateTree != null) {
-                ((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
-            	// why does an alternate node vote even when this is turned off? why do they feature in the foundNodes?
-                // when no tree is built, they don't exist, but when you build one...
-                // an alternate tree might identify it's root as -999, but the standard parent of an alternate learning node won't
-                // so instances will get filtered to alternate leaves if they happen to be child nodes of a standard parent
-                // when that happens, they will be added to foundNodes, and have a chance to vote
-                // but why do standard parent split nodes have alternate child nodes in the first place?
+            	if (this.alternateTree.getClass() == AdaSplitNode.class){ // provide an alternate node as parent!
+            		((NewNode) this.alternateTree).filterInstanceToLeaves(inst, (SplitNode)this.alternateTree, -999, foundNodes, updateSplitterCounts);
+            	}
             }
+
+        	// why does an alternate node vote even when this is turned off? why do they feature in the foundNodes?
+            // when no tree is built, they don't exist, but when you build one...
+            // an alternate tree might identify it's root as -999, but the standard parent of an alternate learning node won't
+            // so instances will get filtered to alternate leaves if they happen to be child nodes of a standard parent
+            // when that happens, they will be added to foundNodes, and have a chance to vote
+            // but why do standard parent split nodes have alternate child nodes in the first place?
+            // because of this line above. shouldn't it pass this.alternateTree as parent??
+
         }
 
 		@Override

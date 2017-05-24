@@ -36,6 +36,7 @@ import moa.classifiers.trees.HoeffdingTree.Node;
 import moa.classifiers.trees.HoeffdingTree.SplitNode;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
+import moa.core.StringUtils;
 import moa.core.Utils;
 import com.yahoo.labs.samoa.instances.Instance;
 
@@ -118,6 +119,31 @@ public class SubConceptTree extends HoeffdingTree {
         //public boolean getErrorChange() {
         //		return ErrorChange;
         //}
+
+        @Override
+        public void describeSubtree(HoeffdingTree ht, StringBuilder out,
+                int indent) {
+            for (int branch = 0; branch < numChildren(); branch++) {
+                Node child = getChild(branch);
+                if (child != null) {
+
+                    StringUtils.appendIndented(out, indent, "if ");
+                    out.append(this.splitTest.describeConditionForBranch(branch,
+                            ht.getModelContext()));
+                    out.append(": ");
+                    if (((NewNode)child).isAlternate()) {
+                        out.append("=====" + ((NewNode)child).isAlternate()+ "====");
+                    }
+
+                    StringUtils.appendNewline(out);
+
+
+                    child.describeSubtree(ht, out, indent + 4);
+                }
+            }
+        }
+
+
         @Override
         public int calcByteSizeIncludingSubtree() {
             int byteSize = calcByteSize();
@@ -317,6 +343,11 @@ public class SubConceptTree extends HoeffdingTree {
             if (updateSplitterCounts) {
                 this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
             }
+        	if (this.isAlternate()){
+        		System.err.println("Alternate node found even though filtering through alternates is turned off");
+        		//An alternate node has been found.
+        	}
+
             int childIndex = instanceChildIndex(inst);
             if (childIndex >= 0) {
                 Node child = getChild(childIndex);
@@ -324,10 +355,7 @@ public class SubConceptTree extends HoeffdingTree {
                     ((NewNode) child).filterInstanceToLeaves(inst, this, childIndex,
                             foundNodes, updateSplitterCounts);
                 } else {
-                	if (this.isAlternate()){
-                		System.err.println("Alternate node found even though filtering through alternates is turned off");
-                		//What? an alternate node votes even before it is added to foundNodes here?
-                	}
+
                     foundNodes.add(new FoundNode(null, this, childIndex));
                     //... this will have a mixture of alternate and normal foundNodes
                     // that's because only the top of the main tree has parent -1, and only the top of each alternate tree has parent -999
@@ -335,11 +363,11 @@ public class SubConceptTree extends HoeffdingTree {
                     // but first... do I need to choose nodes so I extract default HoeffdingTree behavior? I mean... simply disabling tree building gets me that
                 }
             }
-            if (this.alternateTree != null) {
+            //if (this.alternateTree != null) {
                 //((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
             	//why does an alternate node vote even when this is turned off? why do they feature in the foundNodes?
                 // when no tree is built, they don't exist, but when you build one...
-            }
+            //}
         }
 
 		@Override
@@ -490,7 +518,8 @@ public class SubConceptTree extends HoeffdingTree {
                 List<FoundNode> foundNodes, boolean updateSplitterCounts) {
         	if (this.isAlternate()){
         		System.err.println("Alternate node found even though filtering through alternates is turned off");
-        		//So... the alternate node comes from here, even before a split node is ever created.
+        		System.err.println("The parent is parentBranch " + parentBranch);
+        		//So... the alternate node comes from here, even before a split node ever creates an alternate.
         		// but only split nodes should be able to create alternates!
         	}
 
@@ -657,7 +686,9 @@ public class SubConceptTree extends HoeffdingTree {
                     }
 
                     if(((NewNode)leafNode).isAlternate()){
-                    	System.err.println("An alternate node has voted. It is of class " + leafNode.getClass()); // AdaLearningNode, as expected.
+                    	System.err.println("An alternate node has voted. It is of " + leafNode.getClass()); // AdaLearningNode, as expected.
+                    	StringBuilder out = new StringBuilder(); this.treeRoot.describeSubtree(this, out, 2);
+                    	System.err.print(out);
                     	System.exit(1);
                     }
 

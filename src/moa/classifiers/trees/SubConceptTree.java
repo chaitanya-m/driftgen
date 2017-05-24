@@ -348,6 +348,15 @@ public class SubConceptTree extends HoeffdingTree {
         		//An alternate node has been found.
         	}
 
+        	// Can a normal SplitNode have an alternate child LearningNode?
+
+        	if(myparent!= null && this!=null) {
+        		if((!((NewNode)myparent).isAlternate()) && this.isAlternate()){
+
+        		System.err.println("Alternate child of standard parent");
+        		}
+        	}
+
             int childIndex = instanceChildIndex(inst);
             if (childIndex >= 0) {
                 Node child = getChild(childIndex);
@@ -363,11 +372,15 @@ public class SubConceptTree extends HoeffdingTree {
                     // but first... do I need to choose nodes so I extract default HoeffdingTree behavior? I mean... simply disabling tree building gets me that
                 }
             }
-            //if (this.alternateTree != null) {
-                //((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
-            	//why does an alternate node vote even when this is turned off? why do they feature in the foundNodes?
+            if (this.alternateTree != null) {
+                ((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
+            	// why does an alternate node vote even when this is turned off? why do they feature in the foundNodes?
                 // when no tree is built, they don't exist, but when you build one...
-            //}
+                // an alternate tree might identify it's root as -999, but the standard parent of an alternate learning node won't
+                // so instances will get filtered to alternate leaves if they happen to be child nodes of a standard parent
+                // when that happens, they will be added to foundNodes, and have a chance to vote
+                // but why do standard parent split nodes have alternate child nodes in the first place?
+            }
         }
 
 		@Override
@@ -692,7 +705,7 @@ public class SubConceptTree extends HoeffdingTree {
 
                     if(((NewNode)leafNode).isAlternate()){
                     	System.err.println("An alternate node has voted. It is of " + leafNode.getClass()); // AdaLearningNode, as expected.
-                    	StringBuilder out = new StringBuilder(); this.treeRoot.describeSubtree(this, out, 2);
+                    	StringBuilder out = new StringBuilder(); foundNode.parent.describeSubtree(this, out, 2);
                     	System.err.print(out);
                     	System.exit(1);
                     }

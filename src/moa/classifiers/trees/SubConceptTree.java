@@ -544,6 +544,9 @@ public class SubConceptTree extends HoeffdingTree {
     protected int switchedAlternateTrees;
 
 
+    // leaves with perfect classifications must be getting pulled regardless of whether they are alternates or not!!
+    // that would explain the bug
+
     @Override
     protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
             int parentIndex) {

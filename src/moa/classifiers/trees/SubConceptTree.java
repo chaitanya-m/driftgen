@@ -254,7 +254,7 @@ public class SubConceptTree extends HoeffdingTree {
                 //System.err.println("=======New Alternate initialised====" + " Depth: " + this.subtreeDepth());
             } // Check condition to replace tree
 
-            else if (this.alternateTree != null && ((NewNode) this.alternateTree).isNullError() == false) {
+            else if (this.alternateTree != null && ((NewNode) this.alternateTree).isNullError() == false) {/*
                 if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) {
                 	// you discard the alternate tree if your ADWIN buckets have over 300 instances in all
                 	// in other words, this is claiming that 300 instances should suffice to determine subtree performance
@@ -296,7 +296,7 @@ public class SubConceptTree extends HoeffdingTree {
                         ht.prunedAlternateTrees++;
                     }
                 }
-            }
+            */}
             //}
             //learnFromInstance alternate Tree and Child nodes
 
@@ -360,16 +360,21 @@ public class SubConceptTree extends HoeffdingTree {
             int childIndex = instanceChildIndex(inst);
             if (childIndex >= 0) {
                 Node child = getChild(childIndex);
-                if (child != null) {
+                if (child != null){
+                	if(!((NewNode)child).isAlternate() && !this.isAlternate()){
                     ((NewNode) child).filterInstanceToLeaves(inst, this, childIndex,
                             foundNodes, updateSplitterCounts);
-                } else {
+                	}
+                } else if (!this.isAlternate()){
 
                     foundNodes.add(new FoundNode(null, this, childIndex));
                     //... this will have a mixture of alternate and normal foundNodes
                     // that's because only the top of the main tree has parent -1, and only the top of each alternate tree has parent -999
                     // looks like nodes found in alternates of alternates voting is good for accuracy
                     // but first... do I need to choose nodes so I extract default HoeffdingTree behavior? I mean... simply disabling tree building gets me that
+                    // as long as child is null... node gets added to foundNodes
+
+
                 }
             }
             if (this.alternateTree != null) {
@@ -399,6 +404,11 @@ public class SubConceptTree extends HoeffdingTree {
 			this.isAlternate = isAlternate;
 		}
     }
+// if you disable building an alternateTree, you approximate VFDT; if you disable learning for the alternate tree, you approximate VFDT.
+    // it must be possible to allow the alternateTree to learn and still not use it's outputs so as to approximate VFDT
+    // what must be happening is that if the alternate tree is allowed to learn, no main tree leaf sees the example
+    // so excluding alternate leaves kills the learner. Is this what is happening?
+
 
     public static class AdaLearningNode extends LearningNodeNBAdaptive implements NewNode {
 
@@ -701,8 +711,8 @@ public class SubConceptTree extends HoeffdingTree {
             DoubleVector result = new DoubleVector();
             int predictionPaths = 0;
             for (FoundNode foundNode : foundNodes) {
-                if //(foundNode.parentBranch != -999 ){
-            	 (!((NewNode)foundNode.node).isAlternate()){
+                //if (foundNode.parentBranch != -999 ){
+            	 //(!((NewNode)foundNode.node).isAlternate()){
 //(1>0){
                     Node leafNode = foundNode.node;
                     if (leafNode == null) {
@@ -724,10 +734,10 @@ public class SubConceptTree extends HoeffdingTree {
                     //}
                     result.addValues(dist);
                     predictionPaths++;
-                }
+                //}
             }
 
-            System.err.println("prediction paths = " + predictionPaths);
+            //System.err.println("prediction paths = " + predictionPaths);
             //if (predictionPaths > this.maxPredictionPaths) {
             //	this.maxPredictionPaths++;
             //}

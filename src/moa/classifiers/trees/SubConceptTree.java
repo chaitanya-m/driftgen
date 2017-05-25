@@ -408,7 +408,7 @@ public class SubConceptTree extends HoeffdingTree {
     // it must be possible to allow the alternateTree to learn and still not use it's outputs so as to approximate VFDT
     // what must be happening is that if the alternate tree is allowed to learn, no main tree leaf sees the example
     // so excluding alternate leaves kills the learner. Is this what is happening?
-
+//We will need two different filters for prediction and learning
 
     public static class AdaLearningNode extends LearningNodeNBAdaptive implements NewNode {
 

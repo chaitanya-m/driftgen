@@ -783,6 +783,13 @@ public class SubConceptTree extends HoeffdingTree {
 
     @Override
     public void trainOnInstanceImpl(Instance inst) {
+    	numInstances++;
+    	if (numInstances%25000 == 0){
+    		System.out.println(numInstances);
+    	}
+
+
+
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode();
             this.activeLeafNodeCount = 1;
@@ -843,7 +850,7 @@ public class SubConceptTree extends HoeffdingTree {
 
                     	treeRoot.describeSubtree(this, out, 2);
                     	out.append(numInstances + " instances\n");
-                    	System.out.print(out);
+                    	//System.out.print(out);
 
                     }
 

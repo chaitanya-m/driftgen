@@ -783,12 +783,6 @@ public class SubConceptTree extends HoeffdingTree {
 
     @Override
     public void trainOnInstanceImpl(Instance inst) {
-    	numInstances++;
-    	if (numInstances%25000 == 0){
-    		System.out.println(numInstances);
-    	}
-
-
 
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode();
@@ -812,7 +806,12 @@ public class SubConceptTree extends HoeffdingTree {
     // being similar to HAT-ADWIN would indicate that the alternate is being allowed to vote...!
     @Override
     public double[] getVotesForInstance(Instance inst) {
-    	//numInstances++;
+    	numInstances++;
+
+    	if (numInstances%25000 == 0){
+    		System.out.println(numInstances);
+    	}
+
         if (this.treeRoot != null) {
             FoundNode[] foundNodes = filterInstanceToLeavesForPrediction(inst,
                     null, -1, false);

@@ -226,5 +226,284 @@ whether the current example was misclassified, and it has an effect of about 1% 
 
 ==================
 
+EvaluatePrequential -l trees.SubConceptTree -s (generators.monash.AbruptDriftGenerator -o 0.800001 -c -z 2 -n 4 -v 4 -b 100000) -i 200000 -f 1000
+==================
+burnIn=100000
+exact magnitude for p(y|x)=0.80078125	asked=0.800001
+Can not access instrumentation environment.
+Please check if jar file containing SizeOfAgent class is 
+specified in the java's "-javaagent" command line argument.
+Alternate child of standard parent
+An alternate node has voted. It is of class moa.classifiers.trees.SubConceptTree$AdaLearningNode
+  if [att 1:x1] = {val 1:v1}: =====true====
+      Leaf [class:class] = <class 2:class2> weights: {13|90}
+  if [att 1:x1] = {val 2:v2}: =====true====
+      Leaf [class:class] = <class 1:class1> weights: {3|3}
+  if [att 1:x1] = {val 3:v3}: =====true====
+      Leaf [class:class] = <class 1:class1> weights: {67|14}
+  if [att 1:x1] = {val 4:v4}: =====true====
+      Leaf [class:class] = <class 1:class1> weights: {5|5}
+
+
++++++++++++++++++++++++++++
+
+Parent has no alternate
+
++++++++++++++++++++++++++++
+
+  if [att 2:x2] = {val 1:v1}: 
+      if [att 4:x4] = {val 1:v1}: 
+          if [att 3:x3] = {val 1:v1}: 
+              if [att 1:x1] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {23|2,292}
+              if [att 1:x1] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|95}
+              if [att 1:x1] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|2,199}
+              if [att 1:x1] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {722|0}
+          if [att 3:x3] = {val 2:v2}: 
+              if [att 1:x1] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|298}
+              if [att 1:x1] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|20}
+              if [att 1:x1] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|247}
+              if [att 1:x1] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {80|0}
+          if [att 3:x3] = {val 3:v3}: 
+              if [att 1:x1] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {269|0}
+              if [att 1:x1] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|23}
+              if [att 1:x1] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {3|213}
+              if [att 1:x1] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {1|85}
+          if [att 3:x3] = {val 4:v4}: 
+              if [att 1:x1] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {862|0}
+              if [att 1:x1] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|45}
+              if [att 1:x1] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {866|6}
+              if [att 1:x1] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {3|297}
+      if [att 4:x4] = {val 2:v2}: 
+          if [att 1:x1] = {val 1:v1}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {10,583|137}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {1,312|0}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {1,149|0}
+              if [att 3:x3] = {val 4:v4}: 
+                  if [att 4:x4] = {val 1:v1}: 
+                      Leaf [class:class] = <class 1:class1> weights: {0|0}
+                  if [att 4:x4] = {val 2:v2}: 
+                      Leaf [class:class] = <class 2:class2> weights: {66|4,200}
+          if [att 1:x1] = {val 2:v2}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {6|462}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {65|2}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|55}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {1|235}
+          if [att 1:x1] = {val 3:v3}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  if [att 4:x4] = {val 1:v1}: 
+                      Leaf [class:class] = <class 1:class1> weights: {0|0}
+                  if [att 4:x4] = {val 2:v2}: 
+                      Leaf [class:class] = <class 2:class2> weights: {111|10,175}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {8|1,276}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {1,105|30}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {3,936|42}
+          if [att 1:x1] = {val 4:v4}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {3,578|41}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {3|436}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {341|3}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {14|1,409}
+      if [att 4:x4] = {val 3:v3}: 
+          if [att 1:x1] = {val 1:v1}: 
+              Leaf [class:class] = <class 1:class1> weights: {1,590|21}
+          if [att 1:x1] = {val 2:v2}: 
+              Leaf [class:class] = <class 2:class2> weights: {0|80}
+          if [att 1:x1] = {val 3:v3}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {14|786}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {2|113}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {111|0}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {298|5}
+          if [att 1:x1] = {val 4:v4}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {278|1}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|51}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|31}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {135|0}
+      if [att 4:x4] = {val 4:v4}: 
+          if [att 1:x1] = {val 1:v1}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {60|6,298}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {12|845}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {5|637}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {26|2,410}
+          if [att 1:x1] = {val 2:v2}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {1|320}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {38|0}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {36|0}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {2|124}
+          if [att 1:x1] = {val 3:v3}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {76|5,725}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {734|14}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {613|10}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|2,378}
+          if [att 1:x1] = {val 4:v4}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {2,114|20}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|227}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {5|220}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {778|7}
+  if [att 2:x2] = {val 2:v2}: 
+      if [att 3:x3] = {val 1:v1}: 
+          Leaf [class:class] = <class 2:class2> weights: {1,208|1,237}
+      if [att 3:x3] = {val 2:v2}: 
+          Leaf [class:class] = <class 1:class1> weights: {277|36}
+      if [att 3:x3] = {val 3:v3}: 
+          Leaf [class:class] = <class 1:class1> weights: {186|71}
+      if [att 3:x3] = {val 4:v4}: 
+          Leaf [class:class] = <class 2:class2> weights: {408|593}
+  if [att 2:x2] = {val 3:v3}: =====true====
+      if [att 1:x1] = {val 1:v1}: =====true====
+          Leaf [class:class] = <class 2:class2> weights: {13|90}
+      if [att 1:x1] = {val 2:v2}: =====true====
+          Leaf [class:class] = <class 1:class1> weights: {3|3}
+      if [att 1:x1] = {val 3:v3}: =====true====
+          Leaf [class:class] = <class 1:class1> weights: {67|14}
+      if [att 1:x1] = {val 4:v4}: =====true====
+          Leaf [class:class] = <class 1:class1> weights: {5|5}
+  if [att 2:x2] = {val 4:v4}: 
+      if [att 3:x3] = {val 1:v1}: 
+          if [att 1:x1] = {val 1:v1}: 
+              Leaf [class:class] = <class 1:class1> weights: {6,108|18}
+          if [att 1:x1] = {val 2:v2}: 
+              if [att 4:x4] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {20|0}
+              if [att 4:x4] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|110}
+              if [att 4:x4] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {3|0}
+              if [att 4:x4] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {74|0}
+          if [att 1:x1] = {val 3:v3}: 
+              Leaf [class:class] = <class 1:class1> weights: {5,909|58}
+          if [att 1:x1] = {val 4:v4}: 
+              Leaf [class:class] = <class 1:class1> weights: {2,000|22}
+      if [att 3:x3] = {val 2:v2}: 
+          if [att 4:x4] = {val 1:v1}: 
+              Leaf [class:class] = <class 1:class1> weights: {89|71}
+          if [att 4:x4] = {val 2:v2}: 
+              Leaf [class:class] = <class 1:class1> weights: {949|4}
+          if [att 4:x4] = {val 3:v3}: 
+              Leaf [class:class] = <class 2:class2> weights: {43|45}
+          if [att 4:x4] = {val 4:v4}: 
+              if [att 1:x1] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {4|77}
+              if [att 1:x1] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {4|0}
+              if [att 1:x1] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {75|5}
+              if [att 1:x1] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {1|50}
+      if [att 3:x3] = {val 3:v3}: 
+          Leaf [class:class] = <class 1:class1> weights: {896|678}
+      if [att 3:x3] = {val 4:v4}: 
+          if [att 1:x1] = {val 1:v1}: 
+              Leaf [class:class] = <class 2:class2> weights: {35|2,417}
+          if [att 1:x1] = {val 2:v2}: 
+              Leaf [class:class] = <class 1:class1> weights: {70|67}
+          if [att 1:x1] = {val 3:v3}: 
+              if [att 4:x4] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {253|3}
+              if [att 4:x4] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {1,182|16}
+              if [att 4:x4] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {102|4}
+              if [att 4:x4] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {4|689}
+          if [att 1:x1] = {val 4:v4}: 
+              if [att 4:x4] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {77|0}
+              if [att 4:x4] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {463|6}
+              if [att 4:x4] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {42|0}
+              if [att 4:x4] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {3|213}
+===================
+
+So... this has nothing to do with class purity. When is x2:v3 flipping to alternate? Try this on a simpler example.
+
+===================
+
+Here we go.
+
+EvaluatePrequential -l trees.SubConceptTree -s (generators.monash.AbruptDriftGenerator -o 0.800001 -c -z 3 -n 2 -v 2 -b 100000) -i 200000 -f 1000
+
+
+
+burnIn=100000
+exact magnitude for p(y|x)=0.75	asked=0.800001
+Can not access instrumentation environment.
+Please check if jar file containing SizeOfAgent class is 
+specified in the java's "-javaagent" command line argument.
+An alternate node has voted. It is of class moa.classifiers.trees.SubConceptTree$AdaLearningNode
+  if [att 2:x2] = {val 1:v1}: =====true====
+      Leaf [class:class] = <class 1:class1> weights: {140|4|0}
+  if [att 2:x2] = {val 2:v2}: =====true====
+      Leaf [class:class] = <class 3> weights: {0|0|56}
+
+
++++++++++++++++++++++++++++
+
+Parent has no alternate
+
++++++++++++++++++++++++++++
+
+  if [att 2:x2] = {val 1:v1}: =====true====
+      Leaf [class:class] = <class 1:class1> weights: {140|4|0}
+  if [att 2:x2] = {val 2:v2}: =====true====
+      Leaf [class:class] = <class 3> weights: {0|0|56}
+
+
+
 
 

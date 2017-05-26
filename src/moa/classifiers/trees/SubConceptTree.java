@@ -63,6 +63,8 @@ public class SubConceptTree extends HoeffdingTree {
 
     private static final long serialVersionUID = 1L;
 
+    private static long numInstances = 0;
+
     @Override
     public String getPurposeString() {
         return "Hoeffding Adaptive Tree for evolving data streams that uses ADWIN to replace branches for new ones.";
@@ -327,7 +329,7 @@ public class SubConceptTree extends HoeffdingTree {
             //learnFromInstance alternate Tree and Child nodes
 
             if (this.alternateTree != null) { //
-                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch); // compare this- it uses parent
+                //((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, null, parentBranch); // compare this- it uses parent
             }//
             int childBranch = this.instanceChildIndex(inst); //
             Node child = this.getChild(childBranch); //
@@ -378,7 +380,6 @@ public class SubConceptTree extends HoeffdingTree {
 
         	if(myparent!= null && this!=null) {
         		if((!((NewNode)myparent).isAlternate()) && this.isAlternate()){
-
         			System.err.println("Alternate child of standard parent");
         		}
         	}
@@ -387,11 +388,11 @@ public class SubConceptTree extends HoeffdingTree {
             if (childIndex >= 0) {
                 Node child = getChild(childIndex);
                 if (child != null){
-                	if(!((NewNode)child).isAlternate() && !this.isAlternate()){
+                	//if(!((NewNode)child).isAlternate() && !this.isAlternate()){
                     ((NewNode) child).filterInstanceToLeaves(inst, this, childIndex,
                             foundNodes, updateSplitterCounts);
-                	}
-                } else if (!this.isAlternate()){
+                	//}
+                } else {//if (!this.isAlternate()){
 
                     foundNodes.add(new FoundNode(null, this, childIndex));
                     //... this will have a mixture of alternate and normal foundNodes
@@ -453,7 +454,10 @@ public class SubConceptTree extends HoeffdingTree {
             if (childIndex >= 0) {
                 Node child = getChild(childIndex);
                 if (child != null){
-                	//if(!((NewNode)child).isAlternate() && !this.isAlternate()){
+                	if(((NewNode)child).isAlternate() && !this.isAlternate()){
+                		System.err.println("Alternate child of standard parent");
+                		System.exit(1);
+                	}
                     ((NewNode) child).filterInstanceToLeavesForPrediction(inst, this, childIndex,
                             foundNodes, updateSplitterCounts);
                 	//}
@@ -464,7 +468,7 @@ public class SubConceptTree extends HoeffdingTree {
             }
             if (this.alternateTree != null) {
             	if (this.alternateTree.getClass() == AdaSplitNode.class){
-            		((NewNode) this.alternateTree).filterInstanceToLeaves(inst, (SplitNode)this.alternateTree, -999, foundNodes, updateSplitterCounts);
+            		//((NewNode) this.alternateTree).filterInstanceToLeaves(inst, (SplitNode)this.alternateTree, -999, foundNodes, updateSplitterCounts);
             		// provide an alternate node as parent!
             	}
             }
@@ -801,6 +805,7 @@ public class SubConceptTree extends HoeffdingTree {
     // being similar to HAT-ADWIN would indicate that the alternate is being allowed to vote...!
     @Override
     public double[] getVotesForInstance(Instance inst) {
+    	numInstances++;
         if (this.treeRoot != null) {
             FoundNode[] foundNodes = filterInstanceToLeavesForPrediction(inst,
                     null, -1, false);
@@ -818,8 +823,8 @@ public class SubConceptTree extends HoeffdingTree {
                     if(((NewNode)leafNode).isAlternate()){
                     	System.err.println("An alternate node has voted. It is of " + leafNode.getClass()); // AdaLearningNode, as expected.
                     	StringBuilder out = new StringBuilder();
-                    	//((AdaSplitNode)treeRoot).describeSubtree(this, out, 2);
-                    	foundNode.parent.describeSubtree(this, out, 2);
+                    	((AdaSplitNode)treeRoot).describeSubtree(this, out, 2);
+                    	//foundNode.parent.describeSubtree(this, out, 2);
                     	out.append("\n\n+++++++++++++++++++++++++++\n\n");
                     	if(((AdaSplitNode)foundNode.parent).alternateTree !=null) {
                     	    ((AdaSplitNode)foundNode.parent).alternateTree.describeSubtree(this, out, 2);
@@ -832,7 +837,14 @@ public class SubConceptTree extends HoeffdingTree {
                     	((AdaSplitNode)treeRoot).describeSubtree(this, out, 2);
 
                     	System.err.print(out);
-                    	System.exit(1);
+                    	//System.exit(1);
+                    }else if (numInstances%25000 == 0){
+                    	StringBuilder out = new StringBuilder();
+
+                    	treeRoot.describeSubtree(this, out, 2);
+                    	out.append(numInstances + " instances\n");
+                    	System.out.print(out);
+
                     }
 
                     double[] dist = leafNode.getClassVotes(inst, this);

@@ -97,6 +97,9 @@ public class SubConceptTree extends HoeffdingTree {
         public boolean isAlternate();
 
         public void setAlternate(boolean isAlternate);
+
+		public void filterInstanceToLeavesForPrediction(Instance inst, SplitNode parent, int parentBranch,
+				List<FoundNode> nodes, boolean updateSplitterCounts);
         }
 
     public static class AdaSplitNode extends SplitNode implements NewNode {
@@ -133,6 +136,9 @@ public class SubConceptTree extends HoeffdingTree {
                     out.append(": ");
                     if (((NewNode)child).isAlternate()) {
                         out.append("=====" + ((NewNode)child).isAlternate()+ "====");
+                    }else{
+                        //out.append("++++" + ((NewNode)child).isAlternate()+ "++++");
+
                     }
 
                     StringUtils.appendNewline(out);
@@ -142,6 +148,7 @@ public class SubConceptTree extends HoeffdingTree {
                 }
             }
         }
+
 
 
         @Override
@@ -216,7 +223,26 @@ public class SubConceptTree extends HoeffdingTree {
             //Compute ClassPrediction using filterInstanceToLeaf
             //int ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, null, -1).node.getClassVotes(inst, ht));
             int ClassPrediction = 0;
-            if (filterInstanceToLeaf(inst, parent, parentBranch).node != null) {
+            Node s = filterInstanceToLeaf(inst, parent, parentBranch).node;
+            if (s != null) {
+            	// This is where all paths must be explored
+            	// Suppose you are currently on a main tree... you MUST find a node on the main tree that is a normal node
+            	// However, if you find here a node that is an alternate to your main tree while predicting... you have an issue
+            	// Our filter test tells us that this is actually happening
+            	// How can this be fixed? Have clearly delineated filters
+            	// I will first write a filter that lets you go down both alternate and  the alternate nodes. I will use it both for learning and prediction
+            	// before writing a separate one for learning that filters examples down all available alternate paths for learning
+
+            	// Proof of HAT-ADWIN bug
+            	// We're only finding one leaf, whether mainline or alternate. That leads to the problem!
+            	// We need to find all of them at this point. They all need to learn. All alternate subtrees must learn. Only the main tree is used for prediction.
+            	// I suppose what the original authors thought was happening was that
+//            	if(s!=null && parent!=null) {
+//            		if(((NewNode)s).isAlternate() && !((NewNode)parent).isAlternate()) {
+//            			System.err.println("Alternate child of standard parent");
+//            		}
+//            	}
+
                 ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, parent, parentBranch).node.getClassVotes(inst, ht));
             }
 
@@ -300,13 +326,13 @@ public class SubConceptTree extends HoeffdingTree {
             //}
             //learnFromInstance alternate Tree and Child nodes
 
-            if (this.alternateTree != null) {//
-                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);// compare this- it uses parent
+            if (this.alternateTree != null) { //
+                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch); // compare this- it uses parent
             }//
-            int childBranch = this.instanceChildIndex(inst);//
-            Node child = this.getChild(childBranch);//
-            if (child != null) {//
-                ((NewNode) child).learnFromInstance(inst, ht, this, childBranch);//to this- it uses this
+            int childBranch = this.instanceChildIndex(inst); //
+            Node child = this.getChild(childBranch); //
+            if (child != null) { //
+                ((NewNode) child).learnFromInstance(inst, ht, this, childBranch); //to this- it uses this
             }
         }
 
@@ -353,7 +379,7 @@ public class SubConceptTree extends HoeffdingTree {
         	if(myparent!= null && this!=null) {
         		if((!((NewNode)myparent).isAlternate()) && this.isAlternate()){
 
-        		System.err.println("Alternate child of standard parent");
+        			System.err.println("Alternate child of standard parent");
         		}
         	}
 
@@ -373,8 +399,6 @@ public class SubConceptTree extends HoeffdingTree {
                     // looks like nodes found in alternates of alternates voting is good for accuracy
                     // but first... do I need to choose nodes so I extract default HoeffdingTree behavior? I mean... simply disabling tree building gets me that
                     // as long as child is null... node gets added to foundNodes
-
-
                 }
             }
             if (this.alternateTree != null) {
@@ -394,6 +418,67 @@ public class SubConceptTree extends HoeffdingTree {
 
         }
 
+
+        // Make sure a non-alternate leaf is found
+		@Override
+		public void filterInstanceToLeavesForPrediction(Instance inst, SplitNode myparent,
+                int parentBranch, List<FoundNode> foundNodes,
+                boolean updateSplitterCounts) {
+            if (updateSplitterCounts) {
+                this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
+            }
+        	if (this.isAlternate()){
+        		//System.err.println("Alternate node found even though filtering through alternates is turned off");
+        		//An alternate node has been found.
+        	}
+
+        	// Can a normal SplitNode have an alternate child LearningNode?
+
+        	if(myparent!= null && this!=null) {
+        		if((!((NewNode)myparent).isAlternate()) && this.isAlternate()){
+
+        		System.err.println("Alternate child of standard parent");
+        		//System.exit(1);
+
+        		// Design decision: Alternate nodes won't have standard parents.
+        		// Alternates that have just branched off from a main node will have parents set to null.
+        		// If for some reason in future I want to traverse up the tree, alternate or not,
+        		// I can create a mapping between alternates and the nodes they've branched out from so the traversal can continue
+        		// i.e. I will create a mapping from alternate nodes with null parents to their respective main nodes
+
+        		}
+        	}
+
+            int childIndex = instanceChildIndex(inst);
+            if (childIndex >= 0) {
+                Node child = getChild(childIndex);
+                if (child != null){
+                	//if(!((NewNode)child).isAlternate() && !this.isAlternate()){
+                    ((NewNode) child).filterInstanceToLeavesForPrediction(inst, this, childIndex,
+                            foundNodes, updateSplitterCounts);
+                	//}
+                } else { //if (!this.isAlternate()){
+
+                    foundNodes.add(new FoundNode(null, this, childIndex));
+
+            }
+            if (this.alternateTree != null) {
+            	if (this.alternateTree.getClass() == AdaSplitNode.class){
+            		((NewNode) this.alternateTree).filterInstanceToLeaves(inst, (SplitNode)this.alternateTree, -999, foundNodes, updateSplitterCounts);
+            		// provide an alternate node as parent!
+            	}
+            }
+          }
+            if (foundNodes.size() < 1) {
+            	System.err.println(foundNodes.size() + " predictors found");
+
+            	//System.exit(1);
+            }
+
+        }
+
+
+
 		@Override
 		public boolean isAlternate() {
 			return this.isAlternate;
@@ -404,11 +489,15 @@ public class SubConceptTree extends HoeffdingTree {
 			this.isAlternate = isAlternate;
 		}
     }
-// if you disable building an alternateTree, you approximate VFDT; if you disable learning for the alternate tree, you approximate VFDT.
+
+    // if you disable building an alternateTree, you approximate VFDT; if you disable learning for the alternate tree, you approximate VFDT.
     // it must be possible to allow the alternateTree to learn and still not use it's outputs so as to approximate VFDT
     // what must be happening is that if the alternate tree is allowed to learn, no main tree leaf sees the example
     // so excluding alternate leaves kills the learner. Is this what is happening?
-//We will need two different filters for prediction and learning
+    // We will need two different filters for prediction and learning
+    // the learning filter must explore at least one main tree path. It must also explore any alternate paths available.
+    // If you have alternates of alternates... the learning filter must let the instance filter down all possible prediction paths.
+    // the prediction filter must only consider main tree paths
 
     public static class AdaLearningNode extends LearningNodeNBAdaptive implements NewNode {
 
@@ -563,6 +652,13 @@ public class SubConceptTree extends HoeffdingTree {
 		public void setAlternate(boolean isAlternate) {
 			this.isAlternate = isAlternate;
 		}
+
+		@Override
+		public void filterInstanceToLeavesForPrediction(Instance inst, SplitNode splitParent, int parentBranch,
+				List<FoundNode> foundNodes, boolean updateSplitterCounts) {
+            foundNodes.add(new FoundNode(this, splitParent, parentBranch));
+
+		}
     }
 
     protected int alternateTrees;
@@ -692,10 +788,10 @@ public class SubConceptTree extends HoeffdingTree {
     }
 
     //New for options vote
-    public FoundNode[] filterInstanceToLeaves(Instance inst,
+    public FoundNode[] filterInstanceToLeavesForPrediction(Instance inst,
             SplitNode parent, int parentBranch, boolean updateSplitterCounts) {
         List<FoundNode> nodes = new LinkedList<FoundNode>();
-        ((NewNode) this.treeRoot).filterInstanceToLeaves(inst, parent, parentBranch, nodes,
+        ((NewNode) this.treeRoot).filterInstanceToLeavesForPrediction(inst, parent, parentBranch, nodes,
                 updateSplitterCounts);
         return nodes.toArray(new FoundNode[nodes.size()]);
     }
@@ -706,7 +802,7 @@ public class SubConceptTree extends HoeffdingTree {
     @Override
     public double[] getVotesForInstance(Instance inst) {
         if (this.treeRoot != null) {
-            FoundNode[] foundNodes = filterInstanceToLeaves(inst,
+            FoundNode[] foundNodes = filterInstanceToLeavesForPrediction(inst,
                     null, -1, false);
             DoubleVector result = new DoubleVector();
             int predictionPaths = 0;
@@ -721,9 +817,22 @@ public class SubConceptTree extends HoeffdingTree {
 
                     if(((NewNode)leafNode).isAlternate()){
                     	System.err.println("An alternate node has voted. It is of " + leafNode.getClass()); // AdaLearningNode, as expected.
-                    	StringBuilder out = new StringBuilder(); foundNode.parent.describeSubtree(this, out, 2);
+                    	StringBuilder out = new StringBuilder();
+                    	//((AdaSplitNode)treeRoot).describeSubtree(this, out, 2);
+                    	foundNode.parent.describeSubtree(this, out, 2);
+                    	out.append("\n\n+++++++++++++++++++++++++++\n\n");
+                    	if(((AdaSplitNode)foundNode.parent).alternateTree !=null) {
+                    	    ((AdaSplitNode)foundNode.parent).alternateTree.describeSubtree(this, out, 2);
+                    	}
+                    	else{
+                    		out.append("Parent has no alternate");
+                    	}
+                    	out.append("\n\n+++++++++++++++++++++++++++\n\n");
+
+                    	((AdaSplitNode)treeRoot).describeSubtree(this, out, 2);
+
                     	System.err.print(out);
-                    	//System.exit(1);
+                    	System.exit(1);
                     }
 
                     double[] dist = leafNode.getClassVotes(inst, this);

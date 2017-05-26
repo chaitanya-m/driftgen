@@ -812,7 +812,7 @@ public class SubConceptTree extends HoeffdingTree {
     // being similar to HAT-ADWIN would indicate that the alternate is being allowed to vote...!
     @Override
     public double[] getVotesForInstance(Instance inst) {
-    	numInstances++;
+    	//numInstances++;
         if (this.treeRoot != null) {
             FoundNode[] foundNodes = filterInstanceToLeavesForPrediction(inst,
                     null, -1, false);

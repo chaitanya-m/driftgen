@@ -599,7 +599,7 @@ public class SubConceptTree extends HoeffdingTree {
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
             if (k > 0) {
-                weightedInst.setWeight(inst.weight() * k);
+                //weightedInst.setWeight(inst.weight() * k);
             }
             //Compute ClassPrediction using filterInstanceToLeaf
             int ClassPrediction = Utils.maxIndex(this.getClassVotes(inst, ht));

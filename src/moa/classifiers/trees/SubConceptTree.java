@@ -94,15 +94,15 @@ public class SubConceptTree extends HoeffdingTree {
 
         public void learnFromInstance(Instance inst, SubConceptTree ht, SplitNode parent, AdaSplitNode mainBranch, int parentBranch);
 
-        public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch, List<FoundNode> foundNodes,
+        public void filterInstanceToLeaves(Instance inst, SplitNode myparent, AdaSplitNode mainBranch, int parentBranch, List<AdaFoundNode> foundNodes,
                 boolean updateSplitterCounts);
 
         public boolean isAlternate();
 
         public void setAlternate(boolean isAlternate);
 
-		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode parent, int parentBranch,
-				List<FoundNode> nodes, boolean updateSplitterCounts);
+		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode parent,  AdaSplitNode mainBranch, int parentBranch,
+				List<AdaFoundNode> nodes, boolean updateSplitterCounts);
 
 		public boolean isRoot();
 
@@ -250,7 +250,7 @@ public class SubConceptTree extends HoeffdingTree {
             	// I suppose what the original authors thought was happening was that
 //            	if(s!=null && parent!=null) {
 //            		if(((NewNode)s).isAlternate() && !((NewNode)parent).isAlternate()) {
-//            			System.err.println("Alternate child of standard parent");
+//            			//System.err.println("Alternate child of standard parent");
 //            		}
 //            	}
 
@@ -275,7 +275,7 @@ public class SubConceptTree extends HoeffdingTree {
                 if (k > 0) {
                    weightedInst.setWeight(inst.weight() * k);
                 }
-                //System.err.println("Weighted Instance weight is:" + weightedInst.weight());
+                ////System.err.println("Weighted Instance weight is:" + weightedInst.weight());
 
             }
 
@@ -286,11 +286,11 @@ public class SubConceptTree extends HoeffdingTree {
 
                 //Start a new alternative tree : learning node
                 this.alternateTree = ht.newLearningNode(); ((NewNode)this.alternateTree).setAlternate(true);
-                System.err.println("Building alternate tree");
+                //System.err.println("Building alternate tree");
                 //this.alternateTree.isAlternateTree = true;
                 ht.alternateTrees++; //but... looks like you can only have one at a time...
 
-                //System.err.println("=======New Alternate initialised====" + " Depth: " + this.subtreeDepth());
+                ////System.err.println("=======New Alternate initialised====" + " Depth: " + this.subtreeDepth());
             } // Check condition to replace tree
 
             else if (this.alternateTree != null && ((NewNode) this.alternateTree).isNullError() == false) {/*
@@ -307,7 +307,7 @@ public class SubConceptTree extends HoeffdingTree {
                     		&& this.subtreeDepth() < -99
                     		) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
 
-                        System.err.println("++++++++Alternate picked for tree of" + " Depth: " + this.subtreeDepth());
+                        //System.err.println("++++++++Alternate picked for tree of" + " Depth: " + this.subtreeDepth());
 
                         // Switch alternate tree
                         ht.activeLeafNodeCount -= this.numberLeaves();
@@ -340,13 +340,17 @@ public class SubConceptTree extends HoeffdingTree {
             //learnFromInstance alternate Tree and Child nodes
 
             if (this.alternateTree != null) { //
-                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, this, parentBranch); // compare this- it uses parent
+                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, null, this, parentBranch); // compare this- it uses parent
             }//
             int childBranch = this.instanceChildIndex(inst); //
             Node child = this.getChild(childBranch); //
             if (child != null) { //
-                ((NewNode) child).learnFromInstance(inst, ht, this, null, childBranch); //to this- it uses this
+                ((NewNode) child).learnFromInstance(inst, ht, this, mainBranch, childBranch); //to this- it uses this
+                if (!((NewNode)this).isAlternate() && ((NewNode)child).isAlternate()){
+                	System.err.println("Alternate child of main branch parent!!");
+                }
             }
+
         }
 
         @Override
@@ -376,14 +380,14 @@ public class SubConceptTree extends HoeffdingTree {
         //New for option votes
         //@Override
         @Override
-		public void filterInstanceToLeaves(Instance inst, SplitNode myparent,
-                int parentBranch, List<FoundNode> foundNodes,
+		public void filterInstanceToLeaves(Instance inst, SplitNode myparent, AdaSplitNode mainBranch,
+                int parentBranch, List<AdaFoundNode> foundNodes,
                 boolean updateSplitterCounts) {
             if (updateSplitterCounts) {
                 this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
             }
         	if (this.isAlternate()){
-        		//System.err.println("Alternate node found even though filtering through alternates is turned off");
+        		////System.err.println("Alternate node found even though filtering through alternates is turned off");
         		//An alternate node has been found.
         	}
 
@@ -391,7 +395,7 @@ public class SubConceptTree extends HoeffdingTree {
 
         	if(myparent!= null && this!=null) {
         		if((!((NewNode)myparent).isAlternate()) && this.isAlternate()){
-        			System.err.println("Alternate child of standard parent");
+        			//System.err.println("Alternate child of standard parent");
         		}
         	}
 
@@ -400,12 +404,12 @@ public class SubConceptTree extends HoeffdingTree {
                 Node child = getChild(childIndex);
                 if (child != null){
                 	//if(!((NewNode)child).isAlternate() && !this.isAlternate()){
-                    ((NewNode) child).filterInstanceToLeaves(inst, this, childIndex,
+                    ((NewNode) child).filterInstanceToLeaves(inst, this, mainBranch, childIndex,
                             foundNodes, updateSplitterCounts);
                 	//}
                 } else {//if (!this.isAlternate()){
 
-                    foundNodes.add(new FoundNode(null, this, childIndex));
+                    foundNodes.add(new AdaFoundNode(null, this, mainBranch, childIndex));
                     //... this will have a mixture of alternate and normal foundNodes
                     // that's because only the top of the main tree has parent -1, and only the top of each alternate tree has parent -999
                     // looks like nodes found in alternates of alternates voting is good for accuracy
@@ -415,7 +419,7 @@ public class SubConceptTree extends HoeffdingTree {
             }
             if (this.alternateTree != null) {
             	if (this.alternateTree.getClass() == AdaSplitNode.class){
-            		((NewNode) this.alternateTree).filterInstanceToLeaves(inst, (SplitNode)this.alternateTree, -999, foundNodes, updateSplitterCounts);
+            		((NewNode) this.alternateTree).filterInstanceToLeaves(inst, (SplitNode)this.alternateTree, this, -999, foundNodes, updateSplitterCounts);
             		// provide an alternate node as parent!
             	}
             }
@@ -433,14 +437,14 @@ public class SubConceptTree extends HoeffdingTree {
 
         // Make sure a non-alternate leaf is found
 		@Override
-		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode myparent,
-                int parentBranch, List<FoundNode> foundNodes,
+		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode myparent,  AdaSplitNode mainBranch,
+                int parentBranch, List<AdaFoundNode> foundNodes,
                 boolean updateSplitterCounts) {
             if (updateSplitterCounts) {
                 this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
             }
         	if (this.isAlternate()){
-        		//System.err.println("Alternate node found even though filtering through alternates is turned off");
+        		////System.err.println("Alternate node found even though filtering through alternates is turned off");
         		//An alternate node has been found.
         	}
 
@@ -449,7 +453,7 @@ public class SubConceptTree extends HoeffdingTree {
         	if(myparent!= null && this!=null) {
         		if((!((NewNode)myparent).isAlternate()) && this.isAlternate()){
 
-        		System.err.println("Alternate child of standard parent");
+        		//System.err.println("Alternate child of standard parent");
         		//System.exit(1);
 
         		// Design decision: Alternate nodes won't have standard parents.
@@ -466,15 +470,15 @@ public class SubConceptTree extends HoeffdingTree {
                 Node child = getChild(childIndex);
                 if (child != null){
                 	if(((NewNode)child).isAlternate() && !this.isAlternate()){
-                		//System.err.println("Alternate child of standard parent");
+                		////System.err.println("Alternate child of standard parent");
                 		//System.exit(1);
                 	}
-                    ((NewNode) child).filterInstanceToLeavesForPrediction(inst, this, childIndex,
+                    ((NewNode) child).filterInstanceToLeavesForPrediction(inst, this, mainBranch, childIndex,
                             foundNodes, updateSplitterCounts);
                 	//}
                 } else { //if (!this.isAlternate()){
 
-                    foundNodes.add(new FoundNode(null, this, childIndex));
+                    foundNodes.add(new AdaFoundNode(null, this, mainBranch, childIndex));
 
             }
             if (this.alternateTree != null) {
@@ -485,7 +489,7 @@ public class SubConceptTree extends HoeffdingTree {
             }
           }
             if (foundNodes.size() < 1) {
-            	System.err.println(foundNodes.size() + " predictors found");
+            	//System.err.println(foundNodes.size() + " predictors found");
 
             	//System.exit(1);
             }
@@ -517,6 +521,7 @@ public class SubConceptTree extends HoeffdingTree {
 			this.isRoot = isRoot;
 
 		}
+
     }
 
     // if you disable building an alternateTree, you approximate VFDT; if you disable learning for the alternate tree, you approximate VFDT.
@@ -662,17 +667,17 @@ public class SubConceptTree extends HoeffdingTree {
 
         //New for option votes
         @Override
-        public void filterInstanceToLeaves(Instance inst,
-                SplitNode splitparent, int parentBranch,
-                List<FoundNode> foundNodes, boolean updateSplitterCounts) {
+		public void filterInstanceToLeaves(Instance inst,
+                SplitNode splitparent,  AdaSplitNode mainBranch, int parentBranch,
+                List<AdaFoundNode> foundNodes, boolean updateSplitterCounts) {
         	if (this.isAlternate()){
-        		//System.err.println("Alternate node found even though filtering through alternates is turned off");
-        		//System.err.println("The parent is parentBranch " + parentBranch);
+        		////System.err.println("Alternate node found even though filtering through alternates is turned off");
+        		////System.err.println("The parent is parentBranch " + parentBranch);
         		//So... the alternate node comes from here, even before a split node ever creates an alternate.
         		// but only split nodes should be able to create alternates!
         	}
 
-            foundNodes.add(new FoundNode(this, splitparent, parentBranch));
+            foundNodes.add(new AdaFoundNode(this, splitparent, mainBranch, parentBranch));
         }
 
 		@Override
@@ -686,18 +691,18 @@ public class SubConceptTree extends HoeffdingTree {
 		}
 
 		@Override
-		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode splitParent, int parentBranch,
-				List<FoundNode> foundNodes, boolean updateSplitterCounts) {
+		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode splitParent, AdaSplitNode mainBranch, int parentBranch,
+				List<AdaFoundNode> foundNodes, boolean updateSplitterCounts) {
 			if (splitParent!=null){
-				System.err.println("Parent alternate? " + splitParent.isAlternate() + " Leaf alternate? " + this.isAlternate());
+				//System.err.println("Parent alternate? " + splitParent.isAlternate() + " Leaf alternate? " + this.isAlternate());
 			}
 			else{
-				System.err.println("Parent is null. "  + "Leaf alternate? " + this.isAlternate());
+				//System.err.println("Parent is null. "  + "Leaf alternate? " + this.isAlternate());
 
 			}
 
 				if(!this.isAlternate()){
-					foundNodes.add(new FoundNode(this, splitParent, parentBranch));
+					foundNodes.add(new AdaFoundNode(this, splitParent, mainBranch, parentBranch));
 				}
 
 		}
@@ -711,6 +716,18 @@ public class SubConceptTree extends HoeffdingTree {
 		public void setRoot(boolean isRoot) {
 			this.isRoot = isRoot;
 
+		}
+
+    }
+
+    public static class AdaFoundNode extends FoundNode{
+
+    	private AdaSplitNode mainBranch = null;
+
+		public AdaFoundNode(Node node, SplitNode parent, AdaSplitNode mainBranch, int parentBranch) {
+			super(node, parent, parentBranch);
+			this.mainBranch = mainBranch;
+			// TODO Auto-generated constructor stub
 		}
     }
 
@@ -796,7 +813,7 @@ public class SubConceptTree extends HoeffdingTree {
                         newSplit.setChild(i, newChild);
 
                         if(newSplit.isAlternate() != newChild.isAlternate()){
-                        	System.err.println("Bug here!!!!!!");
+                        	//System.err.println("Bug here!!!!!!");
                         }
 
                     }
@@ -856,12 +873,12 @@ public class SubConceptTree extends HoeffdingTree {
     }
 
     //New for options vote
-    public FoundNode[] filterInstanceToLeavesForPrediction(Instance inst,
-            AdaSplitNode parent, int parentBranch, boolean updateSplitterCounts) {
-        List<FoundNode> nodes = new LinkedList<FoundNode>();
-        ((NewNode) this.treeRoot).filterInstanceToLeavesForPrediction(inst, parent, parentBranch, nodes,
+    public AdaFoundNode[] filterInstanceToLeavesForPrediction(Instance inst,
+            AdaSplitNode parent, AdaSplitNode mainBranch, int parentBranch, boolean updateSplitterCounts) {
+        List<AdaFoundNode> nodes = new LinkedList<AdaFoundNode>();
+        ((NewNode) this.treeRoot).filterInstanceToLeavesForPrediction(inst, parent, mainBranch, parentBranch, nodes,
                 updateSplitterCounts);
-        return nodes.toArray(new FoundNode[nodes.size()]);
+        return nodes.toArray(new AdaFoundNode[nodes.size()]);
     }
 
     // The behaviour of a HAT-ADWIN that doesn't allow alternate substitution but allows an alternate to be built
@@ -871,15 +888,15 @@ public class SubConceptTree extends HoeffdingTree {
     	numInstances++;
 
     	if (numInstances > 100000 && numInstances%10 == 0){
-    		System.err.println(numInstances);
+    		//System.err.println(numInstances);
     	}
 
         if (this.treeRoot != null) {
-            FoundNode[] foundNodes = filterInstanceToLeavesForPrediction(inst,
-                    null, -1, false);
+            AdaFoundNode[] foundNodes = filterInstanceToLeavesForPrediction(inst,
+                    null, null, -1, false);
             DoubleVector result = new DoubleVector();
             int predictionPaths = 0;
-            for (FoundNode foundNode : foundNodes) {
+            for (AdaFoundNode foundNode : foundNodes) {
                 //if (foundNode.parentBranch != -999 ){
             	 //(!((NewNode)foundNode.node).isAlternate()){
 //(1>0){
@@ -889,7 +906,7 @@ public class SubConceptTree extends HoeffdingTree {
                     }
 
                     if(((NewNode)leafNode).isAlternate()){
-                    	System.err.println("An alternate node has voted. It is of " + leafNode.getClass()); // AdaLearningNode, as expected.
+                    	//System.err.println("An alternate node has voted. It is of " + leafNode.getClass()); // AdaLearningNode, as expected.
                     	StringBuilder out = new StringBuilder();
                     	((AdaSplitNode)treeRoot).describeSubtree(this, out, 2);
                     	//foundNode.parent.describeSubtree(this, out, 2);
@@ -904,7 +921,7 @@ public class SubConceptTree extends HoeffdingTree {
 
                     	((AdaSplitNode)treeRoot).describeSubtree(this, out, 2);
 
-                    	System.err.print(out);
+                    	//System.err.print(out);
                     	System.exit(1);
                     }else if (numInstances%25000 == 0){
                     	StringBuilder out = new StringBuilder();
@@ -926,7 +943,7 @@ public class SubConceptTree extends HoeffdingTree {
                 //}
             }
 
-            //System.err.println("prediction paths = " + predictionPaths);
+            ////System.err.println("prediction paths = " + predictionPaths);
             //if (predictionPaths > this.maxPredictionPaths) {
             //	this.maxPredictionPaths++;
             //}

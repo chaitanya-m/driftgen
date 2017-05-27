@@ -906,7 +906,7 @@ public class SubConceptTree extends HoeffdingTree {
                     }
 
                     if(((NewNode)leafNode).isAlternate()){
-                    	//System.err.println("An alternate node has voted. It is of " + leafNode.getClass()); // AdaLearningNode, as expected.
+                    	System.err.println("An alternate node has voted. It is of " + leafNode.getClass()); // AdaLearningNode, as expected.
                     	StringBuilder out = new StringBuilder();
                     	((AdaSplitNode)treeRoot).describeSubtree(this, out, 2);
                     	//foundNode.parent.describeSubtree(this, out, 2);

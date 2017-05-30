@@ -324,9 +324,15 @@ public class SubConceptTree extends HoeffdingTree {
                     //if (gNumAlts>0) fDelta=fDelta/gNumAlts;
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
-                    if (Bound < oldErrorRate - altErrorRate
-                    		//&& this.subtreeDepth() < 99
-                    		) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
+                    if (Bound < (oldErrorRate - altErrorRate)
+                    		//* Math.pow((double)(this.subtreeDepth()+1) / (ht.treeRoot.subtreeDepth()+2), 5)
+                        	&& this.subtreeDepth() < 5
+
+                    		) {
+                		System.err.println("Change depth: " +
+                    		(1.0 - (double)(this.subtreeDepth()+1) / (ht.treeRoot.subtreeDepth()+1))
+                    		+ "of distance from root to leaf" + " at time " + numInstances);
+                    	// Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
 
                         //System.err.println("++++++++Alternate picked for tree of" + " Depth: " + this.subtreeDepth());
 
@@ -996,7 +1002,7 @@ public class SubConceptTree extends HoeffdingTree {
     public double[] getVotesForInstance(Instance inst) {
     	numInstances++;
 
-    	if (numInstances > 100000 && numInstances%10 == 0){
+    	if (numInstances > 100000 && numInstances%100000 == 0){
     		//System.err.println(numInstances);
     	}
 

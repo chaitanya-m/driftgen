@@ -428,7 +428,7 @@ public class SubConceptTree extends HoeffdingTree {
                 	//}
                 } else {//if (!this.isAlternate()){
 
-                    foundNodes.add(new AdaFoundNode(null, this, mainBranch, childIndex));
+                    foundNodes.add(new AdaFoundNode(null, this, childIndex));
                     //... this will have a mixture of alternate and normal foundNodes
                     // that's because only the top of the main tree has parent -1, and only the top of each alternate tree has parent -999
                     // looks like nodes found in alternates of alternates voting is good for accuracy
@@ -497,7 +497,7 @@ public class SubConceptTree extends HoeffdingTree {
                 	//}
                 } else { //if (!this.isAlternate()){
 
-                    foundNodes.add(new AdaFoundNode(null, this, mainBranch, childIndex));
+                    foundNodes.add(new AdaFoundNode(null, this, childIndex));
 
             }
             if (this.alternateTree != null) {
@@ -729,7 +729,7 @@ public class SubConceptTree extends HoeffdingTree {
         		// but only split nodes should be able to create alternates!
         	}
 
-            foundNodes.add(new AdaFoundNode(this, splitparent, mainBranch, parentBranch));
+            foundNodes.add(new AdaFoundNode(this, splitparent, parentBranch));
         }
 
 		@Override
@@ -754,7 +754,7 @@ public class SubConceptTree extends HoeffdingTree {
 			}
 
 				if(!this.isAlternate()){
-					foundNodes.add(new AdaFoundNode(this, splitParent, mainBranch, parentBranch));
+					foundNodes.add(new AdaFoundNode(this, splitParent, parentBranch));
 				}
 
 		}
@@ -795,11 +795,8 @@ public class SubConceptTree extends HoeffdingTree {
 
     public static class AdaFoundNode extends FoundNode{
 
-    	private AdaSplitNode mainBranch = null;
-
-		public AdaFoundNode(Node node, SplitNode parent, AdaSplitNode mainBranch, int parentBranch) {
+		public AdaFoundNode(Node node, SplitNode parent, int parentBranch) {
 			super(node, parent, parentBranch);
-			this.mainBranch = mainBranch;
 			// TODO Auto-generated constructor stub
 		}
     }

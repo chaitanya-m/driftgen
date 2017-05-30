@@ -84,7 +84,9 @@ public class SubConceptTree extends HoeffdingTree {
         //public boolean getErrorChange();
         public int numberLeaves();
 
-        public double getErrorEstimation();
+        void setAlternateSubtree(boolean isAlternate);
+
+		public double getErrorEstimation();
 
         public double getErrorWidth();
 
@@ -162,8 +164,8 @@ public class SubConceptTree extends HoeffdingTree {
                     out.append(": ");
                     if (((NewNode)child).isAlternate()) {
                         out.append("=====" + ((NewNode)child).isAlternate()+ "====");
-                    }else{
-                        //out.append("++++" + ((NewNode)child).isAlternate()+ "++++");
+                    }else if (((NewNode)child).getParent() == null ){
+                        out.append("++++++++++++++++++");
 
                     }
 
@@ -312,7 +314,7 @@ public class SubConceptTree extends HoeffdingTree {
                 ////System.err.println("=======New Alternate initialised====" + " Depth: " + this.subtreeDepth());
             } // Check condition to replace tree
 
-            else if (this.alternateTree != null && ((NewNode) this.alternateTree).isNullError() == false) {/*
+            else if (this.alternateTree != null && ((NewNode) this.alternateTree).isNullError() == false) {
                 if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) {
                 	// you discard the alternate tree if your ADWIN buckets have over 300 instances in all
                 	// in other words, this is claiming that 300 instances should suffice to determine subtree performance
@@ -323,7 +325,7 @@ public class SubConceptTree extends HoeffdingTree {
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
                     if (Bound < oldErrorRate - altErrorRate
-                    		&& this.subtreeDepth() < -99
+                    		//&& this.subtreeDepth() < -99
                     		) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
 
                         //System.err.println("++++++++Alternate picked for tree of" + " Depth: " + this.subtreeDepth());
@@ -332,12 +334,26 @@ public class SubConceptTree extends HoeffdingTree {
                         ht.activeLeafNodeCount -= this.numberLeaves();
                         ht.activeLeafNodeCount += ((NewNode) this.alternateTree).numberLeaves();
                         killTreeChilds(ht);
-                        if (parent != null) {
+                        ((NewNode)(this.alternateTree)).setAlternateSubtree(false);
+
+                        if (!this.isRoot()) {
+                        	if(parent == null){
+                        		System.err.println("Non-root node has null parent");
+                            	StringBuilder out = new StringBuilder();
+
+                        		//((AdaSplitNode)ht.treeRoot).describeSubtree(ht, out, 2);
+                        		this.describeSubtree(ht, out, 2);
+
+                        		//System.err.print(out);
+                        		//System.exit(0);
+                        	}
                             parent.setChild(parentBranch, this.alternateTree);
+                            ((NewNode)this.alternateTree).setParent(this.getParent());
                             //((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
                         } else {
                             // Switch root tree
-                            ht.treeRoot = ((AdaSplitNode) ht.treeRoot).alternateTree;
+                        	((NewNode)(this.alternateTree)).setRoot(true);
+                            ht.treeRoot = this.alternateTree;
                         }
                         ht.switchedAlternateTrees++; //Never Initialised?
                     } else if (Bound < altErrorRate - oldErrorRate) { // Once again, Bound is +ve.
@@ -354,7 +370,7 @@ public class SubConceptTree extends HoeffdingTree {
                         ht.prunedAlternateTrees++;
                     }
                 }
-            */}
+            }
             //}
             //learnFromInstance alternate Tree and Child nodes
 
@@ -395,6 +411,18 @@ public class SubConceptTree extends HoeffdingTree {
                 }
             }
         }
+
+        @Override
+        public void setAlternateSubtree(boolean isAlternate) {
+          for (Node child : this.children) {
+            if (child != null) {
+              ((NewNode)child).setAlternateSubtree(isAlternate);
+            }
+            this.setAlternate(isAlternate);
+          }
+        }
+
+
 
         //New for option votes
         //@Override
@@ -791,6 +819,11 @@ public class SubConceptTree extends HoeffdingTree {
 			return this.mainBranch;
 		}
 
+		@Override
+		public void setAlternateSubtree(boolean isAlternate) {
+			this.setAlternate(isAlternate);
+		}
+
     }
 
     public static class AdaFoundNode extends FoundNode{
@@ -893,8 +926,12 @@ public class SubConceptTree extends HoeffdingTree {
                     this.decisionNodeCount++;
                     this.activeLeafNodeCount += splitDecision.numSplits();
                     if (((NewNode)node).isRoot()) {
-                        this.treeRoot = newSplit;
                         ((NewNode) newSplit).setAlternate(false);
+                        ((NewNode) newSplit).setParent(null);
+                        ((NewNode) newSplit).setRoot(true);
+                        this.treeRoot = newSplit;
+                        System.err.println((newSplit.isRoot()) + " " + (newSplit.getParent()==null));
+                        System.err.println("================Root has been split==============");
                     }
                     else if (((NewNode)node).getMainBranch() != null) { // if the node happens to have a main branch
                     	((NewNode)node).getMainBranch().alternateTree = newSplit;
@@ -936,7 +973,7 @@ public class SubConceptTree extends HoeffdingTree {
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode();
             this.activeLeafNodeCount = 1;
-            ((NewNode) this.treeRoot).setAlternate(false);// this is the only learning node class used...
+            ((NewNode) this.treeRoot).setAlternate(false);
             ((NewNode) this.treeRoot).setRoot(true);
             ((NewNode) this.treeRoot).setParent(null);
             ((NewNode) this.treeRoot).setMainBranch(null);

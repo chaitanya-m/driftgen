@@ -326,7 +326,7 @@ public class SubConceptTree extends HoeffdingTree {
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
                     if (Bound < (oldErrorRate - altErrorRate)
                     		//* Math.pow((double)(this.subtreeDepth()+1) / (ht.treeRoot.subtreeDepth()+2), 5)
-                        	&& this.subtreeDepth() < 5
+                        	&& this.subtreeDepth() < 3
 
                     		) {
                 		System.err.println("Change depth: " +

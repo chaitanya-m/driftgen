@@ -92,7 +92,7 @@ public class SubConceptTree extends HoeffdingTree {
 
         public void killTreeChilds(SubConceptTree ht);
 
-        public void learnFromInstance(Instance inst, SubConceptTree ht, AdaSplitNode mainBranch, int parentBranch);
+        public void learnFromInstance(Instance inst, SubConceptTree ht, int parentBranch);
 
         public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch, List<AdaFoundNode> foundNodes,
                 boolean updateSplitterCounts);
@@ -240,7 +240,7 @@ public class SubConceptTree extends HoeffdingTree {
         // LearningNodes can split, but SplitNodes can't
         // Parent nodes are allways SplitNodes
         @Override
-        public void learnFromInstance(Instance inst, SubConceptTree ht, AdaSplitNode mainBranch, int parentBranch) {
+        public void learnFromInstance(Instance inst, SubConceptTree ht, int parentBranch) {
             int trueClass = (int) inst.classValue();
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
@@ -359,12 +359,12 @@ public class SubConceptTree extends HoeffdingTree {
             //learnFromInstance alternate Tree and Child nodes
 
             if (this.alternateTree != null) { //
-                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, this, parentBranch);
+                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parentBranch);
             }//
             int childBranch = this.instanceChildIndex(inst); //
             Node child = this.getChild(childBranch); //
             if (child != null) { //
-                ((NewNode) child).learnFromInstance(inst, ht, mainBranch, childBranch); //to this- it uses this
+                ((NewNode) child).learnFromInstance(inst, ht, childBranch); //to this- it uses this
                 if (!((NewNode)this).isAlternate() && ((NewNode)child).isAlternate()){
                 	System.err.println("Alternate child of main branch parent!!");
                 }
@@ -645,7 +645,7 @@ public class SubConceptTree extends HoeffdingTree {
         }
 
 		@Override
-		public void learnFromInstance(Instance inst, SubConceptTree ht, AdaSplitNode mainBranch, int parentBranch) {
+		public void learnFromInstance(Instance inst, SubConceptTree ht, int parentBranch) {
             int trueClass = (int) inst.classValue();
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
@@ -941,7 +941,7 @@ public class SubConceptTree extends HoeffdingTree {
             ((NewNode) this.treeRoot).setParent(null);
             ((NewNode) this.treeRoot).setMainBranch(null);
         }
-        ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
+        ((NewNode) this.treeRoot).learnFromInstance(inst, this, -1);
     }
 
     //New for options vote

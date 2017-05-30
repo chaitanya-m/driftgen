@@ -101,7 +101,7 @@ public class SubConceptTree extends HoeffdingTree {
 
         public void setAlternate(boolean isAlternate);
 
-		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode parent,  AdaSplitNode mainBranch, int parentBranch,
+		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode parent, int parentBranch,
 				List<AdaFoundNode> nodes, boolean updateSplitterCounts);
 
 		public boolean isRoot();
@@ -456,7 +456,7 @@ public class SubConceptTree extends HoeffdingTree {
 
         // Make sure a non-alternate leaf is found
 		@Override
-		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode myparent,  AdaSplitNode mainBranch,
+		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode myparent,
                 int parentBranch, List<AdaFoundNode> foundNodes,
                 boolean updateSplitterCounts) {
             if (updateSplitterCounts) {
@@ -492,7 +492,7 @@ public class SubConceptTree extends HoeffdingTree {
                 		////System.err.println("Alternate child of standard parent");
                 		//System.exit(1);
                 	}
-                    ((NewNode) child).filterInstanceToLeavesForPrediction(inst, this, mainBranch, childIndex,
+                    ((NewNode) child).filterInstanceToLeavesForPrediction(inst, this, childIndex,
                             foundNodes, updateSplitterCounts);
                 	//}
                 } else { //if (!this.isAlternate()){
@@ -743,7 +743,7 @@ public class SubConceptTree extends HoeffdingTree {
 		}
 
 		@Override
-		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode splitParent, AdaSplitNode mainBranch, int parentBranch,
+		public void filterInstanceToLeavesForPrediction(Instance inst, AdaSplitNode splitParent, int parentBranch,
 				List<AdaFoundNode> foundNodes, boolean updateSplitterCounts) {
 			if (splitParent!=null){
 				//System.err.println("Parent alternate? " + splitParent.isAlternate() + " Leaf alternate? " + this.isAlternate());
@@ -948,7 +948,7 @@ public class SubConceptTree extends HoeffdingTree {
     public AdaFoundNode[] filterInstanceToLeavesForPrediction(Instance inst,
             AdaSplitNode parent, AdaSplitNode mainBranch, int parentBranch, boolean updateSplitterCounts) {
         List<AdaFoundNode> nodes = new LinkedList<AdaFoundNode>();
-        ((NewNode) this.treeRoot).filterInstanceToLeavesForPrediction(inst, parent, mainBranch, parentBranch, nodes,
+        ((NewNode) this.treeRoot).filterInstanceToLeavesForPrediction(inst, parent, parentBranch, nodes,
                 updateSplitterCounts);
         return nodes.toArray(new AdaFoundNode[nodes.size()]);
     }

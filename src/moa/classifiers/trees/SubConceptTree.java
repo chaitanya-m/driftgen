@@ -325,7 +325,7 @@ public class SubConceptTree extends HoeffdingTree {
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
                     if (Bound < oldErrorRate - altErrorRate
-                    		//&& this.subtreeDepth() < -99
+                    		//&& this.subtreeDepth() < 99
                     		) { // Bound is +ve. If oldErrorRate is smaller, Bound > -ve RHS, so this is fine.
 
                         //System.err.println("++++++++Alternate picked for tree of" + " Depth: " + this.subtreeDepth());
@@ -536,7 +536,7 @@ public class SubConceptTree extends HoeffdingTree {
             }
           }
             if (foundNodes.size() < 1) {
-            	//System.err.println(foundNodes.size() + " predictors found");
+            	System.err.println(foundNodes.size() + " predictors found");
 
             	//System.exit(1);
             }
@@ -930,8 +930,8 @@ public class SubConceptTree extends HoeffdingTree {
                         ((NewNode) newSplit).setParent(null);
                         ((NewNode) newSplit).setRoot(true);
                         this.treeRoot = newSplit;
-                        System.err.println((newSplit.isRoot()) + " " + (newSplit.getParent()==null));
-                        System.err.println("================Root has been split==============");
+                        //System.err.println((newSplit.isRoot()) + " " + (newSplit.getParent()==null));
+                        //System.err.println("================Root has been split==============");
                     }
                     else if (((NewNode)node).getMainBranch() != null) { // if the node happens to have a main branch
                     	((NewNode)node).getMainBranch().alternateTree = newSplit;

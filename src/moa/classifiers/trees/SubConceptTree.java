@@ -92,7 +92,7 @@ public class SubConceptTree extends HoeffdingTree {
 
         public void killTreeChilds(SubConceptTree ht);
 
-        public void learnFromInstance(Instance inst, SubConceptTree ht, SplitNode parent, AdaSplitNode mainBranch, int parentBranch);
+        public void learnFromInstance(Instance inst, SubConceptTree ht, AdaSplitNode mainBranch, int parentBranch);
 
         public void filterInstanceToLeaves(Instance inst, SplitNode myparent, AdaSplitNode mainBranch, int parentBranch, List<AdaFoundNode> foundNodes,
                 boolean updateSplitterCounts);
@@ -107,6 +107,14 @@ public class SubConceptTree extends HoeffdingTree {
 		public boolean isRoot();
 
 		public void setRoot(boolean isRoot);
+
+		public void setParent(AdaSplitNode parent);
+
+		public AdaSplitNode getParent();
+
+		public void setMainBranch(AdaSplitNode parent);
+
+		public AdaSplitNode getMainBranch();
 
         }
 
@@ -129,6 +137,13 @@ public class SubConceptTree extends HoeffdingTree {
         public boolean isAlternate = false;
 
 		private boolean isRoot = false;
+
+		private AdaSplitNode parent = null;
+
+
+		private AdaSplitNode mainBranch = null;
+
+
 
         //public boolean getErrorChange() {
         //		return ErrorChange;
@@ -225,7 +240,7 @@ public class SubConceptTree extends HoeffdingTree {
         // LearningNodes can split, but SplitNodes can't
         // Parent nodes are allways SplitNodes
         @Override
-        public void learnFromInstance(Instance inst, SubConceptTree ht, SplitNode parent, AdaSplitNode mainBranch, int parentBranch) {
+        public void learnFromInstance(Instance inst, SubConceptTree ht, AdaSplitNode mainBranch, int parentBranch) {
             int trueClass = (int) inst.classValue();
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
@@ -285,7 +300,11 @@ public class SubConceptTree extends HoeffdingTree {
             	//&& this.alternateTree == null) { //should this be an else-if?
 
                 //Start a new alternative tree : learning node
-                this.alternateTree = ht.newLearningNode(); ((NewNode)this.alternateTree).setAlternate(true);
+                this.alternateTree = ht.newLearningNode();
+                ((NewNode)this.alternateTree).setAlternate(true);
+                ((NewNode)this.alternateTree).setParent(this.parent);
+                ((NewNode)this.alternateTree).setMainBranch(this);
+
                 //System.err.println("Building alternate tree");
                 //this.alternateTree.isAlternateTree = true;
                 ht.alternateTrees++; //but... looks like you can only have one at a time...
@@ -340,12 +359,12 @@ public class SubConceptTree extends HoeffdingTree {
             //learnFromInstance alternate Tree and Child nodes
 
             if (this.alternateTree != null) { //
-                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, null, this, parentBranch); // compare this- it uses parent
+                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, this, parentBranch);
             }//
             int childBranch = this.instanceChildIndex(inst); //
             Node child = this.getChild(childBranch); //
             if (child != null) { //
-                ((NewNode) child).learnFromInstance(inst, ht, this, mainBranch, childBranch); //to this- it uses this
+                ((NewNode) child).learnFromInstance(inst, ht, mainBranch, childBranch); //to this- it uses this
                 if (!((NewNode)this).isAlternate() && ((NewNode)child).isAlternate()){
                 	System.err.println("Alternate child of main branch parent!!");
                 }
@@ -522,6 +541,35 @@ public class SubConceptTree extends HoeffdingTree {
 
 		}
 
+
+
+		@Override
+		public void setParent(AdaSplitNode parent) {
+			this.parent = parent;
+
+		}
+
+
+
+		@Override
+		public AdaSplitNode getParent() {
+
+			return this.parent;
+		}
+
+
+
+		@Override
+		public void setMainBranch(AdaSplitNode mainBranch) {
+			this.mainBranch = mainBranch;
+		}
+
+		@Override
+		public AdaSplitNode getMainBranch() {
+			return this.mainBranch;
+		}
+
+
     }
 
     // if you disable building an alternateTree, you approximate VFDT; if you disable learning for the alternate tree, you approximate VFDT.
@@ -548,6 +596,10 @@ public class SubConceptTree extends HoeffdingTree {
         public boolean isAlternate = false;
 
         private boolean isRoot = false;
+
+		private AdaSplitNode parent = null;
+
+		private AdaSplitNode mainBranch = null;
 
         @Override
         public int calcByteSize() {
@@ -593,7 +645,7 @@ public class SubConceptTree extends HoeffdingTree {
         }
 
 		@Override
-		public void learnFromInstance(Instance inst, SubConceptTree ht, SplitNode parent, AdaSplitNode mainBranch, int parentBranch) {
+		public void learnFromInstance(Instance inst, SubConceptTree ht, AdaSplitNode mainBranch, int parentBranch) {
             int trueClass = (int) inst.classValue();
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
@@ -622,7 +674,7 @@ public class SubConceptTree extends HoeffdingTree {
             double weightSeen = this.getWeightSeen();
             if (weightSeen
                     - this.getWeightSeenAtLastSplitEvaluation() >= ht.gracePeriodOption.getValue()) {
-                ht.attemptToSplit(this, parent, mainBranch, parentBranch);
+                ht.attemptToSplit(this, parentBranch);
                 this.setWeightSeenAtLastSplitEvaluation(weightSeen);
             }
 
@@ -718,6 +770,27 @@ public class SubConceptTree extends HoeffdingTree {
 
 		}
 
+		@Override
+		public void setParent(AdaSplitNode parent) {
+			this.parent = parent;
+
+		}
+
+		@Override
+		public AdaSplitNode getParent() {
+			return this.parent;
+		}
+
+		@Override
+		public void setMainBranch(AdaSplitNode mainBranch) {
+			this.mainBranch = mainBranch;
+		}
+
+		@Override
+		public AdaSplitNode getMainBranch() {
+			return this.mainBranch;
+		}
+
     }
 
     public static class AdaFoundNode extends FoundNode{
@@ -745,8 +818,7 @@ public class SubConceptTree extends HoeffdingTree {
         return newLearningNode(new double[0]);
     }
 
-    protected void attemptToSplit(ActiveLearningNode node, SplitNode parent, AdaSplitNode mainBranch,
-            int parentIndex) {
+    protected void attemptToSplit(ActiveLearningNode node, int parentIndex) {
     	// pure nodes skip this whole function body. Why would that let them vote even if they're alternates?
 
         if (!node.observedClassDistributionIsPure()) {
@@ -802,18 +874,21 @@ public class SubConceptTree extends HoeffdingTree {
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins
-                    deactivateLearningNode(node, parent, parentIndex);
+                    deactivateLearningNode(node, ((NewNode)node).getParent(),parentIndex);
                 } else {
                     AdaSplitNode newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(),splitDecision.numSplits() );
                     ((NewNode) newSplit).setAlternate(((NewNode)node).isAlternate()); // set alternate status to that of the learning node being split from
+                    ((NewNode) newSplit).setParent(((NewNode)node).getParent()); // set parent to that of the learning node being split from
+
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
                         AdaLearningNode newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
                         ((NewNode) newChild).setAlternate(((NewNode)newSplit).isAlternate()); // set alternate status to that of the parent split node
+                        ((NewNode) newChild).setParent(newSplit); // set the parent when node is split
                         newSplit.setChild(i, newChild);
 
                         if(newSplit.isAlternate() != newChild.isAlternate()){
-                        	//System.err.println("Bug here!!!!!!");
+                        	System.err.println("Bug here!!!!!!");
                         }
 
                     }
@@ -821,16 +896,14 @@ public class SubConceptTree extends HoeffdingTree {
                     this.decisionNodeCount++;
                     this.activeLeafNodeCount += splitDecision.numSplits();
                     if (((NewNode)node).isRoot()) {
-                    	// if parent is null... it assumes the treeRoot must change, so only the root must have parent null
-                    	// this needs a workaround
                         this.treeRoot = newSplit;
                         ((NewNode) newSplit).setAlternate(false);
                     }
-                    else if(parent == null) { // only other reason parent would be null is if it is top of alternate tree
-                    	mainBranch.alternateTree = newSplit;
+                    else if (((NewNode)node).getMainBranch() != null) { // if the node happens to have a main branch
+                    	((NewNode)node).getMainBranch().alternateTree = newSplit;
                     }
                     else {
-                        parent.setChild(parentIndex, newSplit);
+                        newSplit.getParent().setChild(parentIndex, newSplit);
                     }
                 }
                 // manage memory
@@ -868,8 +941,10 @@ public class SubConceptTree extends HoeffdingTree {
             this.activeLeafNodeCount = 1;
             ((NewNode) this.treeRoot).setAlternate(false);// this is the only learning node class used...
             ((NewNode) this.treeRoot).setRoot(true);
+            ((NewNode) this.treeRoot).setParent(null);
+            ((NewNode) this.treeRoot).setMainBranch(null);
         }
-        ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, null, -1);
+        ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
     }
 
     //New for options vote

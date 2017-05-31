@@ -339,8 +339,10 @@ public class SubConceptTree extends HoeffdingTree {
                         // Switch alternate tree
                         ht.activeLeafNodeCount -= this.numberLeaves();
                         ht.activeLeafNodeCount += ((NewNode) this.alternateTree).numberLeaves();
-                        killTreeChilds(ht);
+                        this.killTreeChilds(ht);
                         ((NewNode)(this.alternateTree)).setAlternateSubtree(false);
+                        ((NewNode)(this.alternateTree)).setAlternate(false);
+                        ((NewNode)(this.alternateTree)).setMainBranch(null);
 
                         if (!this.isRoot()) {
                         	if(parent == null){

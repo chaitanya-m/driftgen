@@ -683,7 +683,7 @@ public class SubConceptTree extends HoeffdingTree {
 		public void learnFromInstance(Instance inst, SubConceptTree ht, int parentBranch) {
             int trueClass = (int) inst.classValue();
             //New option vore
-            int k = MiscUtils.poisson(3.0, this.classifierRandom);
+            int k = MiscUtils.poisson(1.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
 
             //Compute ClassPrediction using filterInstanceToLeaf
@@ -691,7 +691,7 @@ public class SubConceptTree extends HoeffdingTree {
 
             boolean correctlyClassified = (trueClass == ClassPrediction);
 
-            if (k > 0 && !correctlyClassified) {
+            if (k > 0 && !correctlyClassified){// && !this.isAlternate()) {
                 weightedInst.setWeight(inst.weight() * k);
             }
 

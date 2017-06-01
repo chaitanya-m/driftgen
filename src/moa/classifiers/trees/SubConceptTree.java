@@ -326,7 +326,7 @@ public class SubConceptTree extends HoeffdingTree {
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
                     if (Bound < (oldErrorRate - altErrorRate)
                     		//* Math.pow((double)(this.subtreeDepth()+1) / (ht.treeRoot.subtreeDepth()+2), 5)
-                        	&& this.subtreeDepth() < 5
+                        	&& this.subtreeDepth() < 4
                     		) {
                 		System.err.println("Change depth: " +
                     		(1.0 - (double)(this.subtreeDepth()+1) / (ht.treeRoot.subtreeDepth()+1))
@@ -683,7 +683,7 @@ public class SubConceptTree extends HoeffdingTree {
 		public void learnFromInstance(Instance inst, SubConceptTree ht, int parentBranch) {
             int trueClass = (int) inst.classValue();
             //New option vore
-            int k = MiscUtils.poisson(1.0, this.classifierRandom);
+            int k = MiscUtils.poisson(10.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
 
             //Compute ClassPrediction using filterInstanceToLeaf
@@ -692,7 +692,7 @@ public class SubConceptTree extends HoeffdingTree {
             boolean correctlyClassified = (trueClass == ClassPrediction);
 
             if (k > 0 && !correctlyClassified){// && !this.isAlternate()) {
-                weightedInst.setWeight(inst.weight() * k);
+                //weightedInst.setWeight(inst.weight() * k);
             }
 
             if (this.estimationErrorWeight == null) {

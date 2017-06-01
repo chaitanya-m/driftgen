@@ -1,11 +1,5 @@
 /*
- *    EFDT.java
- *    Chaitanya Manapragada
- *    Based on source from Richard Kirkby, University of Waikato. Original License included.
- */
-
-/*
- *
+ *    HoeffdingTree.java
  *    Copyright (C) 2007 University of Waikato, Hamilton, New Zealand
  *    @author Richard Kirkby (rkirkby@cs.waikato.ac.nz)
  *
@@ -23,7 +17,6 @@
  *    along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 package moa.classifiers.trees;
 
 import java.util.Arrays;
@@ -32,13 +25,10 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
 import com.github.javacliparser.FlagOption;
 import com.github.javacliparser.FloatOption;
 import com.github.javacliparser.IntOption;
 import com.github.javacliparser.MultiChoiceOption;
-import com.yahoo.labs.samoa.instances.Instance;
-
 import moa.AbstractMOAObject;
 import moa.classifiers.AbstractClassifier;
 import moa.classifiers.bayes.NaiveBayes;
@@ -56,6 +46,7 @@ import moa.core.SizeOf;
 import moa.core.StringUtils;
 import moa.core.Utils;
 import moa.options.ClassOption;
+import com.yahoo.labs.samoa.instances.Instance;
 
 /**
  * Hoeffding Tree or VFDT.
@@ -101,7 +92,7 @@ import moa.options.ClassOption;
  * @author Richard Kirkby (rkirkby@cs.waikato.ac.nz)
  * @version $Revision: 7 $
  */
-public class EFDT extends AbstractClassifier {
+public class CVFDT extends AbstractClassifier {
 
     private static final long serialVersionUID = 1L;
 
@@ -158,7 +149,7 @@ public class EFDT extends AbstractClassifier {
             't', "Threshold below which a split will be forced to break ties.",
             0.05, 0.0, 1.0);
 
-    public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
+public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
         "Only allow binary splits.");
 
     public FlagOption stopMemManagementOption = new FlagOption(
@@ -217,7 +208,7 @@ public class EFDT extends AbstractClassifier {
             return this.observedClassDistribution.getArrayCopy();
         }
 
-        public double[] getClassVotes(Instance inst, EFDT ht) {
+        public double[] getClassVotes(Instance inst, CVFDT ht) {
             return this.observedClassDistribution.getArrayCopy();
         }
 
@@ -225,7 +216,7 @@ public class EFDT extends AbstractClassifier {
             return this.observedClassDistribution.numNonZeroEntries() < 2;
         }
 
-        public void describeSubtree(EFDT ht, StringBuilder out,
+        public void describeSubtree(CVFDT ht, StringBuilder out,
                 int indent) {
             StringUtils.appendIndented(out, indent, "Leaf ");
             out.append(ht.getClassNameString());
@@ -333,7 +324,7 @@ public class EFDT extends AbstractClassifier {
         }
 
         @Override
-        public void describeSubtree(EFDT ht, StringBuilder out,
+        public void describeSubtree(CVFDT ht, StringBuilder out,
                 int indent) {
             for (int branch = 0; branch < numChildren(); branch++) {
                 Node child = getChild(branch);
@@ -371,7 +362,7 @@ public class EFDT extends AbstractClassifier {
             super(initialClassObservations);
         }
 
-        public abstract void learnFromInstance(Instance inst, EFDT ht);
+        public abstract void learnFromInstance(Instance inst, CVFDT ht);
     }
 
     public static class InactiveLearningNode extends LearningNode {
@@ -383,9 +374,7 @@ public class EFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, EFDT ht) {
-        	//maintains a DoubleVector containing observed class dist; adds the weight from a single instance
-        	// to the corresponding class
+        public void learnFromInstance(Instance inst, CVFDT ht) {
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
         }
@@ -414,23 +403,16 @@ public class EFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, EFDT ht) {
+        public void learnFromInstance(Instance inst, CVFDT ht) {
             if (this.isInitialized == false) {
                 this.attributeObservers = new AutoExpandVector<AttributeClassObserver>(inst.numAttributes());
                 this.isInitialized = true;
             }
-
-        	// adds the weight from a single instance to the corresponding class in double vector
-            this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
-
+            this.observedClassDistribution.addToValue((int) inst.classValue(),
+                    inst.weight());
             for (int i = 0; i < inst.numAttributes() - 1; i++) {
-
-                // i is index in learner. instAttIndex is index in instance.
                 int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
-
                 AttributeClassObserver obs = this.attributeObservers.get(i);
-
-                // if no observer exists for this attribute, create one
                 if (obs == null) {
                     obs = inst.attribute(instAttIndex).isNominal() ? ht.newNominalClassObserver() : ht.newNumericClassObserver();
                     this.attributeObservers.set(i, obs);
@@ -452,36 +434,21 @@ public class EFDT extends AbstractClassifier {
         }
 
         public AttributeSplitSuggestion[] getBestSplitSuggestions(
-                SplitCriterion criterion, EFDT ht) {
-
+                SplitCriterion criterion, CVFDT ht) {
             List<AttributeSplitSuggestion> bestSuggestions = new LinkedList<AttributeSplitSuggestion>();
             double[] preSplitDist = this.observedClassDistribution.getArrayCopy();
-
-
-            /*
-             add null split as an option
-        	 so if prepruning is allowed, null split is an option
-        	 given the fact that a list of exactly one suggestion always gets split on
-        	 it might be worthwhile taking out the null from a list of two to force a split on the first
-        	 however, what if the list doesn't contain the current attribute? then we would force a split on the new one... this shouldn't happen
-        	 so this is not the place to do this
-        	*/
-
             if (!ht.noPrePruneOption.isSet()) {
+                // add null split as an option
                 bestSuggestions.add(new AttributeSplitSuggestion(null,
                         new double[0][], criterion.getMeritOfSplit(
                         preSplitDist,
                         new double[][]{preSplitDist})));
             }
-
             for (int i = 0; i < this.attributeObservers.size(); i++) {
                 AttributeClassObserver obs = this.attributeObservers.get(i);
                 if (obs != null) {
                     AttributeSplitSuggestion bestSuggestion = obs.getBestEvaluatedSplitSuggestion(criterion,
                             preSplitDist, i, ht.binarySplitsOption.isSet());
-                    // is there a threshold here? i.e. are only some splits considered? What if the current split doesn't get considered?
-                    // if so, there is an edge case in which the top two attributes are different to the current attribute, and there is
-                    // enough distance from the current attribute to have an update
                     if (bestSuggestion != null) {
                         bestSuggestions.add(bestSuggestion);
                     }
@@ -546,35 +513,25 @@ public class EFDT extends AbstractClassifier {
             this.treeRoot = newLearningNode();
             this.activeLeafNodeCount = 1;
         }
-
-        // filter the instance down the tree. Return the node found as a FoundNode.
-        // FoundNode contains a splitParent and the found node.
         FoundNode foundNode = this.treeRoot.filterInstanceToLeaf(inst, null, -1);
-
-        // The found node must be a leaf. Is it null?
         Node leafNode = foundNode.node;
         if (leafNode == null) {
             leafNode = newLearningNode();
             foundNode.parent.setChild(foundNode.parentBranch, leafNode);
             this.activeLeafNodeCount++;
         }
-
-        //why wouldn't it be a learning node?? it can't be a split node can it??
-        //more interesting is that split attempts only happen at leaves.
-        //so... for a higher level node to reset... does it have to become a leaf again?
         if (leafNode instanceof LearningNode) {
             LearningNode learningNode = (LearningNode) leafNode;
             learningNode.learnFromInstance(inst, this);
             if (this.growthAllowed
-                    && (learningNode instanceof ActiveLearningNode)) { //could've been deactivated...
+                    && (learningNode instanceof ActiveLearningNode)) {
                 ActiveLearningNode activeLearningNode = (ActiveLearningNode) learningNode;
                 double weightSeen = activeLearningNode.getWeightSeen();
                 if (weightSeen
                         - activeLearningNode.getWeightSeenAtLastSplitEvaluation() >= this.gracePeriodOption.getValue()) {
-                	//because weight at each timestep is 1... adds up over grace period timesteps
                     attemptToSplit(activeLearningNode, foundNode.parent,
                             foundNode.parentBranch);
-                    activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen); //update weight last seen
+                    activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen);
                 }
             }
         }
@@ -652,6 +609,7 @@ public class EFDT extends AbstractClassifier {
         return new SplitNode(splitTest, classObservations);
     }
 
+
     protected AttributeClassObserver newNominalClassObserver() {
         AttributeClassObserver nominalClassObserver = (AttributeClassObserver) getPreparedClassOption(this.nominalEstimatorOption);
         return (AttributeClassObserver) nominalClassObserver.copy();
@@ -665,20 +623,10 @@ public class EFDT extends AbstractClassifier {
     protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
             int parentIndex) {
         if (!node.observedClassDistributionIsPure()) {
-
             SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
             AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
             Arrays.sort(bestSplitSuggestions);
             boolean shouldSplit = false;
-
-
-            /* we want to split on current best attribute only if no split currently exists
-               will the null split be a suggestion? only if nopreprune is not turned on. if prepruning allowed, yes.
-               shouldSplit = bestSplitSuggestions.length >= 0;
-               in the preprune case, bestSplitSuggestions.length == 1 => only null split is suggested.
-               What if the top two attributes are tied, but neither is the current attribute, and Hoeffding allows one of them to replace current?
-               They should be compared with current.
-               */
             if (bestSplitSuggestions.length < 2) {
                 shouldSplit = bestSplitSuggestions.length > 0;
             } else {
@@ -686,26 +634,18 @@ public class EFDT extends AbstractClassifier {
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
-
-              //if (node.){              }
-
-
                 if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
                     shouldSplit = true;
                 }
-
+                // }
                 if ((this.removePoorAttsOption != null)
                         && this.removePoorAttsOption.isSet()) {
                     Set<Integer> poorAtts = new HashSet<Integer>();
                     // scan 1 - add any poor to set
                     for (int i = 0; i < bestSplitSuggestions.length; i++) {
                         if (bestSplitSuggestions[i].splitTest != null) {
-
-                            // I guess the original author intended to make the code extensible in future
-                            // we only deal with one attr per split, but he's allowed leeway for having multi-attr splits
-
-                            int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn(); // each splitTest corresponds to an attribute or set of attributes
+                            int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
                             if (splitAtts.length == 1) {
                                 if (bestSuggestion.merit
                                         - bestSplitSuggestions[i].merit > hoeffdingBound) {
@@ -714,14 +654,9 @@ public class EFDT extends AbstractClassifier {
                             }
                         }
                     }
-
-                    // it's looking like the poorAtts list ensures we disable observing poor attributes. but this is an option not set by default.
-
-
                     // scan 2 - remove good ones from set
                     for (int i = 0; i < bestSplitSuggestions.length; i++) {
                         if (bestSplitSuggestions[i].splitTest != null) {
-
                             int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
                             if (splitAtts.length == 1) {
                                 if (bestSuggestion.merit
@@ -740,8 +675,6 @@ public class EFDT extends AbstractClassifier {
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins
-                	// if preprune is on, null either wins because it's the only attribute, or because it's better
-
                     deactivateLearningNode(node, parent, parentIndex);
                 } else {
                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
@@ -921,7 +854,7 @@ public class EFDT extends AbstractClassifier {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, EFDT ht) {
+        public double[] getClassVotes(Instance inst, CVFDT ht) {
             if (getWeightSeen() >= ht.nbThresholdOption.getValue()) {
                 return NaiveBayes.doNaiveBayesPrediction(inst,
                         this.observedClassDistribution,
@@ -949,7 +882,7 @@ public class EFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, EFDT ht) {
+        public void learnFromInstance(Instance inst, CVFDT ht) {
             int trueClass = (int) inst.classValue();
             if (this.observedClassDistribution.maxIndex() == trueClass) {
                 this.mcCorrectWeight += inst.weight();
@@ -962,7 +895,7 @@ public class EFDT extends AbstractClassifier {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, EFDT ht) {
+        public double[] getClassVotes(Instance inst, CVFDT ht) {
             if (this.mcCorrectWeight > this.nbCorrectWeight) {
                 return this.observedClassDistribution.getArrayCopy();
             }

@@ -271,7 +271,7 @@ public class SubConceptTree extends HoeffdingTree {
 //            		}
 //            	}
 
-                ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, parent, parentBranch).node.getClassVotes(inst, ht));
+                ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, parent, parentBranch).node.getClassVotes(inst, ht)); // why filter again... just use s
             }
 
             boolean correctlyClassified = (trueClass == ClassPrediction);
@@ -387,7 +387,7 @@ public class SubConceptTree extends HoeffdingTree {
             int childBranch = this.instanceChildIndex(inst); //
             Node child = this.getChild(childBranch); //
             if (child != null) { //
-                ((NewNode) child).learnFromInstance(inst, ht, childBranch); //to this- it uses this
+                ((NewNode) child).learnFromInstance(inst, ht, childBranch);
                 if (!((NewNode)this).isAlternate() && ((NewNode)child).isAlternate()){
                 	System.err.println("Alternate child of main branch parent!!");
                 }
@@ -683,21 +683,23 @@ public class SubConceptTree extends HoeffdingTree {
 		public void learnFromInstance(Instance inst, SubConceptTree ht, int parentBranch) {
             int trueClass = (int) inst.classValue();
             //New option vore
-            int k = MiscUtils.poisson(1.0, this.classifierRandom);
+            int k = MiscUtils.poisson(3.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
-            if (k > 0) {
-                //weightedInst.setWeight(inst.weight() * k);
-            }
+
             //Compute ClassPrediction using filterInstanceToLeaf
             int ClassPrediction = Utils.maxIndex(this.getClassVotes(inst, ht));
 
-            boolean blCorrect = (trueClass == ClassPrediction);
+            boolean correctlyClassified = (trueClass == ClassPrediction);
+
+            if (k > 0 && !correctlyClassified) {
+                weightedInst.setWeight(inst.weight() * k);
+            }
 
             if (this.estimationErrorWeight == null) {
                 this.estimationErrorWeight = new ADWIN();
             }
             double oldError = this.getErrorEstimation();
-            this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ? 0.0 : 1.0);
+            this.ErrorChange = this.estimationErrorWeight.setInput(correctlyClassified == true ? 0.0 : 1.0);
             if (this.ErrorChange == true && oldError > this.getErrorEstimation()) {
                 this.ErrorChange = false;
             }
@@ -709,7 +711,7 @@ public class SubConceptTree extends HoeffdingTree {
             double weightSeen = this.getWeightSeen();
             if (weightSeen
                     - this.getWeightSeenAtLastSplitEvaluation() >= ht.gracePeriodOption.getValue()) {
-                ht.attemptToSplit(this, parentBranch);
+                ht.attemptToSplit(this, parentBranch); //note that weighting misclassified instances will push us to attempt to split earlier than usual...
                 this.setWeightSeenAtLastSplitEvaluation(weightSeen);
             }
 
@@ -908,6 +910,7 @@ public class SubConceptTree extends HoeffdingTree {
                 }
             }
             if (shouldSplit) {
+
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins

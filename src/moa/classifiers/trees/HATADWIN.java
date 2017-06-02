@@ -25,6 +25,7 @@ import java.util.Random;
 import moa.classifiers.bayes.NaiveBayes;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
+import moa.classifiers.trees.HoeffdingTree.LearningNode;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
@@ -216,10 +217,10 @@ public class HATADWIN extends HoeffdingTree {
             //if (this.isAlternateTree == false) {
             if (this.ErrorChange == true) {//&& this.alternateTree == null) {
                 //Start a new alternative tree : learning node
-                this.alternateTree = ht.newLearningNode();
-                //this.alternateTree.isAlternateTree = true;
+                this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
                 ht.alternateTrees++;
             } // Check condition to replace tree
+
             else if (this.alternateTree != null && ((NewNode) this.alternateTree).isNullError() == false) {
                 if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) {
                     double oldErrorRate = this.getErrorEstimation();
@@ -481,6 +482,14 @@ public class HATADWIN extends HoeffdingTree {
     protected int prunedAlternateTrees;
 
     protected int switchedAlternateTrees;
+
+
+    protected LearningNode newLearningNode(boolean isAlternate) {
+        AdaLearningNode aln = new AdaLearningNode(new double[0]);
+        aln.setAlternate(false);
+        return aln;
+    }
+
 
     @Override
     protected LearningNode newLearningNode(double[] initialClassObservations) {

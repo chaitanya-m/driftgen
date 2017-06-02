@@ -30,6 +30,7 @@ import moa.classifiers.bayes.NaiveBayes;
 import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
+import moa.classifiers.core.splitcriteria.InfoGainSplitCriterion;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
 import moa.classifiers.trees.HoeffdingTree.ActiveLearningNode;
 import moa.classifiers.trees.HoeffdingTree.LearningNode;
@@ -683,7 +684,7 @@ public class SubConceptTree extends HoeffdingTree {
 		public void learnFromInstance(Instance inst, SubConceptTree ht, int parentBranch) {
             int trueClass = (int) inst.classValue();
             //New option vore
-            int k = MiscUtils.poisson(10.0, this.classifierRandom);
+            int k = MiscUtils.poisson(50.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
 
             //Compute ClassPrediction using filterInstanceToLeaf
@@ -691,8 +692,8 @@ public class SubConceptTree extends HoeffdingTree {
 
             boolean correctlyClassified = (trueClass == ClassPrediction);
 
-            if (k > 0 && !correctlyClassified){// && !this.isAlternate()) {
-                //weightedInst.setWeight(inst.weight() * k);
+            if (k > 0 && !correctlyClassified && this.isAlternate()) {
+                weightedInst.setWeight(inst.weight() * k);
             }
 
             if (this.estimationErrorWeight == null) {
@@ -872,10 +873,23 @@ public class SubConceptTree extends HoeffdingTree {
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
+
+            	System.err.println(bestSuggestion.merit + " " + secondBestSuggestion.merit + " " +
+            	InfoGainSplitCriterion.computeEntropy(node.getObservedClassDistribution()));
+
+
+                if(bestSuggestion.merit > InfoGainSplitCriterion.computeEntropy(node.getObservedClassDistribution())){
+                	//System.err.println(bestSuggestion.merit + " " + secondBestSuggestion.merit + " " + InfoGainSplitCriterion.computeEntropy(node.getObservedClassDistribution()));
+                }
                 if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
                     shouldSplit = true;
                 }
+                else if(bestSuggestion.merit > InfoGainSplitCriterion.computeEntropy(node.getObservedClassDistribution())){
+
+                }
+
+
                 // }
                 if ((this.removePoorAttsOption != null)
                         && this.removePoorAttsOption.isSet()) {

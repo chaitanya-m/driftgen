@@ -496,9 +496,15 @@ public class HATADWIN extends HoeffdingTree {
                     //	Utils.normalize(dist, distSum);
                     //}
                     result.addValues(dist);
-                    //predictionPaths++;
+                    predictionPaths++;
                 }
             }
+
+            if(predictionPaths != 1) {
+            	System.err.println("predictionPaths != 1");
+            	System.exit(1);
+            }
+
             //if (predictionPaths > this.maxPredictionPaths) {
             //	this.maxPredictionPaths++;
             //}

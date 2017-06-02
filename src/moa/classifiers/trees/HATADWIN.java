@@ -240,8 +240,8 @@ public class HATADWIN extends HoeffdingTree {
             }
 
             // Check condition to build a new alternate tree
-            //if (this.isAlternateTree == false) {
-            if (this.ErrorChange == true) {//&& this.alternateTree == null) {
+            if (this.ErrorChange && !this.isAlternate()) {// disabling alternates of alternates
+
                 //Start a new alternative tree : learning node
                 this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
                 ht.alternateTrees++;
@@ -432,6 +432,7 @@ public class HATADWIN extends HoeffdingTree {
 
         	if(!this.isAlternate()){
         		System.err.println(numInstances);
+        		// this shows mainline learning nodes stop learning once drift occurs
         	}
 
             int trueClass = (int) inst.classValue();
@@ -679,6 +680,7 @@ public class HATADWIN extends HoeffdingTree {
     					return result.getArrayRef();
 
     		}
+
     	}
     	return new double[0];
     }

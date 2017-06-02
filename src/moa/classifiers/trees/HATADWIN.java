@@ -284,7 +284,7 @@ public class HATADWIN extends HoeffdingTree {
             //}
             //learnFromInstance alternate Tree and Child nodes
             if (this.alternateTree != null) {
-//                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
+                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
             }
             int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);

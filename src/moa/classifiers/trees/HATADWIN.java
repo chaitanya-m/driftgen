@@ -252,7 +252,7 @@ public class HATADWIN extends HoeffdingTree {
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
                     if (Bound < oldErrorRate - altErrorRate
-                    		&& this.subtreeDepth() < 0
+                    		  && this.subtreeDepth() < 0
                     		) {
                         // Switch alternate tree
                         ht.activeLeafNodeCount -= this.numberLeaves();
@@ -654,20 +654,18 @@ public class HATADWIN extends HoeffdingTree {
             DoubleVector result = new DoubleVector();
             int predictionPaths = 0;
             for (FoundNode foundNode : foundNodes) {
-            	if (foundNode.node != null){
-            	if(!((NewNode)foundNode.node).isAlternate()){
 //                if (foundNode.parentBranch != -999) {
                 	// this only works one level down
                 	// Otherwise it doesn't - the node will just have a split index as parent branch
                 	// So the filter will still add any nodes found deeper down to foundNodes
                 	// This looks like a bug.
 
-//                	if (foundNode.node != null){
-//                		if (((NewNode)foundNode.node).isAlternate()){
-//                			System.err.println("Alternate is being used for prediction");
-//                			System.exit(1);
-//                		}
-//                	}
+                	if (foundNode.node != null){
+                		if (((NewNode)foundNode.node).isAlternate()){
+                			System.err.println("Alternate is being used for prediction even though tree substitution is off");
+                			//System.exit(1);
+                		}
+                	}
 
                     Node leafNode = foundNode.node;
                     if (leafNode == null) {
@@ -682,8 +680,7 @@ public class HATADWIN extends HoeffdingTree {
                     result.addValues(dist);
                     predictionPaths++;
                 }
-            }
-            }
+
 //            if(predictionPaths < 1) {
 //            	System.err.println("predictionPaths = 0");
 //            	System.exit(1);

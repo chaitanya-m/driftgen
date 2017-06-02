@@ -654,7 +654,9 @@ public class HATADWIN extends HoeffdingTree {
             DoubleVector result = new DoubleVector();
             int predictionPaths = 0;
             for (FoundNode foundNode : foundNodes) {
-                if (foundNode.parentBranch != -999) {
+            	if (foundNode.node != null){
+            	if(!((NewNode)foundNode.node).isAlternate()){
+//                if (foundNode.parentBranch != -999) {
                 	// this only works one level down
                 	// Otherwise it doesn't - the node will just have a split index as parent branch
                 	// So the filter will still add any nodes found deeper down to foundNodes
@@ -681,11 +683,11 @@ public class HATADWIN extends HoeffdingTree {
                     predictionPaths++;
                 }
             }
-
-            if(predictionPaths != 1) {
-            	System.err.println("predictionPaths != 1");
-            	System.exit(1);
             }
+//            if(predictionPaths < 1) {
+//            	System.err.println("predictionPaths = 0");
+//            	System.exit(1);
+//            }
 
             //if (predictionPaths > this.maxPredictionPaths) {
             //	this.maxPredictionPaths++;

@@ -105,7 +105,7 @@ public class HATADWIN extends HoeffdingTree {
 
         protected Random classifierRandom;
 
-        private boolean isAlternate;
+        private boolean isAlternate = false;
 
 		@Override
 		public boolean isAlternate() {
@@ -339,7 +339,7 @@ public class HATADWIN extends HoeffdingTree {
 
         protected Random classifierRandom;
 
-        private boolean isAlternate;
+        private boolean isAlternate = false;
 
 		@Override
 		public boolean isAlternate() {
@@ -505,6 +505,7 @@ public class HATADWIN extends HoeffdingTree {
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode();
             this.activeLeafNodeCount = 1;
+            ((NewNode)this.treeRoot).setAlternate(false);
         }
         ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
     }

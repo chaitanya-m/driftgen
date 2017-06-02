@@ -658,6 +658,12 @@ public class HATADWIN extends HoeffdingTree {
                 	// So the filter will still add any nodes found deeper down to foundNodes
                 	// This looks like a bug.
 
+                	if (foundNode.node != null){
+                		if (((NewNode)foundNode.node).isAlternate()){
+                			System.err.println("Alternate is being used for prediction");
+                			System.exit(1);
+                		}
+                	}
 
                     Node leafNode = foundNode.node;
                     if (leafNode == null) {

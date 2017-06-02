@@ -31,6 +31,7 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.multilabel.trees.ISOUPTree.LeafNode;
 import moa.classifiers.trees.HoeffdingTree.ActiveLearningNode;
 import moa.classifiers.trees.HoeffdingTree.LearningNode;
 import moa.classifiers.trees.HoeffdingTree.Node;
@@ -655,22 +656,20 @@ public class HATADWIN extends HoeffdingTree {
     		int predictionPaths = 0;
     		for (FoundNode foundNode : foundNodes) {
 
-    			if (foundNode.node != null){
-    				if (!((NewNode)foundNode.node).isAlternate()){
-
     					Node leafNode = foundNode.node;
     					if (leafNode == null) {
     						leafNode = foundNode.parent;
     					}
     					double[] dist = leafNode.getClassVotes(inst, this);
 
-    					result.addValues(dist);
+    					if(!((NewNode)leafNode).isAlternate()){
+    						result.addValues(dist);
+    					}
+
     					predictionPaths++;
 
     					return result.getArrayRef();
-    				}
 
-    			}
     		}
     	}
     	return new double[0];

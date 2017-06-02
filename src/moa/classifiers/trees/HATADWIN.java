@@ -648,49 +648,31 @@ public class HATADWIN extends HoeffdingTree {
 
     @Override
     public double[] getVotesForInstance(Instance inst) {
-        if (this.treeRoot != null) {
-            FoundNode[] foundNodes = filterInstanceToLeaves(inst,
-                    null, -1, false);
-            DoubleVector result = new DoubleVector();
-            int predictionPaths = 0;
-            for (FoundNode foundNode : foundNodes) {
-//                if (foundNode.parentBranch != -999) {
-                	// this only works one level down
-                	// Otherwise it doesn't - the node will just have a split index as parent branch
-                	// So the filter will still add any nodes found deeper down to foundNodes
-                	// This looks like a bug.
+    	if (this.treeRoot != null) {
+    		FoundNode[] foundNodes = filterInstanceToLeaves(inst,
+    				null, -1, false);
+    		DoubleVector result = new DoubleVector();
+    		int predictionPaths = 0;
+    		for (FoundNode foundNode : foundNodes) {
 
-//                	if (foundNode.node != null){
-//                		if (((NewNode)foundNode.node).isAlternate()){
-//                			System.err.println("Alternate is being used for prediction even though tree substitution is off");
-//                			//System.exit(1);
-//                		}
-//                	}
+    			if (foundNode.node != null){
+    				if (!((NewNode)foundNode.node).isAlternate()){
 
-                    Node leafNode = foundNode.node;
-                    if (leafNode == null) {
-                        leafNode = foundNode.parent;
-                    }
-                    double[] dist = leafNode.getClassVotes(inst, this);
-                    //Albert: changed for weights
-                    //double distSum = Utils.sum(dist);
-                    //if (distSum > 0.0) {
-                    //	Utils.normalize(dist, distSum);
-                    //}
-                    result.addValues(dist);
-                    predictionPaths++;
-                }
+    					Node leafNode = foundNode.node;
+    					if (leafNode == null) {
+    						leafNode = foundNode.parent;
+    					}
+    					double[] dist = leafNode.getClassVotes(inst, this);
 
-//            if(predictionPaths < 1) {
-//            	System.err.println("predictionPaths = 0");
-//            	System.exit(1);
-//            }
+    					result.addValues(dist);
+    					predictionPaths++;
 
-            //if (predictionPaths > this.maxPredictionPaths) {
-            //	this.maxPredictionPaths++;
-            //}
-            return result.getArrayRef();
-        }
-        return new double[0];
+    					return result.getArrayRef();
+    				}
+
+    			}
+    		}
+    	}
+    	return new double[0];
     }
 }

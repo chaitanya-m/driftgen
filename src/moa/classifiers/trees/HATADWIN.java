@@ -251,7 +251,9 @@ public class HATADWIN extends HoeffdingTree {
                     //if (gNumAlts>0) fDelta=fDelta/gNumAlts;
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
-                    if (Bound < oldErrorRate - altErrorRate) {
+                    if (Bound < oldErrorRate - altErrorRate
+                    		&& this.subtreeDepth() < 0
+                    		) {
                         // Switch alternate tree
                         ht.activeLeafNodeCount -= this.numberLeaves();
                         ht.activeLeafNodeCount += ((NewNode) this.alternateTree).numberLeaves();
@@ -658,12 +660,12 @@ public class HATADWIN extends HoeffdingTree {
                 	// So the filter will still add any nodes found deeper down to foundNodes
                 	// This looks like a bug.
 
-                	if (foundNode.node != null){
-                		if (((NewNode)foundNode.node).isAlternate()){
-                			System.err.println("Alternate is being used for prediction");
-                			System.exit(1);
-                		}
-                	}
+//                	if (foundNode.node != null){
+//                		if (((NewNode)foundNode.node).isAlternate()){
+//                			System.err.println("Alternate is being used for prediction");
+//                			System.exit(1);
+//                		}
+//                	}
 
                     Node leafNode = foundNode.node;
                     if (leafNode == null) {

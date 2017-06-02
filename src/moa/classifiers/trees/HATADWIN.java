@@ -83,6 +83,11 @@ public class HATADWIN extends HoeffdingTree {
 
         public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch, List<FoundNode> foundNodes,
                 boolean updateSplitterCounts);
+
+        public boolean isAlternate();
+
+        public void setAlternate(boolean isAlternate);
+
     }
 
     public static class AdaSplitNode extends SplitNode implements NewNode {
@@ -99,6 +104,20 @@ public class HATADWIN extends HoeffdingTree {
         protected int randomSeed = 1;
 
         protected Random classifierRandom;
+
+        private boolean isAlternate;
+
+		@Override
+		public boolean isAlternate() {
+			return this.isAlternate;
+		}
+
+		@Override
+		public void setAlternate(boolean isAlternate) {
+			this.isAlternate = isAlternate;
+		}
+
+
 
         //public boolean getErrorChange() {
         //		return ErrorChange;
@@ -319,6 +338,18 @@ public class HATADWIN extends HoeffdingTree {
         protected int randomSeed = 1;
 
         protected Random classifierRandom;
+
+        private boolean isAlternate;
+
+		@Override
+		public boolean isAlternate() {
+			return this.isAlternate;
+		}
+
+		@Override
+		public void setAlternate(boolean isAlternate) {
+			this.isAlternate = isAlternate;
+		}
 
         @Override
         public int calcByteSize() {

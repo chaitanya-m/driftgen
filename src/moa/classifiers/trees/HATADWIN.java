@@ -288,13 +288,22 @@ public class HATADWIN extends HoeffdingTree {
                 if (child != null) {
                     ((NewNode) child).filterInstanceToLeaves(inst, this, childIndex,
                             foundNodes, updateSplitterCounts);
+                    // this will usually just take you down one path until you hit a learning node. Unless you are overextending
+                    // your tree without pruning
                 } else {
                     foundNodes.add(new FoundNode(null, this, childIndex));
+                    // Only killTreeChilds would create null child nodes
                 }
             }
             if (this.alternateTree != null) {
                 ((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999,
                         foundNodes, updateSplitterCounts);
+                // the -999 used to launch this subtree filter becomes inutile immediately following
+                // the top node of the subtree. Only the immediate children of a split will see this as a parentBranch
+                // So a foundnode created further down cannot be distinguished from the mainline thing
+                // Using this to separate out the alternate found nodes from the mainline ones won't work.
+                // But that is how it seems to be used...
+
             }
         }
     }
@@ -361,6 +370,7 @@ public class HATADWIN extends HoeffdingTree {
             Instance weightedInst = inst.copy();
             if (k > 0) {
                 weightedInst.setWeight(inst.weight() * k);
+                // this wasn't in the paper
             }
             //Compute ClassPrediction using filterInstanceToLeaf
             int ClassPrediction = Utils.maxIndex(this.getClassVotes(inst, ht));
@@ -430,6 +440,7 @@ public class HATADWIN extends HoeffdingTree {
         public void filterInstanceToLeaves(Instance inst,
                 SplitNode splitparent, int parentBranch,
                 List<FoundNode> foundNodes, boolean updateSplitterCounts) {
+
             foundNodes.add(new FoundNode(this, splitparent, parentBranch));
         }
     }
@@ -485,6 +496,12 @@ public class HATADWIN extends HoeffdingTree {
             int predictionPaths = 0;
             for (FoundNode foundNode : foundNodes) {
                 if (foundNode.parentBranch != -999) {
+                	// this only works one level down
+                	// Otherwise it doesn't - the node will just have a split index as parent branch
+                	// So the filter will still add any nodes found deeper down to foundNodes
+                	// This looks like a bug.
+
+
                     Node leafNode = foundNode.node;
                     if (leafNode == null) {
                         leafNode = foundNode.parent;

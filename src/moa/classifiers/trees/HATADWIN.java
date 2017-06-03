@@ -36,7 +36,6 @@ import moa.classifiers.trees.HoeffdingTree.ActiveLearningNode;
 import moa.classifiers.trees.HoeffdingTree.LearningNode;
 import moa.classifiers.trees.HoeffdingTree.Node;
 import moa.classifiers.trees.HoeffdingTree.SplitNode;
-import moa.classifiers.trees.SubConceptTree.NewNode;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
@@ -106,6 +105,10 @@ public class HATADWIN extends HoeffdingTree {
 
 		public void setRoot(boolean isRoot);
 
+		public void setMainlineNode(AdaSplitNode parent);
+
+		public AdaSplitNode getMainlineNode();
+
     }
 
     public static class AdaSplitNode extends SplitNode implements NewNode {
@@ -126,6 +129,8 @@ public class HATADWIN extends HoeffdingTree {
         private boolean isAlternate = false;
 
         private boolean isRoot = false;
+
+		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
 
 		@Override
 		public boolean isAlternate() {
@@ -251,6 +256,7 @@ public class HATADWIN extends HoeffdingTree {
 
                 //Start a new alternative tree : learning node
                 this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
+                ((NewNode)this.alternateTree).setMainlineNode(this);
                 ht.alternateTrees++;
             } // Check condition to replace tree
 
@@ -371,6 +377,16 @@ public class HATADWIN extends HoeffdingTree {
 			this.isRoot = isRoot;
 
 		}
+
+		@Override
+		public void setMainlineNode(AdaSplitNode mainlineNode) {
+			this.mainlineNode  = mainlineNode;
+		}
+
+		@Override
+		public AdaSplitNode getMainlineNode() {
+			return this.mainlineNode;
+		}
     }
 
     public static class AdaLearningNode extends LearningNodeNBAdaptive implements NewNode {
@@ -388,6 +404,8 @@ public class HATADWIN extends HoeffdingTree {
         private boolean isAlternate = false;
 
 		private boolean isRoot = false;
+
+		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
 
 		@Override
 		public boolean isAlternate() {
@@ -545,6 +563,16 @@ public class HATADWIN extends HoeffdingTree {
 			this.isRoot = isRoot;
 
 		}
+		@Override
+		public void setMainlineNode(AdaSplitNode mainlineNode) {
+			this.mainlineNode  = mainlineNode;
+		}
+
+		@Override
+		public AdaSplitNode getMainlineNode() {
+			return this.mainlineNode;
+		}
+
     }
 
     protected int alternateTrees;
@@ -678,12 +706,13 @@ public class HATADWIN extends HoeffdingTree {
                     if (((NewNode)node).isRoot()) {
                     	((NewNode)newSplit).setRoot(true);
                         this.treeRoot = newSplit;
-                        // What if I had an alternate at the root level? Parent would be null still, and treeRoot would be set to the alternate's split
-                        // This should resolve clearly the difference between root and root's alternate which would've shared parent null.
-                    } else {
+                    }
+                    else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment
+                    	//((NewNode)node).getMainlineNode().alternateTree = newSplit;
+                    }
+                    else {
                         parent.setChild(parentIndex, newSplit);
-                        // but now... what happens when root's alternate is here? it's parent is null...
-                        // it must be attached to the root node... so let an alternate subtree be attached to a mainline node.
+
                     }
                 }
                 // manage memory

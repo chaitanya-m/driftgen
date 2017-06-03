@@ -477,10 +477,10 @@ public class HATADWIN extends HoeffdingTree {
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
-            if (k > 0) {
-                weightedInst.setWeight(inst.weight() * k);
-                // this wasn't in the paper
-            }
+//            if (k > 0) {
+//                weightedInst.setWeight(inst.weight() * k);
+//                // this wasn't in the paper
+//            }
             //Compute ClassPrediction using filterInstanceToLeaf
             int ClassPrediction = Utils.maxIndex(this.getClassVotes(inst, ht));
 

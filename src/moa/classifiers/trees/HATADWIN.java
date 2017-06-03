@@ -256,7 +256,7 @@ public class HATADWIN extends HoeffdingTree {
 
                 //Start a new alternative tree : learning node
                 this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
-                ((NewNode)this.alternateTree).setMainlineNode(this);
+                ((NewNode)this.alternateTree).setMainlineNode(this); // this node is the alternate's attachment point
                 ht.alternateTrees++;
             } // Check condition to replace tree
 
@@ -708,7 +708,7 @@ public class HATADWIN extends HoeffdingTree {
                         this.treeRoot = newSplit;
                     }
                     else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment
-                    	//((NewNode)node).getMainlineNode().alternateTree = newSplit;
+                    	((NewNode)node).getMainlineNode().alternateTree = newSplit;
                     }
                     else {
                         parent.setChild(parentIndex, newSplit);

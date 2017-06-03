@@ -293,17 +293,9 @@ public class HATADWIN extends HoeffdingTree {
                         ((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
                         ((NewNode)(this.alternateTree)).setMainlineNode(null);
 
+                        System.out.print(this.alternateTree.subtreeDepth() + " " + this.subtreeDepth());
+
                         if (!this.isRoot()) {
-                        	if(parent == null){
-                        		System.err.println("Non-root node has null parent");
-                            	StringBuilder out = new StringBuilder();
-
-                        		//((AdaSplitNode)ht.treeRoot).describeSubtree(ht, out, 2);
-                        		this.describeSubtree(ht, out, 2);
-
-                        		//System.err.print(out);
-                        		//System.exit(0);
-                        	}
                             parent.setChild(parentBranch, this.alternateTree);
                             ((NewNode)this.alternateTree).setParent(this.getParent());
                             //((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
@@ -525,11 +517,11 @@ public class HATADWIN extends HoeffdingTree {
 
         @Override
         public void learnFromInstance(Instance inst, HATADWIN ht, SplitNode parent, int parentBranch) {
-
-        	if(!this.isAlternate()){
-        		System.err.println(numInstances);
-        		// this shows mainline learning nodes stop learning once drift occurs
-        	}
+//
+//        	if(!this.isAlternate()){
+//        		System.err.println(numInstances);
+//        		// this shows mainline learning nodes stop learning once drift occurs
+//        	}
 
             int trueClass = (int) inst.classValue();
             //New option vore

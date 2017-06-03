@@ -31,11 +31,6 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
-import moa.classifiers.multilabel.trees.ISOUPTree.LeafNode;
-import moa.classifiers.trees.HoeffdingTree.ActiveLearningNode;
-import moa.classifiers.trees.HoeffdingTree.LearningNode;
-import moa.classifiers.trees.HoeffdingTree.Node;
-import moa.classifiers.trees.HoeffdingTree.SplitNode;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
@@ -84,7 +79,9 @@ public class HATADWIN extends HoeffdingTree {
         //public boolean getErrorChange();
         public int numberLeaves();
 
-        public double getErrorEstimation();
+        void setAlternateStatusForSubtreeNodes(boolean isAlternate);
+
+		public double getErrorEstimation();
 
         public double getErrorWidth();
 
@@ -109,6 +106,10 @@ public class HATADWIN extends HoeffdingTree {
 
 		public AdaSplitNode getMainlineNode();
 
+		public void setParent(AdaSplitNode parent);
+
+		public AdaSplitNode getParent();
+
     }
 
     public static class AdaSplitNode extends SplitNode implements NewNode {
@@ -131,6 +132,20 @@ public class HATADWIN extends HoeffdingTree {
         private boolean isRoot = false;
 
 		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
+
+		private AdaSplitNode parent = null;
+
+		@Override
+		public void setParent(AdaSplitNode parent) {
+			this.parent = parent;
+
+		}
+
+		@Override
+		public AdaSplitNode getParent() {
+			return this.parent;
+		}
+
 
 		@Override
 		public boolean isAlternate() {
@@ -269,18 +284,33 @@ public class HATADWIN extends HoeffdingTree {
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
                     if (Bound < oldErrorRate - altErrorRate
-                    		  && this.subtreeDepth() < 0
+                    		  //&& this.subtreeDepth() < 0
                     		) {
                         // Switch alternate tree
                         ht.activeLeafNodeCount -= this.numberLeaves();
                         ht.activeLeafNodeCount += ((NewNode) this.alternateTree).numberLeaves();
-                        killTreeChilds(ht);
-                        if (parent != null) {
+                        this.killTreeChilds(ht);
+                        ((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
+                        ((NewNode)(this.alternateTree)).setMainlineNode(null);
+
+                        if (!this.isRoot()) {
+                        	if(parent == null){
+                        		System.err.println("Non-root node has null parent");
+                            	StringBuilder out = new StringBuilder();
+
+                        		//((AdaSplitNode)ht.treeRoot).describeSubtree(ht, out, 2);
+                        		this.describeSubtree(ht, out, 2);
+
+                        		//System.err.print(out);
+                        		//System.exit(0);
+                        	}
                             parent.setChild(parentBranch, this.alternateTree);
+                            ((NewNode)this.alternateTree).setParent(this.getParent());
                             //((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
                         } else {
                             // Switch root tree
-                            ht.treeRoot = ((AdaSplitNode) ht.treeRoot).alternateTree;
+                        	((NewNode)(this.alternateTree)).setRoot(true);
+                            ht.treeRoot = this.alternateTree;
                         }
                         ht.switchedAlternateTrees++;
                     } else if (Bound < altErrorRate - oldErrorRate) {
@@ -309,6 +339,20 @@ public class HATADWIN extends HoeffdingTree {
                 ((NewNode) child).learnFromInstance(weightedInst, ht, this, childBranch);
             }
         }
+
+		@Override
+        public void setAlternateStatusForSubtreeNodes(boolean isAlternate) {
+
+          this.setAlternate(isAlternate);
+
+          for (Node child : this.children) {
+            if (child != null) {
+              ((NewNode)child).setAlternateStatusForSubtreeNodes(isAlternate);
+            }
+          }
+        }
+
+
 
         @Override
         public void killTreeChilds(HATADWIN ht) {
@@ -407,6 +451,20 @@ public class HATADWIN extends HoeffdingTree {
 
 		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
 
+		private AdaSplitNode parent = null;
+
+		@Override
+		public void setParent(AdaSplitNode parent) {
+			this.parent = parent;
+
+		}
+
+		@Override
+		public AdaSplitNode getParent() {
+			return this.parent;
+		}
+
+
 		@Override
 		public boolean isAlternate() {
 			return this.isAlternate;
@@ -477,10 +535,10 @@ public class HATADWIN extends HoeffdingTree {
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
-//            if (k > 0) {
-//                weightedInst.setWeight(inst.weight() * k);
-//                // this wasn't in the paper
-//            }
+            if (k > 0) {
+                weightedInst.setWeight(inst.weight() * k);
+                // this wasn't in the paper
+            }
             //Compute ClassPrediction using filterInstanceToLeaf
             int ClassPrediction = Utils.maxIndex(this.getClassVotes(inst, ht));
 
@@ -571,6 +629,11 @@ public class HATADWIN extends HoeffdingTree {
 		@Override
 		public AdaSplitNode getMainlineNode() {
 			return this.mainlineNode;
+		}
+
+		@Override
+		public void setAlternateStatusForSubtreeNodes(boolean isAlternate) {
+			this.setAlternate(isAlternate);
 		}
 
     }

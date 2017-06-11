@@ -249,7 +249,7 @@ public class HATADWIN extends HoeffdingTree {
             //Compute ClassPrediction using filterInstanceToLeaf
             //int ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, null, -1).node.getClassVotes(inst, ht));
             int ClassPrediction = 0;
-            Node leaf = filterInstanceToLeaf(inst, parent, parentBranch).node;
+            Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
             if (leaf != null) {
                 ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
             }
@@ -272,6 +272,7 @@ public class HATADWIN extends HoeffdingTree {
                 //Start a new alternative tree : learning node
                 this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
                 ((NewNode)this.alternateTree).setMainlineNode(this); // this node is the alternate's attachment point
+                ((NewNode)this.alternateTree).setParent(this.getParent());
                 ht.alternateTrees++;
             } // Check condition to replace tree
 
@@ -283,6 +284,18 @@ public class HATADWIN extends HoeffdingTree {
                     //if (gNumAlts>0) fDelta=fDelta/gNumAlts;
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
+
+                    System.out.print(this.alternateTree.subtreeDepth()
+                    		+ " " + this.subtreeDepth() +
+                    		" " + this.isRoot() +
+                    		" " + this.isAlternate());
+
+                    if(this.getParent() == null){
+                    	System.out.print(" ||parent is null; root level node||");
+                    }
+
+                    System.out.println();
+
                     if (Bound < oldErrorRate - altErrorRate
                     		  //&& this.subtreeDepth() < 0
                     		) {
@@ -293,17 +306,19 @@ public class HATADWIN extends HoeffdingTree {
                         ((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
                         ((NewNode)(this.alternateTree)).setMainlineNode(null);
 
-                        System.out.print(this.alternateTree.subtreeDepth() + " " + this.subtreeDepth());
 
                         if (!this.isRoot()) {
-                            parent.setChild(parentBranch, this.alternateTree);
+                            this.getParent().setChild(parentBranch, this.alternateTree);
+                        	((NewNode)(this.alternateTree)).setRoot(false);
                             ((NewNode)this.alternateTree).setParent(this.getParent());
                             //((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
                         } else {
                             // Switch root tree
                         	((NewNode)(this.alternateTree)).setRoot(true);
+                        	((NewNode)(this.alternateTree)).setParent(null);
                             ht.treeRoot = this.alternateTree;
                         }
+                        this.alternateTree = null;
                         ht.switchedAlternateTrees++;
                     } else if (Bound < altErrorRate - oldErrorRate) {
                         // Erase alternate tree
@@ -323,7 +338,7 @@ public class HATADWIN extends HoeffdingTree {
             //}
             //learnFromInstance alternate Tree and Child nodes
             if (this.alternateTree != null) {
-                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
+                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, this.getParent(), parentBranch);
             }
             int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);
@@ -552,7 +567,7 @@ public class HATADWIN extends HoeffdingTree {
             double weightSeen = this.getWeightSeen();
             if (weightSeen
                     - this.getWeightSeenAtLastSplitEvaluation() >= ht.gracePeriodOption.getValue()) {
-                ht.attemptToSplit(this, parent,
+                ht.attemptToSplit(this, this.getParent(),
                         parentBranch);
                 this.setWeightSeenAtLastSplitEvaluation(weightSeen);
             }
@@ -677,6 +692,7 @@ public class HATADWIN extends HoeffdingTree {
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode(false); // root cannot be alternate
             ((NewNode) this.treeRoot).setRoot(true);
+            ((NewNode) this.treeRoot).setParent(null);
             this.activeLeafNodeCount = 1;
         }
         ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
@@ -747,12 +763,13 @@ public class HATADWIN extends HoeffdingTree {
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins
-                    deactivateLearningNode(node, parent, parentIndex);
+                    deactivateLearningNode(node, ((NewNode)node).getParent(), parentIndex);
                 } else {
                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(),splitDecision.numSplits(), ((NewNode)(node)).isAlternate());
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i), ((NewNode)newSplit).isAlternate());
+                        ((NewNode)newChild).setParent((AdaSplitNode)newSplit);
                         newSplit.setChild(i, newChild);
                     }
                     this.activeLeafNodeCount--;
@@ -760,14 +777,16 @@ public class HATADWIN extends HoeffdingTree {
                     this.activeLeafNodeCount += splitDecision.numSplits();
                     if (((NewNode)node).isRoot()) {
                     	((NewNode)newSplit).setRoot(true);
+                    	((NewNode)newSplit).setParent(null);
                         this.treeRoot = newSplit;
                     }
-                    else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment
+                    else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is alternate
                     	((NewNode)node).getMainlineNode().alternateTree = newSplit;
+                    	((NewNode)newSplit).setParent(((NewNode)node).getParent());
                     }
-                    else {
-                        parent.setChild(parentIndex, newSplit);
-
+                    else { //if the node is neither root nor an alternate, it must have a mainline split parent
+                    	((NewNode)node).getParent().setChild(parentIndex, newSplit);
+                    	((NewNode)newSplit).setParent(((NewNode)node).getParent());
                     }
                 }
                 // manage memory

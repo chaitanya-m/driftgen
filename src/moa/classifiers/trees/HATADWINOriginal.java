@@ -228,7 +228,6 @@ public class HATADWINOriginal extends HoeffdingTree {
                     System.out.println(this.alternateTree.subtreeDepth() + " " + this.subtreeDepth() + " " + (parent==null));
 
                     if (Bound < oldErrorRate - altErrorRate
-                    		&& this.subtreeDepth() < 0
                     		) {
                         // Switch alternate tree
                         ht.activeLeafNodeCount -= this.numberLeaves();

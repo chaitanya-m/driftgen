@@ -285,20 +285,23 @@ public class HATADWIN extends HoeffdingTree {
                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
 
-                    System.out.print(this.alternateTree.subtreeDepth()
-                    		+ " " + this.subtreeDepth() +
-                    		" " + this.isRoot() +
-                    		" " + this.isAlternate());
+//                    System.out.print(this.alternateTree.subtreeDepth()
+//                    		+ " " + this.subtreeDepth() +
+//                    		" " + this.isRoot() +
+//                    		" " + this.isAlternate());
+//
+//                    if(this.getParent() == null){
+//                    	System.out.print(" ||parent is null; root level node||");
+//                    }
+//
+//                    System.out.println();
 
-                    if(this.getParent() == null){
-                    	System.out.print(" ||parent is null; root level node||");
-                    }
-
-                    System.out.println();
 
                     if (Bound < oldErrorRate - altErrorRate
-                    		  //&& this.subtreeDepth() < 0
+                    		  //&& this.subtreeDepth() < 4
                     		) {
+                        //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
+
                         // Switch alternate tree
                         ht.activeLeafNodeCount -= this.numberLeaves();
                         ht.activeLeafNodeCount += ((NewNode) this.alternateTree).numberLeaves();
@@ -540,10 +543,11 @@ public class HATADWIN extends HoeffdingTree {
 
             int trueClass = (int) inst.classValue();
             //New option vore
-            int k = MiscUtils.poisson(1.0, this.classifierRandom);
+            int k = MiscUtils.poisson(10.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
-            if (k > 0) {
-                weightedInst.setWeight(inst.weight() * k);
+            if (k > 0 && this.isAlternate()) {
+            	// use weighted instance if necessary for asymmetric alternate weighting
+                // weightedInst.setWeight(inst.weight() * k);
                 // this wasn't in the paper
             }
             //Compute ClassPrediction using filterInstanceToLeaf
@@ -812,7 +816,9 @@ public class HATADWIN extends HoeffdingTree {
     					double[] dist = leafNode.getClassVotes(inst, this);
 
     					if(!((NewNode)leafNode).isAlternate()){
+
     						result.addValues(dist);
+
     					}
 
     					predictionPaths++;

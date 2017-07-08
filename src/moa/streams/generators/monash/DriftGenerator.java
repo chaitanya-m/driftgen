@@ -44,7 +44,11 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 			Integer.MIN_VALUE, Integer.MAX_VALUE);
 
 	public FloatOption driftMagnitudePrior = new FloatOption("driftMagnitudePrior", 'i',
-			"Magnitude of the drift between the starting probability and the one after the drift."
+			"Magnitude of the covariate drift."
+					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
+
+	public FloatOption driftMagnitudeTarget = new FloatOption("driftMagnitudeTarget", 'y',
+			"Magnitude of the target drift."
 					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
 
 	public IntOption burnInNInstances = new IntOption("burnInNInstances", 'b',
@@ -64,6 +68,8 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 	}
 
 	RandomDataGenerator r;
+	RandomDataGenerator r2;
+
 
 	long nInstancesGeneratedSoFar;
 

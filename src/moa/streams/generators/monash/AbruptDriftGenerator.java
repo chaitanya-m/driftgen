@@ -80,6 +80,7 @@ public class AbruptDriftGenerator extends DriftGenerator{
 		for (int a = 0; a < indexes.length; a++) {
 			// choosing values of x_1,...,x_n
 			double rand = r.nextUniform(0.0, 1.0, true);
+			// pick seed for distribution from interface, but to spit out a different sequence using timeinmillis, use r2. For consistent sequences, use r.
 			int chosenVal = 0;
 			double sumProba = px[a][chosenVal];
 
@@ -102,7 +103,7 @@ public class AbruptDriftGenerator extends DriftGenerator{
 
 		nInstancesGeneratedSoFar++;
 
-		if(nInstancesGeneratedSoFar % 100 == 0 && nInstancesGeneratedSoFar < 302000 && nInstancesGeneratedSoFar > 300000) {System.err.println(nInstancesGeneratedSoFar);}
+		//if(nInstancesGeneratedSoFar % 100 == 0 && nInstancesGeneratedSoFar < 302000 && nInstancesGeneratedSoFar > 300000) {System.err.println(nInstancesGeneratedSoFar);}
 
 		return new InstanceExample(inst);
 	}
@@ -124,6 +125,10 @@ public class AbruptDriftGenerator extends DriftGenerator{
 		RandomGenerator rg = new JDKRandomGenerator();
 		rg.setSeed(seed.getValue());
 		r = new RandomDataGenerator(rg);
+
+		RandomGenerator rg2 = new JDKRandomGenerator(); // pick seed for distribution from interface, but spit out a different sequence using timeinmillis
+		rg2.setSeed(System.currentTimeMillis());
+		r2 = new RandomDataGenerator(rg2);
 
 		// generating distribution before drift
 

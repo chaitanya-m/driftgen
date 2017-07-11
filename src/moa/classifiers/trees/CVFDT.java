@@ -1,4 +1,4 @@
-package weka.classifiers.trees;
+package moa.classifiers.trees;
 
 import static com.metsci.glimpse.util.logging.LoggerUtils.logWarning;
 
@@ -36,7 +36,7 @@ import edu.gmu.vfml.tree.Node;
  * @see weka.classifiers.trees.VFDT
  * @author ulman
  */
-public class CVFDT extends VFDT
+public class CVFDT extends HoeffdingTree
 {
     private static final Logger logger = Logger.getLogger( CVFDT.class.getName( ) );
 

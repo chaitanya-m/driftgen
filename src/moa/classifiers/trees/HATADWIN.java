@@ -239,6 +239,10 @@ public class HATADWIN extends HoeffdingTree {
         // Parent nodes are allways SplitNodes
         @Override
         public void learnFromInstance(Instance inst, HATADWIN ht, SplitNode parent, int parentBranch) {
+
+            System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
+
+
             int trueClass = (int) inst.classValue();
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
@@ -543,13 +547,13 @@ public class HATADWIN extends HoeffdingTree {
 
             int trueClass = (int) inst.classValue();
             //New option vore
-            int k = MiscUtils.poisson(10.0, this.classifierRandom);
+            int k = MiscUtils.poisson(1.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
-            if (k > 0 && this.isAlternate()) {
+            //if (k > 0 && this.isAlternate()) {
             	// use weighted instance if necessary for asymmetric alternate weighting
-                // weightedInst.setWeight(inst.weight() * k);
+                //weightedInst.setWeight(inst.weight() * k);
                 // this wasn't in the paper
-            }
+            //}
             //Compute ClassPrediction using filterInstanceToLeaf
             int ClassPrediction = Utils.maxIndex(this.getClassVotes(inst, ht));
 

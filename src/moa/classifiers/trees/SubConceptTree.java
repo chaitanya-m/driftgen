@@ -327,7 +327,7 @@ public class SubConceptTree extends HoeffdingTree {
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
                     if (Bound < (oldErrorRate - altErrorRate)
                     		//* Math.pow((double)(this.subtreeDepth()+1) / (ht.treeRoot.subtreeDepth()+2), 5)
-                        	&& this.subtreeDepth() < 4
+                        	&& this.subtreeDepth() < 0
                     		) {
                 		System.err.println("Change depth: " +
                     		(1.0 - (double)(this.subtreeDepth()+1) / (ht.treeRoot.subtreeDepth()+1))
@@ -589,7 +589,6 @@ public class SubConceptTree extends HoeffdingTree {
 
 		@Override
 		public AdaSplitNode getParent() {
-
 			return this.parent;
 		}
 
@@ -874,8 +873,8 @@ public class SubConceptTree extends HoeffdingTree {
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
 
-            	System.err.println(bestSuggestion.merit + " " + secondBestSuggestion.merit + " " +
-            	InfoGainSplitCriterion.computeEntropy(node.getObservedClassDistribution()));
+            	//System.err.println(bestSuggestion.merit + " " + secondBestSuggestion.merit + " " +
+            	//InfoGainSplitCriterion.computeEntropy(node.getObservedClassDistribution()));
 
 
                 if(bestSuggestion.merit > InfoGainSplitCriterion.computeEntropy(node.getObservedClassDistribution())){
@@ -1071,7 +1070,10 @@ public class SubConceptTree extends HoeffdingTree {
                     //if (distSum > 0.0) {
                     //	Utils.normalize(dist, distSum);
                     //}
-                    result.addValues(dist);
+
+                    if(!((NewNode)leafNode).isAlternate()){
+                    	result.addValues(dist);
+                    }
                     predictionPaths++;
                 //}
             }

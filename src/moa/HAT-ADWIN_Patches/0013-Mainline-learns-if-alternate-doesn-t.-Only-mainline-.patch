@@ -1,0 +1,95 @@
+From 7140e47e5ea887b04ab37886957423b6547c78dd Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sat, 3 Jun 2017 00:21:44 +1000
+Subject: [PATCH 13/27] Mainline learns if alternate doesn't. Only mainline
+ allowed to predict.
+
+Approximates VFDT. The gap is due to the weights (not mentioned in paper).
+---
+ src/moa/classifiers/trees/HATADWIN.java | 70 ++++++++++++---------------------
+ 1 file changed, 26 insertions(+), 44 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index 3511fe2..6ed4541 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -648,49 +648,31 @@ public class HATADWIN extends HoeffdingTree {
+ 
+     @Override
+     public double[] getVotesForInstance(Instance inst) {
+-        if (this.treeRoot != null) {
+-            FoundNode[] foundNodes = filterInstanceToLeaves(inst,
+-                    null, -1, false);
+-            DoubleVector result = new DoubleVector();
+-            int predictionPaths = 0;
+-            for (FoundNode foundNode : foundNodes) {
+-//                if (foundNode.parentBranch != -999) {
+-                	// this only works one level down
+-                	// Otherwise it doesn't - the node will just have a split index as parent branch
+-                	// So the filter will still add any nodes found deeper down to foundNodes
+-                	// This looks like a bug.
+-
+-//                	if (foundNode.node != null){
+-//                		if (((NewNode)foundNode.node).isAlternate()){
+-//                			System.err.println("Alternate is being used for prediction even though tree substitution is off");
+-//                			//System.exit(1);
+-//                		}
+-//                	}
+-
+-                    Node leafNode = foundNode.node;
+-                    if (leafNode == null) {
+-                        leafNode = foundNode.parent;
+-                    }
+-                    double[] dist = leafNode.getClassVotes(inst, this);
+-                    //Albert: changed for weights
+-                    //double distSum = Utils.sum(dist);
+-                    //if (distSum > 0.0) {
+-                    //	Utils.normalize(dist, distSum);
+-                    //}
+-                    result.addValues(dist);
+-                    predictionPaths++;
+-                }
+-
+-//            if(predictionPaths < 1) {
+-//            	System.err.println("predictionPaths = 0");
+-//            	System.exit(1);
+-//            }
+-
+-            //if (predictionPaths > this.maxPredictionPaths) {
+-            //	this.maxPredictionPaths++;
+-            //}
+-            return result.getArrayRef();
+-        }
+-        return new double[0];
++    	if (this.treeRoot != null) {
++    		FoundNode[] foundNodes = filterInstanceToLeaves(inst,
++    				null, -1, false);
++    		DoubleVector result = new DoubleVector();
++    		int predictionPaths = 0;
++    		for (FoundNode foundNode : foundNodes) {
++
++    			if (foundNode.node != null){
++    				if (!((NewNode)foundNode.node).isAlternate()){
++
++    					Node leafNode = foundNode.node;
++    					if (leafNode == null) {
++    						leafNode = foundNode.parent;
++    					}
++    					double[] dist = leafNode.getClassVotes(inst, this);
++
++    					result.addValues(dist);
++    					predictionPaths++;
++
++    					return result.getArrayRef();
++    				}
++
++    			}
++    		}
++    	}
++    	return new double[0];
+     }
+ }
+\ No newline at end of file
+-- 
+2.7.4
+

@@ -1,0 +1,51 @@
+From 70a305cb31a91b4434b4eccd5adb878c6cf2c8d9 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sat, 3 Jun 2017 01:29:51 +1000
+Subject: [PATCH 15/27] More clarity- allowing only non-alternate votes
+
+---
+ src/moa/classifiers/trees/HATADWIN.java | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index 7ee2bdb..fd45974 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -31,6 +31,7 @@ import moa.classifiers.core.AttributeSplitSuggestion;
+ import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
+ import moa.classifiers.core.driftdetection.ADWIN;
+ import moa.classifiers.core.splitcriteria.SplitCriterion;
++import moa.classifiers.multilabel.trees.ISOUPTree.LeafNode;
+ import moa.classifiers.trees.HoeffdingTree.ActiveLearningNode;
+ import moa.classifiers.trees.HoeffdingTree.LearningNode;
+ import moa.classifiers.trees.HoeffdingTree.Node;
+@@ -655,22 +656,20 @@ public class HATADWIN extends HoeffdingTree {
+     		int predictionPaths = 0;
+     		for (FoundNode foundNode : foundNodes) {
+ 
+-    			if (foundNode.node != null){
+-    				if (!((NewNode)foundNode.node).isAlternate()){
+-
+     					Node leafNode = foundNode.node;
+     					if (leafNode == null) {
+     						leafNode = foundNode.parent;
+     					}
+     					double[] dist = leafNode.getClassVotes(inst, this);
+ 
+-    					result.addValues(dist);
++    					if(!((NewNode)leafNode).isAlternate()){
++    						result.addValues(dist);
++    					}
++
+     					predictionPaths++;
+ 
+     					return result.getArrayRef();
+-    				}
+ 
+-    			}
+     		}
+     	}
+     	return new double[0];
+-- 
+2.7.4
+

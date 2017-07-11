@@ -1,0 +1,26 @@
+From 444f6e033f1f376a2f9e3f5384768f3262e7f9a2 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sun, 11 Jun 2017 16:38:35 +1000
+Subject: [PATCH 26/27] Turning back on subtree substitution in the original
+ HATADWIN
+
+To return it back to its original state...
+---
+ src/moa/classifiers/trees/HATADWINOriginal.java | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWINOriginal.java b/src/moa/classifiers/trees/HATADWINOriginal.java
+index 4b6d4ba..5da44c0 100644
+--- a/src/moa/classifiers/trees/HATADWINOriginal.java
++++ b/src/moa/classifiers/trees/HATADWINOriginal.java
+@@ -228,7 +228,6 @@ public class HATADWINOriginal extends HoeffdingTree {
+                     System.out.println(this.alternateTree.subtreeDepth() + " " + this.subtreeDepth() + " " + (parent==null));
+ 
+                     if (Bound < oldErrorRate - altErrorRate
+-                    		&& this.subtreeDepth() < 0
+                     		) {
+                         // Switch alternate tree
+                         ht.activeLeafNodeCount -= this.numberLeaves();
+-- 
+2.7.4
+

@@ -1,0 +1,65 @@
+From 913b646fc033486551996369e61449eec65f95af Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Fri, 2 Jun 2017 23:50:57 +1000
+Subject: [PATCH 10/27] I made a mistake in the last one, but, the bug remains
+
+Alternates vote as soon as drift occurs even though tree substitution is turned off. They are the only nodes doing any learning after drift- turn off
+
+I had made a mistake in the last experiment with the braces, fixed now.
+---
+ src/moa/classifiers/trees/HATADWIN.java | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index a3a0631..405f7cb 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -252,7 +252,7 @@ public class HATADWIN extends HoeffdingTree {
+                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
+                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
+                     if (Bound < oldErrorRate - altErrorRate
+-                    		&& this.subtreeDepth() < 0
++                    		  && this.subtreeDepth() < 0
+                     		) {
+                         // Switch alternate tree
+                         ht.activeLeafNodeCount -= this.numberLeaves();
+@@ -654,20 +654,18 @@ public class HATADWIN extends HoeffdingTree {
+             DoubleVector result = new DoubleVector();
+             int predictionPaths = 0;
+             for (FoundNode foundNode : foundNodes) {
+-            	if (foundNode.node != null){
+-            	if(!((NewNode)foundNode.node).isAlternate()){
+ //                if (foundNode.parentBranch != -999) {
+                 	// this only works one level down
+                 	// Otherwise it doesn't - the node will just have a split index as parent branch
+                 	// So the filter will still add any nodes found deeper down to foundNodes
+                 	// This looks like a bug.
+ 
+-//                	if (foundNode.node != null){
+-//                		if (((NewNode)foundNode.node).isAlternate()){
+-//                			System.err.println("Alternate is being used for prediction");
+-//                			System.exit(1);
+-//                		}
+-//                	}
++                	if (foundNode.node != null){
++                		if (((NewNode)foundNode.node).isAlternate()){
++                			System.err.println("Alternate is being used for prediction even though tree substitution is off");
++                			//System.exit(1);
++                		}
++                	}
+ 
+                     Node leafNode = foundNode.node;
+                     if (leafNode == null) {
+@@ -682,8 +680,7 @@ public class HATADWIN extends HoeffdingTree {
+                     result.addValues(dist);
+                     predictionPaths++;
+                 }
+-            }
+-            }
++
+ //            if(predictionPaths < 1) {
+ //            	System.err.println("predictionPaths = 0");
+ //            	System.exit(1);
+-- 
+2.7.4
+

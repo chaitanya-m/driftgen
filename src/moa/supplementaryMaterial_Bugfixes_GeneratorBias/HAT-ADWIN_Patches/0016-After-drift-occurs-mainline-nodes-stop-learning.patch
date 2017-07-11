@@ -1,0 +1,67 @@
+From 1dc911b52dae0db5a6bf3da38fa09f944873b587 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sat, 3 Jun 2017 02:13:31 +1000
+Subject: [PATCH 16/27] After drift occurs, mainline nodes stop learning.
+
+---
+ src/moa/classifiers/trees/HATADWIN.java | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index fd45974..9f45447 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -64,6 +64,8 @@ public class HATADWIN extends HoeffdingTree {
+ 
+     private static final long serialVersionUID = 1L;
+ 
++    private static long numInstances = 0;
++
+     @Override
+     public String getPurposeString() {
+         return "Hoeffding Adaptive Tree for evolving data streams that uses ADWIN to replace branches for new ones.";
+@@ -220,8 +222,9 @@ public class HATADWIN extends HoeffdingTree {
+             //Compute ClassPrediction using filterInstanceToLeaf
+             //int ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, null, -1).node.getClassVotes(inst, ht));
+             int ClassPrediction = 0;
+-            if (filterInstanceToLeaf(inst, parent, parentBranch).node != null) {
+-                ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, parent, parentBranch).node.getClassVotes(inst, ht));
++            Node leaf = filterInstanceToLeaf(inst, parent, parentBranch).node;
++            if (leaf != null) {
++                ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
+             }
+ 
+             boolean blCorrect = (trueClass == ClassPrediction);
+@@ -341,8 +344,7 @@ public class HATADWIN extends HoeffdingTree {
+                 }
+             }
+             if (this.alternateTree != null) {
+-                ((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999,
+-                        foundNodes, updateSplitterCounts);
++                ((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
+                 // the -999 used to launch this subtree filter becomes inutile immediately following
+                 // the top node of the subtree. Only the immediate children of a split will see this as a parentBranch
+                 // So a foundnode created further down cannot be distinguished from the mainline thing
+@@ -427,6 +429,11 @@ public class HATADWIN extends HoeffdingTree {
+ 
+         @Override
+         public void learnFromInstance(Instance inst, HATADWIN ht, SplitNode parent, int parentBranch) {
++
++        	if(!this.isAlternate()){
++        		System.err.println(numInstances);
++        	}
++
+             int trueClass = (int) inst.classValue();
+             //New option vore
+             int k = MiscUtils.poisson(1.0, this.classifierRandom);
+@@ -650,6 +657,7 @@ public class HATADWIN extends HoeffdingTree {
+     @Override
+     public double[] getVotesForInstance(Instance inst) {
+     	if (this.treeRoot != null) {
++    		numInstances++;
+     		FoundNode[] foundNodes = filterInstanceToLeaves(inst,
+     				null, -1, false);
+     		DoubleVector result = new DoubleVector();
+-- 
+2.7.4
+

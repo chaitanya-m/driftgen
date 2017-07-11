@@ -1,0 +1,43 @@
+From 3fbd1aa6f036a36195c7511e1187daf0d29ec1b5 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Fri, 2 Jun 2017 21:44:19 +1000
+Subject: [PATCH 03/27] Some initializations. Root must of course not be
+ alternate.
+
+---
+ src/moa/classifiers/trees/HATADWIN.java | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index 9afcff7..59c8876 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -105,7 +105,7 @@ public class HATADWIN extends HoeffdingTree {
+ 
+         protected Random classifierRandom;
+ 
+-        private boolean isAlternate;
++        private boolean isAlternate = false;
+ 
+ 		@Override
+ 		public boolean isAlternate() {
+@@ -339,7 +339,7 @@ public class HATADWIN extends HoeffdingTree {
+ 
+         protected Random classifierRandom;
+ 
+-        private boolean isAlternate;
++        private boolean isAlternate = false;
+ 
+ 		@Override
+ 		public boolean isAlternate() {
+@@ -505,6 +505,7 @@ public class HATADWIN extends HoeffdingTree {
+         if (this.treeRoot == null) {
+             this.treeRoot = newLearningNode();
+             this.activeLeafNodeCount = 1;
++            ((NewNode)this.treeRoot).setAlternate(false);
+         }
+         ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
+     }
+-- 
+2.7.4
+

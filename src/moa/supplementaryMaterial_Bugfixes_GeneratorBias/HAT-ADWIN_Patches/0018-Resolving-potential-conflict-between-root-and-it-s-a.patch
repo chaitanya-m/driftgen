@@ -1,0 +1,123 @@
+From eb3b0184f5b8ef69d4826132abb60d7c6e883596 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sat, 3 Jun 2017 03:41:54 +1000
+Subject: [PATCH 18/27] Resolving potential conflict between root and it's
+ alternate.
+
+Incomplete.
+
+// What if I had an alternate at the root level? Parent would be null still, and treeRoot would be set to the alternate's split
+                        // I should resolve clearly the difference between root and root's alternate which would've shared parent null.
+
+
+                        // but then... what happens when root's alternate's parent is used? it's parent is null...
+                        // it must be attached to the root node... so let an alternate subtree be attached to a mainline node.
+---
+ src/moa/classifiers/trees/HATADWIN.java | 39 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 38 insertions(+), 1 deletion(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index bfcb9df..6c7405c 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -36,6 +36,7 @@ import moa.classifiers.trees.HoeffdingTree.ActiveLearningNode;
+ import moa.classifiers.trees.HoeffdingTree.LearningNode;
+ import moa.classifiers.trees.HoeffdingTree.Node;
+ import moa.classifiers.trees.HoeffdingTree.SplitNode;
++import moa.classifiers.trees.SubConceptTree.NewNode;
+ import moa.core.DoubleVector;
+ import moa.core.MiscUtils;
+ import moa.core.Utils;
+@@ -101,6 +102,10 @@ public class HATADWIN extends HoeffdingTree {
+ 
+         public void setAlternate(boolean isAlternate);
+ 
++		public boolean isRoot();
++
++		public void setRoot(boolean isRoot);
++
+     }
+ 
+     public static class AdaSplitNode extends SplitNode implements NewNode {
+@@ -120,6 +125,8 @@ public class HATADWIN extends HoeffdingTree {
+ 
+         private boolean isAlternate = false;
+ 
++        private boolean isRoot = false;
++
+ 		@Override
+ 		public boolean isAlternate() {
+ 			return this.isAlternate;
+@@ -353,6 +360,17 @@ public class HATADWIN extends HoeffdingTree {
+ 
+             }
+         }
++
++		@Override
++		public boolean isRoot() {
++			return this.isRoot;
++		}
++
++		@Override
++		public void setRoot(boolean isRoot) {
++			this.isRoot = isRoot;
++
++		}
+     }
+ 
+     public static class AdaLearningNode extends LearningNodeNBAdaptive implements NewNode {
+@@ -369,6 +387,8 @@ public class HATADWIN extends HoeffdingTree {
+ 
+         private boolean isAlternate = false;
+ 
++		private boolean isRoot = false;
++
+ 		@Override
+ 		public boolean isAlternate() {
+ 			return this.isAlternate;
+@@ -514,6 +534,17 @@ public class HATADWIN extends HoeffdingTree {
+ 
+             foundNodes.add(new FoundNode(this, splitparent, parentBranch));
+         }
++
++		@Override
++		public boolean isRoot() {
++			return this.isRoot ;
++		}
++
++		@Override
++		public void setRoot(boolean isRoot) {
++			this.isRoot = isRoot;
++
++		}
+     }
+ 
+     protected int alternateTrees;
+@@ -562,6 +593,7 @@ public class HATADWIN extends HoeffdingTree {
+     public void trainOnInstanceImpl(Instance inst) {
+         if (this.treeRoot == null) {
+             this.treeRoot = newLearningNode(false); // root cannot be alternate
++            ((NewNode) this.treeRoot).setRoot(true);
+             this.activeLeafNodeCount = 1;
+         }
+         ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
+@@ -643,10 +675,15 @@ public class HATADWIN extends HoeffdingTree {
+                     this.activeLeafNodeCount--;
+                     this.decisionNodeCount++;
+                     this.activeLeafNodeCount += splitDecision.numSplits();
+-                    if (parent == null) {
++                    if (((NewNode)node).isRoot()) {
++                    	((NewNode)newSplit).setRoot(true);
+                         this.treeRoot = newSplit;
++                        // What if I had an alternate at the root level? Parent would be null still, and treeRoot would be set to the alternate's split
++                        // This should resolve clearly the difference between root and root's alternate which would've shared parent null.
+                     } else {
+                         parent.setChild(parentIndex, newSplit);
++                        // but now... what happens when root's alternate is here? it's parent is null...
++                        // it must be attached to the root node... so let an alternate subtree be attached to a mainline node.
+                     }
+                 }
+                 // manage memory
+-- 
+2.7.4
+

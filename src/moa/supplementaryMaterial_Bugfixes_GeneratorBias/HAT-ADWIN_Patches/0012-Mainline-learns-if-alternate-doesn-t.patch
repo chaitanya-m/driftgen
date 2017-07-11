@@ -1,0 +1,25 @@
+From 8452e5ce7939d6bd8f8274e3c1ee72efd77bff4f Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sat, 3 Jun 2017 00:14:08 +1000
+Subject: [PATCH 12/27] Mainline learns if alternate doesn't
+
+---
+ src/moa/classifiers/trees/HATADWIN.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index ad24db4..3511fe2 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -284,7 +284,7 @@ public class HATADWIN extends HoeffdingTree {
+             //}
+             //learnFromInstance alternate Tree and Child nodes
+             if (this.alternateTree != null) {
+-                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
++//                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
+             }
+             int childBranch = this.instanceChildIndex(inst);
+             Node child = this.getChild(childBranch);
+-- 
+2.7.4
+

@@ -1,0 +1,34 @@
+From 6f62e63402bd856479228ea317662879e9e905ae Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sat, 3 Jun 2017 15:01:14 +1000
+Subject: [PATCH 21/27] Spurious weighting turned off
+
+There was no mention of this in the paper. It is simply weighting everything and actually leads to worse performance than VFDT on this test.
+
+Turning it off lets it match VFDT performance. Next, I will enable subtree promotion and get closer to HAT-ADWIN as described in the paper and debugged..
+---
+ src/moa/classifiers/trees/HATADWIN.java | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index 1f1f712..8e9b56c 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -477,10 +477,10 @@ public class HATADWIN extends HoeffdingTree {
+             //New option vore
+             int k = MiscUtils.poisson(1.0, this.classifierRandom);
+             Instance weightedInst = inst.copy();
+-            if (k > 0) {
+-                weightedInst.setWeight(inst.weight() * k);
+-                // this wasn't in the paper
+-            }
++//            if (k > 0) {
++//                weightedInst.setWeight(inst.weight() * k);
++//                // this wasn't in the paper
++//            }
+             //Compute ClassPrediction using filterInstanceToLeaf
+             int ClassPrediction = Utils.maxIndex(this.getClassVotes(inst, ht));
+ 
+-- 
+2.7.4
+

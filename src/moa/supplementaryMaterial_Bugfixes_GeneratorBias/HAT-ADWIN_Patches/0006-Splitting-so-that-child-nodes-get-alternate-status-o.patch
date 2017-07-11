@@ -1,0 +1,115 @@
+From 4ec2d16378069c25353a9086a90ccc01c49b8598 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Fri, 2 Jun 2017 23:03:55 +1000
+Subject: [PATCH 06/27] Splitting so that child nodes get alternate status of
+ parent nodes
+
+---
+ src/moa/classifiers/trees/HATADWIN.java | 46 ++++++++++++++++++++++++++-------
+ 1 file changed, 37 insertions(+), 9 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index f85856f..12099e7 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -150,6 +150,20 @@ public class HATADWIN extends HoeffdingTree {
+         }
+ 
+         public AdaSplitNode(InstanceConditionalTest splitTest,
++                double[] classObservations, int size, boolean isAlternate) {
++            super(splitTest, classObservations, size);
++            this.classifierRandom = new Random(this.randomSeed);
++            this.setAlternate(isAlternate);
++        }
++
++        public AdaSplitNode(InstanceConditionalTest splitTest,
++                double[] classObservations, boolean isAlternate) {
++            super(splitTest, classObservations);
++            this.classifierRandom = new Random(this.randomSeed);
++            this.setAlternate(isAlternate);
++        }
++
++        public AdaSplitNode(InstanceConditionalTest splitTest,
+                 double[] classObservations, int size) {
+             super(splitTest, classObservations, size);
+             this.classifierRandom = new Random(this.randomSeed);
+@@ -160,7 +174,6 @@ public class HATADWIN extends HoeffdingTree {
+             super(splitTest, classObservations);
+             this.classifierRandom = new Random(this.randomSeed);
+         }
+-
+         @Override
+         public int numberLeaves() {
+             int numLeaves = 0;
+@@ -375,6 +388,12 @@ public class HATADWIN extends HoeffdingTree {
+             this.classifierRandom = new Random(this.randomSeed);
+         }
+ 
++        public AdaLearningNode(double[] initialClassObservations, boolean isAlternate) {
++            super(initialClassObservations);
++            this.classifierRandom = new Random(this.randomSeed);
++            this.setAlternate(isAlternate);
++        }
++
+         @Override
+         public int numberLeaves() {
+             return 1;
+@@ -494,11 +513,11 @@ public class HATADWIN extends HoeffdingTree {
+ 
+ 
+     protected LearningNode newLearningNode(boolean isAlternate) {
+-        AdaLearningNode aln = new AdaLearningNode(new double[0]);
+-        aln.setAlternate(false);
+-        return aln;
++        return new AdaLearningNode(new double[0], isAlternate);
++    }
++    protected LearningNode newLearningNode(double[] initialClassObservations, boolean isAlternate) {
++        return new AdaLearningNode(initialClassObservations, isAlternate);
+     }
+-
+ 
+     @Override
+     protected LearningNode newLearningNode(double[] initialClassObservations) {
+@@ -506,6 +525,16 @@ public class HATADWIN extends HoeffdingTree {
+         return new AdaLearningNode(initialClassObservations);
+     }
+ 
++    protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
++            double[] classObservations, int size, boolean isAlternate) {
++    	return new AdaSplitNode(splitTest, classObservations, size, isAlternate);
++    }
++
++	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
++            double[] classObservations, boolean isAlternate) {
++    	return new AdaSplitNode(splitTest, classObservations, isAlternate);
++    	}
++
+    @Override
+     protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
+             double[] classObservations, int size) {
+@@ -521,9 +550,8 @@ public class HATADWIN extends HoeffdingTree {
+     @Override
+     public void trainOnInstanceImpl(Instance inst) {
+         if (this.treeRoot == null) {
+-            this.treeRoot = newLearningNode();
++            this.treeRoot = newLearningNode(false); // root cannot be alternate
+             this.activeLeafNodeCount = 1;
+-            ((NewNode)this.treeRoot).setAlternate(false);
+         }
+         ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
+     }
+@@ -596,9 +624,9 @@ public class HATADWIN extends HoeffdingTree {
+                     deactivateLearningNode(node, parent, parentIndex);
+                 } else {
+                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
+-                            node.getObservedClassDistribution(),splitDecision.numSplits() );
++                            node.getObservedClassDistribution(),splitDecision.numSplits(), ((NewNode)(node)).isAlternate());
+                     for (int i = 0; i < splitDecision.numSplits(); i++) {
+-                        Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
++                        Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i), ((NewNode)newSplit).isAlternate());
+                         newSplit.setChild(i, newChild);
+                     }
+                     this.activeLeafNodeCount--;
+-- 
+2.7.4
+

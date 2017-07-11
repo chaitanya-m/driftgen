@@ -1,0 +1,57 @@
+From 34bff5cbfd785b2e7386635c3b9cd8fea1f91bf6 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sat, 3 Jun 2017 15:50:37 +1000
+Subject: [PATCH 23/27] That is exactly it. The existing implementation appears
+ to work because
+
+for most test cases it is very rare to see a subtree of greater depth than 0. Where a subtree of depth 1 is created- as in the attached example- their accuracy and kappa temp  diverge. (The original performs slightly better because the level 1 child nodes in the alternate don't see a parent branch of -999 and they end up voting when they shouldn't...)
+
+EvaluatePrequential -l trees.HoeffdingAdaptiveTree -s (generators.monash.AbruptDriftGenerator -o 0.700002 -c -z 2 -r 1 -b 200000) -i 400000 -f 1000
+---
+ src/moa/classifiers/trees/HATADWIN.java | 22 +++++++---------------
+ 1 file changed, 7 insertions(+), 15 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index ed5e2c4..8c9c945 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -293,17 +293,9 @@ public class HATADWIN extends HoeffdingTree {
+                         ((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
+                         ((NewNode)(this.alternateTree)).setMainlineNode(null);
+ 
+-                        if (!this.isRoot()) {
+-                        	if(parent == null){
+-                        		System.err.println("Non-root node has null parent");
+-                            	StringBuilder out = new StringBuilder();
+-
+-                        		//((AdaSplitNode)ht.treeRoot).describeSubtree(ht, out, 2);
+-                        		this.describeSubtree(ht, out, 2);
++                        System.out.print(this.alternateTree.subtreeDepth() + " " + this.subtreeDepth());
+ 
+-                        		//System.err.print(out);
+-                        		//System.exit(0);
+-                        	}
++                        if (!this.isRoot()) {
+                             parent.setChild(parentBranch, this.alternateTree);
+                             ((NewNode)this.alternateTree).setParent(this.getParent());
+                             //((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
+@@ -525,11 +517,11 @@ public class HATADWIN extends HoeffdingTree {
+ 
+         @Override
+         public void learnFromInstance(Instance inst, HATADWIN ht, SplitNode parent, int parentBranch) {
+-
+-        	if(!this.isAlternate()){
+-        		System.err.println(numInstances);
+-        		// this shows mainline learning nodes stop learning once drift occurs
+-        	}
++//
++//        	if(!this.isAlternate()){
++//        		System.err.println(numInstances);
++//        		// this shows mainline learning nodes stop learning once drift occurs
++//        	}
+ 
+             int trueClass = (int) inst.classValue();
+             //New option vore
+-- 
+2.7.4
+

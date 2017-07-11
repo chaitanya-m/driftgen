@@ -1,0 +1,43 @@
+From da4f1def0fbed9dd596b793a1e6647fd7a1ad179 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sat, 3 Jun 2017 03:01:20 +1000
+Subject: [PATCH 17/27] Disable alternates of alternates
+
+---
+ src/moa/classifiers/trees/HATADWIN.java | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index 9f45447..bfcb9df 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -240,8 +240,8 @@ public class HATADWIN extends HoeffdingTree {
+             }
+ 
+             // Check condition to build a new alternate tree
+-            //if (this.isAlternateTree == false) {
+-            if (this.ErrorChange == true) {//&& this.alternateTree == null) {
++            if (this.ErrorChange && !this.isAlternate()) {// disabling alternates of alternates
++
+                 //Start a new alternative tree : learning node
+                 this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
+                 ht.alternateTrees++;
+@@ -432,6 +432,7 @@ public class HATADWIN extends HoeffdingTree {
+ 
+         	if(!this.isAlternate()){
+         		System.err.println(numInstances);
++        		// this shows mainline learning nodes stop learning once drift occurs
+         	}
+ 
+             int trueClass = (int) inst.classValue();
+@@ -679,6 +680,7 @@ public class HATADWIN extends HoeffdingTree {
+     					return result.getArrayRef();
+ 
+     		}
++
+     	}
+     	return new double[0];
+     }
+-- 
+2.7.4
+

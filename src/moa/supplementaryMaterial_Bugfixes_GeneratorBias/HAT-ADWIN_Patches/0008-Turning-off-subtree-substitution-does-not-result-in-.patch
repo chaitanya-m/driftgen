@@ -1,0 +1,48 @@
+From c58bf12838fc5e7c318ba030ec8ca72ec46f8e56 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Fri, 2 Jun 2017 23:15:34 +1000
+Subject: [PATCH 08/27] Turning off subtree substitution does not result in
+ VFDT behaviour
+
+This is because of the alternate trees voting. Even though they never get promoted because promotion is tured off, the performance profile does not match VFDT because of the alternate subtrees getting to vote.
+---
+ src/moa/classifiers/trees/HATADWIN.java | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index 179d9ec..ac9f026 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -251,7 +251,9 @@ public class HATADWIN extends HoeffdingTree {
+                     //if (gNumAlts>0) fDelta=fDelta/gNumAlts;
+                     double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
+                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
+-                    if (Bound < oldErrorRate - altErrorRate) {
++                    if (Bound < oldErrorRate - altErrorRate
++                    		&& this.subtreeDepth() < 0
++                    		) {
+                         // Switch alternate tree
+                         ht.activeLeafNodeCount -= this.numberLeaves();
+                         ht.activeLeafNodeCount += ((NewNode) this.alternateTree).numberLeaves();
+@@ -658,12 +660,12 @@ public class HATADWIN extends HoeffdingTree {
+                 	// So the filter will still add any nodes found deeper down to foundNodes
+                 	// This looks like a bug.
+ 
+-                	if (foundNode.node != null){
+-                		if (((NewNode)foundNode.node).isAlternate()){
+-                			System.err.println("Alternate is being used for prediction");
+-                			System.exit(1);
+-                		}
+-                	}
++//                	if (foundNode.node != null){
++//                		if (((NewNode)foundNode.node).isAlternate()){
++//                			System.err.println("Alternate is being used for prediction");
++//                			System.exit(1);
++//                		}
++//                	}
+ 
+                     Node leafNode = foundNode.node;
+                     if (leafNode == null) {
+-- 
+2.7.4
+

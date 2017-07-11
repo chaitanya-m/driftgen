@@ -1,0 +1,69 @@
+From 0cb9762cc8277ccccf71c717b14baea8c245f4c8 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Fri, 2 Jun 2017 21:42:18 +1000
+Subject: [PATCH 02/27] isAlternate field, getters, setters
+
+To tell if a node is on an alternate branch or not
+---
+ src/moa/classifiers/trees/HATADWIN.java | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index 844e2e7..9afcff7 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -83,6 +83,11 @@ public class HATADWIN extends HoeffdingTree {
+ 
+         public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch, List<FoundNode> foundNodes,
+                 boolean updateSplitterCounts);
++
++        public boolean isAlternate();
++
++        public void setAlternate(boolean isAlternate);
++
+     }
+ 
+     public static class AdaSplitNode extends SplitNode implements NewNode {
+@@ -100,6 +105,20 @@ public class HATADWIN extends HoeffdingTree {
+ 
+         protected Random classifierRandom;
+ 
++        private boolean isAlternate;
++
++		@Override
++		public boolean isAlternate() {
++			return this.isAlternate;
++		}
++
++		@Override
++		public void setAlternate(boolean isAlternate) {
++			this.isAlternate = isAlternate;
++		}
++
++
++
+         //public boolean getErrorChange() {
+         //		return ErrorChange;
+         //}
+@@ -320,6 +339,18 @@ public class HATADWIN extends HoeffdingTree {
+ 
+         protected Random classifierRandom;
+ 
++        private boolean isAlternate;
++
++		@Override
++		public boolean isAlternate() {
++			return this.isAlternate;
++		}
++
++		@Override
++		public void setAlternate(boolean isAlternate) {
++			this.isAlternate = isAlternate;
++		}
++
+         @Override
+         public int calcByteSize() {
+             int byteSize = super.calcByteSize();
+-- 
+2.7.4
+

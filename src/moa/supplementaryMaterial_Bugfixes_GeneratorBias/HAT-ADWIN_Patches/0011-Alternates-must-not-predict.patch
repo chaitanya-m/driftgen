@@ -1,0 +1,44 @@
+From 1b77067da80bf01cfba258b9bae610e1b1599566 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sat, 3 Jun 2017 00:12:22 +1000
+Subject: [PATCH 11/27] Alternates must not predict.
+
+This would seem to be the point of the -999 test. Since it doesn't work, alternates are predicting.
+
+But there is much more to this. As noted earlier, simply disabling alternates doesn't help.
+
+What's happening is that the mainline does fine until drift happens. Then even if tree substitution is turned off, alternates predict. But merely turning off alternate prediction shouldn't be a problem.
+
+Since it is a problem, it shows that the mainline is not behaving like VFDT. It stops learning the moment an alternate is created. Further tests show that it actually stops learning if the alternate is allowed to learn. Examples are filtering down to the alternates leaving the mainline dry.
+
+These tests will follow now.
+---
+ src/moa/classifiers/trees/HATADWIN.java | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index 405f7cb..ad24db4 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -660,12 +660,12 @@ public class HATADWIN extends HoeffdingTree {
+                 	// So the filter will still add any nodes found deeper down to foundNodes
+                 	// This looks like a bug.
+ 
+-                	if (foundNode.node != null){
+-                		if (((NewNode)foundNode.node).isAlternate()){
+-                			System.err.println("Alternate is being used for prediction even though tree substitution is off");
+-                			//System.exit(1);
+-                		}
+-                	}
++//                	if (foundNode.node != null){
++//                		if (((NewNode)foundNode.node).isAlternate()){
++//                			System.err.println("Alternate is being used for prediction even though tree substitution is off");
++//                			//System.exit(1);
++//                		}
++//                	}
+ 
+                     Node leafNode = foundNode.node;
+                     if (leafNode == null) {
+-- 
+2.7.4
+

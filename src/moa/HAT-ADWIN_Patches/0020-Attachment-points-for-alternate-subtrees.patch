@@ -1,0 +1,35 @@
+From b8a06d016976480166f7b18d1fae7cd4f9b847a3 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sat, 3 Jun 2017 14:33:57 +1000
+Subject: [PATCH 20/27] Attachment points for alternate subtrees
+
+As described in previous commit. These will come in very handy for a neat subtree promotion.
+---
+ src/moa/classifiers/trees/HATADWIN.java | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/HATADWIN.java b/src/moa/classifiers/trees/HATADWIN.java
+index c6bf3e6..1f1f712 100644
+--- a/src/moa/classifiers/trees/HATADWIN.java
++++ b/src/moa/classifiers/trees/HATADWIN.java
+@@ -256,7 +256,7 @@ public class HATADWIN extends HoeffdingTree {
+ 
+                 //Start a new alternative tree : learning node
+                 this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
+-                ((NewNode)this.alternateTree).setMainlineNode(this);
++                ((NewNode)this.alternateTree).setMainlineNode(this); // this node is the alternate's attachment point
+                 ht.alternateTrees++;
+             } // Check condition to replace tree
+ 
+@@ -708,7 +708,7 @@ public class HATADWIN extends HoeffdingTree {
+                         this.treeRoot = newSplit;
+                     }
+                     else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment
+-                    	//((NewNode)node).getMainlineNode().alternateTree = newSplit;
++                    	((NewNode)node).getMainlineNode().alternateTree = newSplit;
+                     }
+                     else {
+                         parent.setChild(parentIndex, newSplit);
+-- 
+2.7.4
+

@@ -1,4 +1,4 @@
-package moa.classifiers.trees;
+package weka.classifiers.trees;
 
 import static com.metsci.glimpse.util.logging.LoggerUtils.logWarning;
 

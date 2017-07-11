@@ -47,9 +47,9 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 			"Magnitude of the covariate drift."
 					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
 
-	public FloatOption driftMagnitudeTarget = new FloatOption("driftMagnitudeTarget", 'y',
-			"Magnitude of the target drift."
-					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
+	//public FloatOption driftMagnitudeTarget = new FloatOption("driftMagnitudeTarget", 'y',
+	//		"Magnitude of the target drift."
+	//				+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
 
 	public IntOption burnInNInstances = new IntOption("burnInNInstances", 'b',
 			"Number of instances before the start of the drift", 10000, 0, Integer.MAX_VALUE);

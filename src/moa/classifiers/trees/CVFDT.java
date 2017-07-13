@@ -73,7 +73,7 @@ public class CVFDT extends HoeffdingTree {
                 "Naive Bayes",
                 "Naive Bayes Adaptive"}, 2);*/
 
-    public interface NewNode {
+    public interface AdaNode {
 
         // Change for adwin
         //public boolean getErrorChange();
@@ -112,7 +112,7 @@ public class CVFDT extends HoeffdingTree {
 
     }
 
-    public static class AdaSplitNode extends SplitNode implements NewNode {
+    public static class AdaSplitNode extends SplitNode implements AdaNode {
 
         private static final long serialVersionUID = 1L;
 
@@ -209,7 +209,7 @@ public class CVFDT extends HoeffdingTree {
             int numLeaves = 0;
             for (Node child : this.children) {
                 if (child != null) {
-                    numLeaves += ((NewNode) child).numberLeaves();
+                    numLeaves += ((AdaNode) child).numberLeaves();
                 }
             }
             return numLeaves;
@@ -275,18 +275,18 @@ public class CVFDT extends HoeffdingTree {
 
                 //Start a new alternative tree : learning node
                 this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
-                ((NewNode)this.alternateTree).setMainlineNode(this); // this node is the alternate's attachment point
-                ((NewNode)this.alternateTree).setParent(this.getParent());
+                ((AdaNode)this.alternateTree).setMainlineNode(this); // this node is the alternate's attachment point
+                ((AdaNode)this.alternateTree).setParent(this.getParent());
                 ht.alternateTrees++;
             } // Check condition to replace tree
 
-            else if (this.alternateTree != null && ((NewNode) this.alternateTree).isNullError() == false) {
-                if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) {
+            else if (this.alternateTree != null && ((AdaNode) this.alternateTree).isNullError() == false) {
+                if (this.getErrorWidth() > 300 && ((AdaNode) this.alternateTree).getErrorWidth() > 300) {
                     double oldErrorRate = this.getErrorEstimation();
-                    double altErrorRate = ((NewNode) this.alternateTree).getErrorEstimation();
+                    double altErrorRate = ((AdaNode) this.alternateTree).getErrorEstimation();
                     double fDelta = .05;
                     //if (gNumAlts>0) fDelta=fDelta/gNumAlts;
-                    double fN = 1.0 / (((NewNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
+                    double fN = 1.0 / (((AdaNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
                     double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
 
 //                    System.out.print(this.alternateTree.subtreeDepth()
@@ -308,21 +308,21 @@ public class CVFDT extends HoeffdingTree {
 
                         // Switch alternate tree
                         ht.activeLeafNodeCount -= this.numberLeaves();
-                        ht.activeLeafNodeCount += ((NewNode) this.alternateTree).numberLeaves();
+                        ht.activeLeafNodeCount += ((AdaNode) this.alternateTree).numberLeaves();
                         this.killTreeChilds(ht);
-                        ((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
-                        ((NewNode)(this.alternateTree)).setMainlineNode(null);
+                        ((AdaNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
+                        ((AdaNode)(this.alternateTree)).setMainlineNode(null);
 
 
                         if (!this.isRoot()) {
                             this.getParent().setChild(parentBranch, this.alternateTree);
-                        	((NewNode)(this.alternateTree)).setRoot(false);
-                            ((NewNode)this.alternateTree).setParent(this.getParent());
+                        	((AdaNode)(this.alternateTree)).setRoot(false);
+                            ((AdaNode)this.alternateTree).setParent(this.getParent());
                             //((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
                         } else {
                             // Switch root tree
-                        	((NewNode)(this.alternateTree)).setRoot(true);
-                        	((NewNode)(this.alternateTree)).setParent(null);
+                        	((AdaNode)(this.alternateTree)).setRoot(true);
+                        	((AdaNode)(this.alternateTree)).setParent(null);
                             ht.treeRoot = this.alternateTree;
                         }
                         this.alternateTree = null;
@@ -345,12 +345,12 @@ public class CVFDT extends HoeffdingTree {
             //}
             //learnFromInstance alternate Tree and Child nodes
             if (this.alternateTree != null) {
-                ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, this.getParent(), parentBranch);
+                ((AdaNode) this.alternateTree).learnFromInstance(weightedInst, ht, this.getParent(), parentBranch);
             }
             int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);
             if (child != null) {
-                ((NewNode) child).learnFromInstance(weightedInst, ht, this, childBranch);
+                ((AdaNode) child).learnFromInstance(weightedInst, ht, this, childBranch);
             }
         }
 
@@ -361,7 +361,7 @@ public class CVFDT extends HoeffdingTree {
 
           for (Node child : this.children) {
             if (child != null) {
-              ((NewNode)child).setAlternateStatusForSubtreeNodes(isAlternate);
+              ((AdaNode)child).setAlternateStatusForSubtreeNodes(isAlternate);
             }
           }
         }
@@ -374,12 +374,12 @@ public class CVFDT extends HoeffdingTree {
                 if (child != null) {
                     //Delete alternate tree if it exists
                     if (child instanceof AdaSplitNode && ((AdaSplitNode) child).alternateTree != null) {
-                        ((NewNode) ((AdaSplitNode) child).alternateTree).killTreeChilds(ht);
+                        ((AdaNode) ((AdaSplitNode) child).alternateTree).killTreeChilds(ht);
                         ht.prunedAlternateTrees++;
                     }
                     //Recursive delete of SplitNodes
                     if (child instanceof AdaSplitNode) {
-                        ((NewNode) child).killTreeChilds(ht);
+                        ((AdaNode) child).killTreeChilds(ht);
                     }
                     if (child instanceof ActiveLearningNode) {
                         child = null;
@@ -405,7 +405,7 @@ public class CVFDT extends HoeffdingTree {
             if (childIndex >= 0) {
                 Node child = getChild(childIndex);
                 if (child != null) {
-                    ((NewNode) child).filterInstanceToLeaves(inst, this, childIndex,
+                    ((AdaNode) child).filterInstanceToLeaves(inst, this, childIndex,
                             foundNodes, updateSplitterCounts);
                     // this will usually just take you down one path until you hit a learning node. Unless you are overextending
                     // your tree without pruning
@@ -415,7 +415,7 @@ public class CVFDT extends HoeffdingTree {
                 }
             }
             if (this.alternateTree != null) {
-                ((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
+                ((AdaNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
                 // the -999 used to launch this subtree filter becomes inutile immediately following
                 // the top node of the subtree. Only the immediate children of a split will see this as a parentBranch
                 // So a foundnode created further down cannot be distinguished from the mainline thing
@@ -447,7 +447,7 @@ public class CVFDT extends HoeffdingTree {
 		}
     }
 
-    public static class AdaLearningNode extends LearningNodeNBAdaptive implements NewNode {
+    public static class AdaLearningNode extends LearningNodeNBAdaptive implements AdaNode {
 
         private static final long serialVersionUID = 1L;
 
@@ -699,18 +699,18 @@ public class CVFDT extends HoeffdingTree {
     public void trainOnInstanceImpl(Instance inst) {
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode(false); // root cannot be alternate
-            ((NewNode) this.treeRoot).setRoot(true);
-            ((NewNode) this.treeRoot).setParent(null);
+            ((AdaNode) this.treeRoot).setRoot(true);
+            ((AdaNode) this.treeRoot).setParent(null);
             this.activeLeafNodeCount = 1;
         }
-        ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
+        ((AdaNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
     }
 
     //New for options vote
     public FoundNode[] filterInstanceToLeaves(Instance inst,
             SplitNode parent, int parentBranch, boolean updateSplitterCounts) {
         List<FoundNode> nodes = new LinkedList<FoundNode>();
-        ((NewNode) this.treeRoot).filterInstanceToLeaves(inst, parent, parentBranch, nodes,
+        ((AdaNode) this.treeRoot).filterInstanceToLeaves(inst, parent, parentBranch, nodes,
                 updateSplitterCounts);
         return nodes.toArray(new FoundNode[nodes.size()]);
     }
@@ -771,30 +771,30 @@ public class CVFDT extends HoeffdingTree {
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins
-                    deactivateLearningNode(node, ((NewNode)node).getParent(), parentIndex);
+                    deactivateLearningNode(node, ((AdaNode)node).getParent(), parentIndex);
                 } else {
                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
-                            node.getObservedClassDistribution(),splitDecision.numSplits(), ((NewNode)(node)).isAlternate());
+                            node.getObservedClassDistribution(),splitDecision.numSplits(), ((AdaNode)(node)).isAlternate());
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
-                        Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i), ((NewNode)newSplit).isAlternate());
-                        ((NewNode)newChild).setParent((AdaSplitNode)newSplit);
+                        Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i), ((AdaNode)newSplit).isAlternate());
+                        ((AdaNode)newChild).setParent((AdaSplitNode)newSplit);
                         newSplit.setChild(i, newChild);
                     }
                     this.activeLeafNodeCount--;
                     this.decisionNodeCount++;
                     this.activeLeafNodeCount += splitDecision.numSplits();
-                    if (((NewNode)node).isRoot()) {
-                    	((NewNode)newSplit).setRoot(true);
-                    	((NewNode)newSplit).setParent(null);
+                    if (((AdaNode)node).isRoot()) {
+                    	((AdaNode)newSplit).setRoot(true);
+                    	((AdaNode)newSplit).setParent(null);
                         this.treeRoot = newSplit;
                     }
-                    else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is alternate
-                    	((NewNode)node).getMainlineNode().alternateTree = newSplit;
-                    	((NewNode)newSplit).setParent(((NewNode)node).getParent());
+                    else if (((AdaNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is alternate
+                    	((AdaNode)node).getMainlineNode().alternateTree = newSplit;
+                    	((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
                     }
                     else { //if the node is neither root nor an alternate, it must have a mainline split parent
-                    	((NewNode)node).getParent().setChild(parentIndex, newSplit);
-                    	((NewNode)newSplit).setParent(((NewNode)node).getParent());
+                    	((AdaNode)node).getParent().setChild(parentIndex, newSplit);
+                    	((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
                     }
                 }
                 // manage memory
@@ -819,7 +819,7 @@ public class CVFDT extends HoeffdingTree {
     					}
     					double[] dist = leafNode.getClassVotes(inst, this);
 
-    					if(!((NewNode)leafNode).isAlternate()){
+    					if(!((AdaNode)leafNode).isAlternate()){
 
     						result.addValues(dist);
 

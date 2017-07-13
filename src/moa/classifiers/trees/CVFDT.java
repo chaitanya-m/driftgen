@@ -52,9 +52,23 @@ import com.yahoo.labs.samoa.instances.Instance;
  * adaptive (NBAdaptive).
  * </ul>
  *
- * @author Albert Bifet (abifet at cs dot waikato dot ac dot nz)
+ * @author
  * @version $Revision: 7 $
  */
+
+/*
+ * What do we need to do to change this to CVFDT?
+ * First, we need to get the tree substitutions out. Then we get the change detectors out. Get the weighting out. Then we should perform similarly to VFDT.
+ * Next, add counters at nodes.
+ * Then use those counters to regularly assess splits.
+ * Add examples to window. I won't be testing under conditions where I have to store examples on disk. That's one change to the algorithm.
+ *
+ * Parent-child state in nodes: I've currently got the parent, but not the parentBranch within the node. Changing that may require a full rewrite of VFDT.
+ * I'll use the existing framework and change things later.
+ *
+ */
+
+
 public class CVFDT extends HoeffdingTree {
 
     private static final long serialVersionUID = 1L;
@@ -302,7 +316,7 @@ public class CVFDT extends HoeffdingTree {
 
 
                     if (Bound < oldErrorRate - altErrorRate
-                    		  //&& this.subtreeDepth() < 4
+                    		  && this.subtreeDepth() < 0
                     		) {
                         //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 

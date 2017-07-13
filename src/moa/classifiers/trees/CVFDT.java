@@ -254,7 +254,7 @@ public class CVFDT extends HoeffdingTree {
         @Override
         public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch) {
 
-            System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
+            //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
 
             int trueClass = (int) inst.classValue();
@@ -274,94 +274,7 @@ public class CVFDT extends HoeffdingTree {
 
             boolean blCorrect = (trueClass == ClassPrediction);
 
-            if (this.estimationErrorWeight == null) {
-                this.estimationErrorWeight = new ADWIN();
-            }
-            double oldError = this.getErrorEstimation();
-            this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ? 0.0 : 1.0);
-            if (this.ErrorChange == true && oldError > this.getErrorEstimation()) {
-                //if error is decreasing, don't do anything
-                this.ErrorChange = false;
-            }
-
-            // Check condition to build a new alternate tree
-            if (this.ErrorChange && !this.isAlternate()) {// disabling alternates of alternates
-
-                //Start a new alternative tree : learning node
-                this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
-                ((AdaNode)this.alternateTree).setMainlineNode(this); // this node is the alternate's attachment point
-                ((AdaNode)this.alternateTree).setParent(this.getParent());
-                ht.alternateTrees++;
-            } // Check condition to replace tree
-
-            else if (this.alternateTree != null && ((AdaNode) this.alternateTree).isNullError() == false) {
-                if (this.getErrorWidth() > 300 && ((AdaNode) this.alternateTree).getErrorWidth() > 300) {
-                    double oldErrorRate = this.getErrorEstimation();
-                    double altErrorRate = ((AdaNode) this.alternateTree).getErrorEstimation();
-                    double fDelta = .05;
-                    //if (gNumAlts>0) fDelta=fDelta/gNumAlts;
-                    double fN = 1.0 / (((AdaNode) this.alternateTree).getErrorWidth()) + 1.0 / (this.getErrorWidth());
-                    double Bound = Math.sqrt(2.0 * oldErrorRate * (1.0 - oldErrorRate) * Math.log(2.0 / fDelta) * fN);
-
-//                    System.out.print(this.alternateTree.subtreeDepth()
-//                    		+ " " + this.subtreeDepth() +
-//                    		" " + this.isRoot() +
-//                    		" " + this.isAlternate());
-//
-//                    if(this.getParent() == null){
-//                    	System.out.print(" ||parent is null; root level node||");
-//                    }
-//
-//                    System.out.println();
-
-
-                    if (Bound < oldErrorRate - altErrorRate
-                    		  && this.subtreeDepth() < 0
-                    		) {
-                        //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
-
-                        // Switch alternate tree
-                        ht.activeLeafNodeCount -= this.numberLeaves();
-                        ht.activeLeafNodeCount += ((AdaNode) this.alternateTree).numberLeaves();
-                        this.killTreeChilds(ht);
-                        ((AdaNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
-                        ((AdaNode)(this.alternateTree)).setMainlineNode(null);
-
-
-                        if (!this.isRoot()) {
-                            this.getParent().setChild(parentBranch, this.alternateTree);
-                        	((AdaNode)(this.alternateTree)).setRoot(false);
-                            ((AdaNode)this.alternateTree).setParent(this.getParent());
-                            //((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
-                        } else {
-                            // Switch root tree
-                        	((AdaNode)(this.alternateTree)).setRoot(true);
-                        	((AdaNode)(this.alternateTree)).setParent(null);
-                            ht.treeRoot = this.alternateTree;
-                        }
-                        this.alternateTree = null;
-                        ht.switchedAlternateTrees++;
-                    } else if (Bound < altErrorRate - oldErrorRate) {
-                        // Erase alternate tree
-                        if (this.alternateTree instanceof ActiveLearningNode) {
-                            this.alternateTree = null;
-                            //ht.activeLeafNodeCount--;
-                        } else if (this.alternateTree instanceof InactiveLearningNode) {
-                            this.alternateTree = null;
-                            //ht.inactiveLeafNodeCount--;
-                        } else {
-                            ((AdaSplitNode) this.alternateTree).killTreeChilds(ht);
-                        }
-                        ht.prunedAlternateTrees++;
-                    }
-                }
-            }
-            //}
-            //learnFromInstance alternate Tree and Child nodes
-            if (this.alternateTree != null) {
-                ((AdaNode) this.alternateTree).learnFromInstance(weightedInst, ht, this.getParent(), parentBranch);
-            }
-            int childBranch = this.instanceChildIndex(inst);
+                        int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);
             if (child != null) {
                 ((AdaNode) child).learnFromInstance(weightedInst, ht, this, childBranch);

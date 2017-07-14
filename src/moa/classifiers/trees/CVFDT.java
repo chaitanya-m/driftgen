@@ -75,6 +75,8 @@ public class CVFDT extends HoeffdingTree {
 
     private static long numInstances = 0;
 
+    private static long nodeIDGenerator = 0;
+
     @Override
     public String getPurposeString() {
         return "Hoeffding Adaptive Tree for evolving data streams that uses ADWIN to replace branches for new ones.";
@@ -93,7 +95,7 @@ public class CVFDT extends HoeffdingTree {
         //public boolean getErrorChange();
         public int numberLeaves();
 
-        void setAlternateStatusForSubtreeNodes(boolean isAlternate);
+		void setAlternateStatusForSubtreeNodes(boolean isAlternate);
 
 		public double getErrorEstimation();
 
@@ -124,11 +126,17 @@ public class CVFDT extends HoeffdingTree {
 
 		public AdaSplitNode getParent();
 
+		public long getUniqueID();
+
+        public void setUniqueID(long uniqueID);
     }
+
 
     public static class AdaSplitNode extends SplitNode implements AdaNode {
 
         private static final long serialVersionUID = 1L;
+
+        private long uID;
 
         protected Node alternateTree;
 
@@ -327,11 +335,6 @@ public class CVFDT extends HoeffdingTree {
             }
             if (this.alternateTree != null) {
                 ((AdaNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
-                // the -999 used to launch this subtree filter becomes inutile immediately following
-                // the top node of the subtree. Only the immediate children of a split will see this as a parentBranch
-                // So a foundnode created further down cannot be distinguished from the mainline thing
-                // Using this to separate out the alternate found nodes from the mainline ones won't work.
-                // But that is how it seems to be used...
 
             }
         }
@@ -356,6 +359,17 @@ public class CVFDT extends HoeffdingTree {
 		public AdaSplitNode getMainlineNode() {
 			return this.mainlineNode;
 		}
+
+		@Override
+		public long getUniqueID() {
+
+			return this.uID;
+		}
+
+		@Override
+		public void setUniqueID(long uniqueID) {
+			this.uID = uniqueID;
+		}
     }
 
     public static class AdaLearningNode extends LearningNodeNBAdaptive implements AdaNode {
@@ -377,6 +391,8 @@ public class CVFDT extends HoeffdingTree {
 		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
 
 		private AdaSplitNode parent = null;
+
+		private long uID;
 
 		@Override
 		public void setParent(AdaSplitNode parent) {
@@ -412,12 +428,17 @@ public class CVFDT extends HoeffdingTree {
         public AdaLearningNode(double[] initialClassObservations) {
             super(initialClassObservations);
             this.classifierRandom = new Random(this.randomSeed);
+            this.uID = nodeIDGenerator++;
+            //System.err.println(this.uID);
         }
 
         public AdaLearningNode(double[] initialClassObservations, boolean isAlternate) {
             super(initialClassObservations);
             this.classifierRandom = new Random(this.randomSeed);
             this.setAlternate(isAlternate);
+            this.uID = nodeIDGenerator++;
+            //System.err.println(this.uID);
+
         }
 
         @Override
@@ -526,6 +547,17 @@ public class CVFDT extends HoeffdingTree {
 			this.setAlternate(isAlternate);
 		}
 
+		@Override
+		public long getUniqueID() {
+
+			return this.uID;
+		}
+
+		@Override
+		public void setUniqueID(long uniqueID) {
+			this.uID = uniqueID;
+		}
+
     }
 
     protected int alternateTrees;
@@ -584,6 +616,10 @@ public class CVFDT extends HoeffdingTree {
          	(a) Node $ observedClassDistribution is the thing that needs to updated
          	(b) Give each node a monotonically increasing ID
          	(c) To delete an example, filter it down the tree and delete it from all the nodes with lower ID's than the highest it had hit
+         		(i) A creative way of doing this might be to use weight -1
+         		(ii) So you learn from two instances each training cycle, from either edge of the window
+         		(iii) One is weighted -1 and the other is weighted 1 (or whatever it was originally weighted)
+         		(iv) Each old instance will be mapped to a highest ID number. Anything node with ID less than or equal to that number is allowed to learn.
 
          2. Build alternates as necessary: Once the moving window is well implemented... this shouldn't be hard
          	(a) Periodically check each node for the best available splits now
@@ -662,6 +698,10 @@ public class CVFDT extends HoeffdingTree {
                 } else {
                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(),splitDecision.numSplits(), ((AdaNode)(node)).isAlternate());
+
+                    ((AdaNode)newSplit).setUniqueID(((AdaNode)node).getUniqueID());
+                    //Ensure that the split node's ID is the same as it's ID as a leaf
+
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i), ((AdaNode)newSplit).isAlternate());
                         ((AdaNode)newChild).setParent((AdaSplitNode)newSplit);
@@ -670,6 +710,7 @@ public class CVFDT extends HoeffdingTree {
                     this.activeLeafNodeCount--;
                     this.decisionNodeCount++;
                     this.activeLeafNodeCount += splitDecision.numSplits();
+
                     if (((AdaNode)node).isRoot()) {
                     	((AdaNode)newSplit).setRoot(true);
                     	((AdaNode)newSplit).setParent(null);

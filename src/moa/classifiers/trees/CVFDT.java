@@ -579,6 +579,18 @@ public class CVFDT extends HoeffdingTree {
             this.activeLeafNodeCount = 1;
         }
         ((AdaNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
+/*
+         1. Implement a moving, forgetting window
+         	(a) Node $ observedClassDistribution is the thing that needs to updated
+         	(b) Give each node a monotonically increasing ID
+         	(c) To delete an example, filter it down the tree and delete it from all the nodes with lower ID's than the highest it had hit
+
+         2. Build alternates as necessary: Once the moving window is well implemented... this shouldn't be hard
+         	(a) Periodically check each node for the best available splits now
+         	(b) If alternate splits pass the requisite conditions... start building alternate trees
+         	(c) When accuracy is higher... substitute. Remember that the original CVFDT uses a 9000-1000 split for training/testing alternates.
+         	(d) Original CVFDT does allow you to change window size during a run... manually...
+*/
     }
 
     //New for options vote

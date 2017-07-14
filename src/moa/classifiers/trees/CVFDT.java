@@ -256,25 +256,9 @@ public class CVFDT extends HoeffdingTree {
 
             //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
-
-            int trueClass = (int) inst.classValue();
-            //New option vore
-            int k = MiscUtils.poisson(1.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
-            if (k > 0) {
-                //weightedInst.setWeight(inst.weight() * k);
-            }
-            //Compute ClassPrediction using filterInstanceToLeaf
-            //int ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, null, -1).node.getClassVotes(inst, ht));
-            int ClassPrediction = 0;
-            Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
-            if (leaf != null) {
-                ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
-            }
 
-            boolean blCorrect = (trueClass == ClassPrediction);
-
-                        int childBranch = this.instanceChildIndex(inst);
+            int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);
             if (child != null) {
                 ((AdaNode) child).learnFromInstance(weightedInst, ht, this, childBranch);
@@ -466,34 +450,8 @@ public class CVFDT extends HoeffdingTree {
 
         @Override
         public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch) {
-//
-//        	if(!this.isAlternate()){
-//        		System.err.println(numInstances);
-//        		// this shows mainline learning nodes stop learning once drift occurs
-//        	}
 
-            int trueClass = (int) inst.classValue();
-            //New option vore
-            int k = MiscUtils.poisson(1.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
-            //if (k > 0 && this.isAlternate()) {
-            	// use weighted instance if necessary for asymmetric alternate weighting
-                //weightedInst.setWeight(inst.weight() * k);
-                // this wasn't in the paper
-            //}
-            //Compute ClassPrediction using filterInstanceToLeaf
-            int ClassPrediction = Utils.maxIndex(this.getClassVotes(inst, ht));
-
-            boolean blCorrect = (trueClass == ClassPrediction);
-
-            if (this.estimationErrorWeight == null) {
-                this.estimationErrorWeight = new ADWIN();
-            }
-            double oldError = this.getErrorEstimation();
-            this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ? 0.0 : 1.0);
-            if (this.ErrorChange == true && oldError > this.getErrorEstimation()) {
-                this.ErrorChange = false;
-            }
 
             //Update statistics
             learnFromInstance(weightedInst, ht);	//inst
@@ -502,21 +460,11 @@ public class CVFDT extends HoeffdingTree {
             double weightSeen = this.getWeightSeen();
             if (weightSeen
                     - this.getWeightSeenAtLastSplitEvaluation() >= ht.gracePeriodOption.getValue()) {
-                ht.attemptToSplit(this, this.getParent(),
-                        parentBranch);
+                ht.attemptToSplit(this, this.getParent(), parentBranch);
+
                 this.setWeightSeenAtLastSplitEvaluation(weightSeen);
             }
 
-
-            //learnFromInstance alternate Tree and Child nodes
-			/*if (this.alternateTree != null)  {
-            this.alternateTree.learnFromInstance(inst,ht);
-            }
-            for (Node child : this.children) {
-            if (child != null) {
-            child.learnFromInstance(inst,ht);
-            }
-            }*/
         }
 
         @Override
@@ -751,11 +699,9 @@ public class CVFDT extends HoeffdingTree {
     						result.addValues(dist);
 
     					}
-
     					predictionPaths++;
 
     					return result.getArrayRef();
-
     		}
 
     	}

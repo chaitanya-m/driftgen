@@ -75,7 +75,7 @@ public class CVFDT extends HoeffdingTree {
 
     private static long numInstances = 0;
 
-    private static long nodeIDGenerator = 0;
+    private static long nodeIDGenerator = 0; // nodeIDs start from 0 (incremented with post ++ operator)
 
     @Override
     public String getPurposeString() {
@@ -429,7 +429,6 @@ public class CVFDT extends HoeffdingTree {
             super(initialClassObservations);
             this.classifierRandom = new Random(this.randomSeed);
             this.uID = nodeIDGenerator++;
-            //System.err.println(this.uID);
         }
 
         public AdaLearningNode(double[] initialClassObservations, boolean isAlternate) {
@@ -437,8 +436,6 @@ public class CVFDT extends HoeffdingTree {
             this.classifierRandom = new Random(this.randomSeed);
             this.setAlternate(isAlternate);
             this.uID = nodeIDGenerator++;
-            //System.err.println(this.uID);
-
         }
 
         @Override

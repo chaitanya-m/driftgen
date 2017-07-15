@@ -271,6 +271,15 @@ public class CVFDT extends HoeffdingTree {
             if (child != null) {
                 ((AdaNode) child).learnFromInstance(weightedInst, ht, this, childBranch);
             }
+
+            // Note that all this is doing is filtering down the instance to a leaf
+            // Q: so what's the point of a dedicated filter-to-leaves function?
+            // A: it is only used for voting
+            // This is where we must update statistics for split nodes.
+            // First let's create statistics fields for split nodes similarly to what learning nodes have
+            // Note that once we have a moving window, implemented as a queue, we can learn popped instances with weight -1... to forget
+            // Note also that once a learning node is replaced with a split node... we must transfer the statistics smoothly
+
         }
 
 		@Override
@@ -472,7 +481,9 @@ public class CVFDT extends HoeffdingTree {
             Instance weightedInst = inst.copy();
 
             //Update statistics
-            learnFromInstance(weightedInst, ht);	//inst
+            learnFromInstance(weightedInst, ht);
+            //this is where we call VFDT's learnFromInstance which then calls a super that updates statistics... but only for learning nodes at this time
+
 
             //Check for Split condition
             double weightSeen = this.getWeightSeen();

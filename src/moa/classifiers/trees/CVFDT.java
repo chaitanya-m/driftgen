@@ -84,11 +84,11 @@ public class CVFDT extends HoeffdingTree {
 
     private static long nodeIDGenerator = 0; // nodeIDs start from 0 (incremented with post ++ operator)
 
-    private EvictingQueue<Instance> window;
+    private EvictingQueue<Instance> window = null;
 
 
     public IntOption windowSize = new IntOption("windowSize", 'W',
-            "Maximum moving window size", 200000, 0,
+            "Maximum moving window size", 20000, 0,
             Integer.MAX_VALUE);
 
     @Override
@@ -653,6 +653,19 @@ public class CVFDT extends HoeffdingTree {
             ((AdaNode) this.treeRoot).setParent(null);
             this.activeLeafNodeCount = 1;
         }
+
+    	if(window == null){
+    		window = EvictingQueue.create(windowSize.getValue());
+    	}
+
+    	Instance forgetInst;
+        if(window.remainingCapacity() == 0){
+        	forgetInst = window.peek();
+            forgetInst.setWeight(-1.0);
+            ((AdaNode) this.treeRoot).learnFromInstance(forgetInst, this, null, -1);
+        }
+
+        window.offer(inst);
         ((AdaNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
 /*
          1. Implement a moving, forgetting window

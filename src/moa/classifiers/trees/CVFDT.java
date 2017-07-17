@@ -40,6 +40,8 @@ import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
 import com.yahoo.labs.samoa.instances.Instance;
+import com.github.javacliparser.IntOption;
+import com.google.common.collect.EvictingQueue;
 
 /**
  * Hoeffding Adaptive Tree for evolving data streams.
@@ -81,6 +83,13 @@ public class CVFDT extends HoeffdingTree {
     private static long numInstances = 0;
 
     private static long nodeIDGenerator = 0; // nodeIDs start from 0 (incremented with post ++ operator)
+
+    private EvictingQueue<Instance> window;
+
+
+    public IntOption windowSize = new IntOption("windowSize", 'W',
+            "Maximum moving window size", 200000, 0,
+            Integer.MAX_VALUE);
 
     @Override
     public String getPurposeString() {
@@ -767,8 +776,6 @@ public class CVFDT extends HoeffdingTree {
                     }
 
                     // Now transfer all the statistics from the learning node being replaced
-
-
 
                 }
                 // manage memory

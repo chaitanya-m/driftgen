@@ -2,6 +2,8 @@
  *    HoeffdingAdaptiveTree.java
  *    Copyright (C) 2008 University of Waikato, Hamilton, New Zealand
  *    @author Albert Bifet (abifet at cs dot waikato dot ac dot nz)
+ * CVFDT.java
+ * Chaitanya Manapragada
  *
  *    This program is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -15,6 +17,7 @@
  *
  *    You should have received a copy of the GNU General Public License
  *    along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * Based on HoeffdingAdaptiveTree by Albert Bifet and HoeffdingTree by Richard Kirkby
  *
  */
 package moa.classifiers.trees;
@@ -28,9 +31,11 @@ import java.util.Set;
 
 import moa.classifiers.bayes.NaiveBayes;
 import moa.classifiers.core.AttributeSplitSuggestion;
+import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.core.AutoExpandVector;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
@@ -157,6 +162,10 @@ public class CVFDT extends HoeffdingTree {
 
 		private AdaSplitNode parent = null;
 
+		protected AutoExpandVector<AttributeClassObserver> attributeObservers;
+
+		protected boolean createdFromInitializedLearningNode = false;
+
 		@Override
 		public void setParent(AdaSplitNode parent) {
 			this.parent = parent;
@@ -264,12 +273,28 @@ public class CVFDT extends HoeffdingTree {
 
             //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
-            Instance weightedInst = inst.copy();
+            // DRY... for now this code is repeated...
+            // Updates statistics in split nodes also
+        	assert (this.createdFromInitializedLearningNode = true);
+
+            this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
+
+            for (int i = 0; i < inst.numAttributes() - 1; i++) {
+                int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
+                AttributeClassObserver obs = this.attributeObservers.get(i);
+                if (obs == null) {
+                    obs = inst.attribute(instAttIndex).isNominal() ? ht.newNominalClassObserver() : ht.newNumericClassObserver();
+                    this.attributeObservers.set(i, obs);
+                }
+                obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
+            }
+            // DRY... for now this code is repeated...
+
 
             int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);
             if (child != null) {
-                ((AdaNode) child).learnFromInstance(weightedInst, ht, this, childBranch);
+                ((AdaNode) child).learnFromInstance(inst, ht, this, childBranch);
             }
 
             // Note that all this is doing is filtering down the instance to a leaf
@@ -279,6 +304,7 @@ public class CVFDT extends HoeffdingTree {
             // First let's create statistics fields for split nodes similarly to what learning nodes have
             // Note that once we have a moving window, implemented as a queue, we can learn popped instances with weight -1... to forget
             // Note also that once a learning node is replaced with a split node... we must transfer the statistics smoothly
+            // Then learning can proceed...
 
         }
 
@@ -588,7 +614,7 @@ public class CVFDT extends HoeffdingTree {
         return new AdaLearningNode(initialClassObservations);
     }
 
-    protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
+    protected AdaSplitNode newSplitNode(InstanceConditionalTest splitTest,
             double[] classObservations, int size, boolean isAlternate) {
     	return new AdaSplitNode(splitTest, classObservations, size, isAlternate);
     }
@@ -659,13 +685,15 @@ public class CVFDT extends HoeffdingTree {
             } else {
                 double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
+
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
+
                 if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
                     shouldSplit = true;
                 }
-                // }
+
                 if ((this.removePoorAttsOption != null)
                         && this.removePoorAttsOption.isSet()) {
                     Set<Integer> poorAtts = new HashSet<Integer>();
@@ -704,15 +732,20 @@ public class CVFDT extends HoeffdingTree {
                     // preprune - null wins
                     deactivateLearningNode(node, ((AdaNode)node).getParent(), parentIndex);
                 } else {
-                    SplitNode newSplit = newSplitNode(splitDecision.splitTest,
+                    AdaSplitNode newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(),splitDecision.numSplits(), ((AdaNode)(node)).isAlternate());
 
                     ((AdaNode)newSplit).setUniqueID(((AdaNode)node).getUniqueID());
                     //Ensure that the split node's ID is the same as it's ID as a leaf
 
+                    // Copy statistics from the learning node being replaced
+                    newSplit.createdFromInitializedLearningNode = node.isInitialized;
+                    newSplit.observedClassDistribution = node.observedClassDistribution; // copy the class distribution
+                    newSplit.attributeObservers = node.attributeObservers; // copy the attribute observers
+
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i), ((AdaNode)newSplit).isAlternate());
-                        ((AdaNode)newChild).setParent((AdaSplitNode)newSplit);
+                        ((AdaNode)newChild).setParent(newSplit);
                         newSplit.setChild(i, newChild);
                     }
                     this.activeLeafNodeCount--;
@@ -725,13 +758,18 @@ public class CVFDT extends HoeffdingTree {
                         this.treeRoot = newSplit;
                     }
                     else if (((AdaNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is alternate
-                    	((AdaNode)node).getMainlineNode().alternateTree = newSplit;
                     	((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
+                    	((AdaNode)node).getMainlineNode().alternateTree = newSplit;
                     }
                     else { //if the node is neither root nor an alternate, it must have a mainline split parent
-                    	((AdaNode)node).getParent().setChild(parentIndex, newSplit);
                     	((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
+                    	((AdaNode)node).getParent().setChild(parentIndex, newSplit);
                     }
+
+                    // Now transfer all the statistics from the learning node being replaced
+
+
+
                 }
                 // manage memory
                 enforceTrackerLimit();

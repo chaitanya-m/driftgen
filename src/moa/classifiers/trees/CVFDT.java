@@ -29,12 +29,15 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.commons.math3.util.Pair;
+
 import moa.classifiers.bayes.NaiveBayes;
 import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.HoeffdingTree.SplitNode;
 import moa.core.AutoExpandVector;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
@@ -84,7 +87,7 @@ public class CVFDT extends HoeffdingTree {
 
     private static long nodeIDGenerator = 0; // nodeIDs start from 0 (incremented with post ++ operator)
 
-    private EvictingQueue<Instance> window = null;
+    private EvictingQueue<Pair<Instance, Long>> window = null;
 
 
     public IntOption windowSize = new IntOption("windowSize", 'W',
@@ -109,6 +112,9 @@ public class CVFDT extends HoeffdingTree {
         //public boolean getErrorChange();
         public int numberLeaves();
 
+		void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
+				AutoExpandVector<Long> reachedLeafIDs);
+
 		void setAlternateStatusForSubtreeNodes(boolean isAlternate);
 
 		public double getErrorEstimation();
@@ -118,8 +124,6 @@ public class CVFDT extends HoeffdingTree {
         public boolean isNullError();
 
         public void killTreeChilds(CVFDT ht);
-
-        public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch);
 
         public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch, List<FoundNode> foundNodes,
                 boolean updateSplitterCounts);
@@ -143,6 +147,8 @@ public class CVFDT extends HoeffdingTree {
 		public long getUniqueID();
 
         public void setUniqueID(long uniqueID);
+
+		public void forgetInstance(Instance inst, CVFDT ht, AdaSplitNode adaSplitNode, int childBranch, long maxNodeID);
     }
 
 
@@ -278,7 +284,7 @@ public class CVFDT extends HoeffdingTree {
         // LearningNodes can split, but SplitNodes can't
         // Parent nodes are allways SplitNodes
         @Override
-        public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch) {
+		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
 
             //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
@@ -303,7 +309,48 @@ public class CVFDT extends HoeffdingTree {
             int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);
             if (child != null) {
-                ((AdaNode) child).learnFromInstance(inst, ht, this, childBranch);
+                ((AdaNode) child).learnFromInstance(inst, ht, this, childBranch, reachedLeafIDs);
+            }
+
+            // Note that all this is doing is filtering down the instance to a leaf
+            // Q: so what's the point of a dedicated filter-to-leaves function?
+            // A: it is only used for voting
+            // This is where we must update statistics for split nodes.
+            // First let's create statistics fields for split nodes similarly to what learning nodes have
+            // Note that once we have a moving window, implemented as a queue, we can learn popped instances with weight -1... to forget
+            // Note also that once a learning node is replaced with a split node... we must transfer the statistics smoothly
+            // Then learning can proceed...
+
+        }
+		@Override
+        public void forgetInstance(Instance inst, CVFDT ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
+
+            //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
+
+            // DRY... for now this code is repeated...
+            // Updates statistics in split nodes also
+        	assert (this.createdFromInitializedLearningNode = true);
+        	inst.setWeight(-1.0);
+
+
+            this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
+
+            for (int i = 0; i < inst.numAttributes() - 1; i++) {
+                int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
+                AttributeClassObserver obs = this.attributeObservers.get(i);
+                if (obs == null) {
+                    obs = inst.attribute(instAttIndex).isNominal() ? ht.newNominalClassObserver() : ht.newNumericClassObserver();
+                    this.attributeObservers.set(i, obs);
+                }
+                obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
+            }
+            // DRY... for now this code is repeated...
+
+
+            int childBranch = this.instanceChildIndex(inst);
+            Node child = this.getChild(childBranch);
+            if (child != null && ((AdaNode)child).getUniqueID() <= maxNodeID) {
+                ((AdaNode) child).forgetInstance(inst, ht, this, childBranch, maxNodeID);
             }
 
             // Note that all this is doing is filtering down the instance to a leaf
@@ -414,6 +461,8 @@ public class CVFDT extends HoeffdingTree {
 		public void setUniqueID(long uniqueID) {
 			this.uID = uniqueID;
 		}
+
+
     }
 
     public static class AdaLearningNode extends LearningNodeNBAdaptive implements AdaNode {
@@ -511,7 +560,7 @@ public class CVFDT extends HoeffdingTree {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch) {
+        public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
 
             Instance weightedInst = inst.copy();
 
@@ -528,6 +577,8 @@ public class CVFDT extends HoeffdingTree {
 
                 this.setWeightSeenAtLastSplitEvaluation(weightSeen);
             }
+
+            reachedLeafIDs.add(new Long(this.getUniqueID()));
 
         }
 
@@ -601,6 +652,14 @@ public class CVFDT extends HoeffdingTree {
 			this.uID = uniqueID;
 		}
 
+		@Override
+		public void forgetInstance(Instance inst, CVFDT ht, AdaSplitNode adaSplitNode, int childBranch,
+				long maxNodeID) {
+			inst.setWeight(-1.0);
+			super.learnFromInstance(inst, ht);
+
+		}
+
     }
 
     protected int alternateTrees;
@@ -647,6 +706,8 @@ public class CVFDT extends HoeffdingTree {
 
     @Override
     public void trainOnInstanceImpl(Instance inst) {
+
+    	// If treeRoot is null, create a new tree, rooted with a learning node.
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode(false); // root cannot be alternate
             ((AdaNode) this.treeRoot).setRoot(true);
@@ -654,19 +715,34 @@ public class CVFDT extends HoeffdingTree {
             this.activeLeafNodeCount = 1;
         }
 
+        // If you have no window, create one.
     	if(window == null){
     		window = EvictingQueue.create(windowSize.getValue());
     	}
 
+    	// Forget an instance. The window stores along with each instance the maximum node reached. So look at the head of the queue and forget the instance there.
     	Instance forgetInst;
         if(window.remainingCapacity() == 0){
-        	forgetInst = window.peek();
-            forgetInst.setWeight(-1.0);
-            ((AdaNode) this.treeRoot).learnFromInstance(forgetInst, this, null, -1);
+        	forgetInst = window.peek().getFirst();
+            ((AdaNode) this.treeRoot).forgetInstance(forgetInst, this, null, -1, window.peek().getSecond());
         }
 
-        window.offer(inst);
-        ((AdaNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
+        // Create an object to store the IDs visited while learning this instance. Pass a reference so you add all the IDs...
+        AutoExpandVector<Long> reachedNodeIDs = new AutoExpandVector<>();
+        ((AdaNode) this.treeRoot).learnFromInstance(inst, this, null, -1, reachedNodeIDs);
+
+        // Store the max ID reached along with the instance in the window
+
+        long maxIDreached = 0;
+        for(int i = 0; i < reachedNodeIDs.size(); i++){
+        	maxIDreached = maxIDreached > reachedNodeIDs.get(i) ? maxIDreached : reachedNodeIDs.get(i);
+        }
+
+        window.add(new Pair<Instance, Long>(inst, reachedNodeIDs.get(0)));
+
+//        for(int i = 0; i < reachedNodeIDs.size(); i ++){ System.out.print(reachedNodeIDs.get(i) + " ");}
+//        System.out.println();
+
 /*
          1. Implement a moving, forgetting window
          	(a) Node $ observedClassDistribution is the thing that needs to updated

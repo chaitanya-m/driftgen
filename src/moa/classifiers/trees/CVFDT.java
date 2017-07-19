@@ -330,8 +330,7 @@ public class CVFDT extends HoeffdingTree {
             // DRY... for now this code is repeated...
             // Updates statistics in split nodes also
         	assert (this.createdFromInitializedLearningNode = true);
-        	inst.setWeight(-1.0);
-
+        		//inst.setWeight(-1.0);
 
             this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
 
@@ -655,8 +654,13 @@ public class CVFDT extends HoeffdingTree {
 		@Override
 		public void forgetInstance(Instance inst, CVFDT ht, AdaSplitNode adaSplitNode, int childBranch,
 				long maxNodeID) {
-			inst.setWeight(-1.0);
+			//if(numInstances < ht.windowSize.getValue() + 10000){
+
+			//}else{
+			//inst.setWeight(-1.0);
+
 			super.learnFromInstance(inst, ht);
+			//}
 
 		}
 
@@ -724,6 +728,7 @@ public class CVFDT extends HoeffdingTree {
     	Instance forgetInst;
         if(window.remainingCapacity() == 0){
         	forgetInst = window.peek().getFirst();
+        	forgetInst.setWeight(-1.0);
             ((AdaNode) this.treeRoot).forgetInstance(forgetInst, this, null, -1, window.peek().getSecond());
         }
 
@@ -738,7 +743,9 @@ public class CVFDT extends HoeffdingTree {
         	maxIDreached = maxIDreached > reachedNodeIDs.get(i) ? maxIDreached : reachedNodeIDs.get(i);
         }
 
-        window.add(new Pair<Instance, Long>(inst, reachedNodeIDs.get(0)));
+        window.add(new Pair<Instance, Long>(inst, maxIDreached));
+
+        numInstances++;
 
 //        for(int i = 0; i < reachedNodeIDs.size(); i ++){ System.out.print(reachedNodeIDs.get(i) + " ");}
 //        System.out.println();

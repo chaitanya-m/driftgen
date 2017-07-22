@@ -22,6 +22,13 @@
  */
 package moa.classifiers.trees;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -89,6 +96,7 @@ public class CVFDT extends HoeffdingTree {
 
     private EvictingQueue<Pair<Instance, Long>> window = null;
 
+	private PrintWriter writer = null;
 
     public IntOption windowSize = new IntOption("windowSize", 'W',
             "Maximum moving window size", 20000, 0,
@@ -292,8 +300,16 @@ public class CVFDT extends HoeffdingTree {
             // Updates statistics in split nodes also
         	assert (this.createdFromInitializedLearningNode = true);
 
+
+        	if(numInstances > 200510 && numInstances < 200513){
+        		System.out.println(this.observedClassDistribution.toString()+ "-----------");
+        	}
+
             this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
 
+            if(numInstances > 200510 && numInstances < 200513){
+        		System.out.println(this.observedClassDistribution.toString()+ "-----------");
+        	}
             for (int i = 0; i < inst.numAttributes() - 1; i++) {
                 int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
                 AttributeClassObserver obs = this.attributeObservers.get(i);
@@ -304,7 +320,6 @@ public class CVFDT extends HoeffdingTree {
                 obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
             }
             // DRY... for now this code is repeated...
-
 
             int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);
@@ -563,9 +578,17 @@ public class CVFDT extends HoeffdingTree {
 
             Instance weightedInst = inst.copy();
 
-            //Update statistics
+        	if(numInstances > 200510 && numInstances < 200513){
+        		System.out.println(this.observedClassDistribution.toString()+ "+++++++++++");
+        	}
+
+//Update statistics
             learnFromInstance(weightedInst, ht);
             //this is where we call VFDT's learnFromInstance which then calls a super that updates statistics... but only for learning nodes at this time
+            if(numInstances > 200510 && numInstances < 200513){
+        		System.out.println(this.observedClassDistribution.toString()+ "+++++++++++");
+        	}
+
 
 
             //Check for Split condition
@@ -711,6 +734,7 @@ public class CVFDT extends HoeffdingTree {
     @Override
     public void trainOnInstanceImpl(Instance inst) {
 
+
     	// If treeRoot is null, create a new tree, rooted with a learning node.
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode(false); // root cannot be alternate
@@ -727,9 +751,9 @@ public class CVFDT extends HoeffdingTree {
     	// Forget an instance. The window stores along with each instance the maximum node reached. So look at the head of the queue and forget the instance there.
     	Instance forgetInst;
         if(window.remainingCapacity() == 0){
-        	forgetInst = window.peek().getFirst();
-        	forgetInst.setWeight(-1.0);
-            ((AdaNode) this.treeRoot).forgetInstance(forgetInst, this, null, -1, window.peek().getSecond());
+        	//forgetInst = window.peek().getFirst();
+        	//forgetInst.setWeight(-0.95);
+            //((AdaNode) this.treeRoot).forgetInstance(forgetInst, this, null, -1, window.peek().getSecond());
         }
 
         // Create an object to store the IDs visited while learning this instance. Pass a reference so you add all the IDs...
@@ -745,7 +769,33 @@ public class CVFDT extends HoeffdingTree {
 
         window.add(new Pair<Instance, Long>(inst, maxIDreached));
 
+    	if (numInstances == 0){
+    		try {
+				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),false));
+				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),true));
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+    	}
+    	//System.out.println(this.measureTreeDepth());
+
         numInstances++;
+
+		//System.out.println(numInstances);
+
+
+    	if(numInstances > 200510 && numInstances < 200513 && numInstances % 1 == 0){
+    		StringBuilder out = new StringBuilder();
+    		this.treeRoot.describeSubtree(this, out, 8);
+    		System.out.println("===== " + numInstances + " =======");
+    		System.out.print(out);
+    		writer.println(numInstances);
+    		writer.print(out);
+    	}
+    	if(numInstances > 300000){
+    		writer.close();
+    	}
+
 
 //        for(int i = 0; i < reachedNodeIDs.size(); i ++){ System.out.print(reachedNodeIDs.get(i) + " ");}
 //        System.out.println();
@@ -883,7 +933,6 @@ public class CVFDT extends HoeffdingTree {
     @Override
     public double[] getVotesForInstance(Instance inst) {
     	if (this.treeRoot != null) {
-    		numInstances++;
     		FoundNode[] foundNodes = filterInstanceToLeaves(inst,
     				null, -1, false);
     		DoubleVector result = new DoubleVector();

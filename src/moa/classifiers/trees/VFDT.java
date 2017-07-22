@@ -19,6 +19,10 @@
  */
 package moa.classifiers.trees;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -95,6 +99,12 @@ import com.yahoo.labs.samoa.instances.Instance;
 public class VFDT extends AbstractClassifier {
 
     private static final long serialVersionUID = 1L;
+
+    private int i = 0;
+
+    private int numInstances = 0;
+
+	private PrintWriter writer = null;
 
     @Override
     public String getPurposeString() {
@@ -441,8 +451,7 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                 // add null split as an option
                 bestSuggestions.add(new AttributeSplitSuggestion(null,
                         new double[0][], criterion.getMeritOfSplit(
-                        preSplitDist,
-                        new double[][]{preSplitDist})));
+                        preSplitDist, new double[][]{preSplitDist})));
             }
             for (int i = 0; i < this.attributeObservers.size(); i++) {
                 AttributeClassObserver obs = this.attributeObservers.get(i);
@@ -505,10 +514,21 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
         if (this.leafpredictionOption.getChosenIndex()>0) {
             this.removePoorAttsOption = null;
         }
+
+    	if (numInstances == 0){
+    		try {
+				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),false));
+				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),true));
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+    	}
+
     }
 
     @Override
     public void trainOnInstanceImpl(Instance inst) {
+    	//System.err.println(i++);
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode();
             this.activeLeafNodeCount = 1;
@@ -539,6 +559,29 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                 % this.memoryEstimatePeriodOption.getValue() == 0) {
             estimateModelByteSizes();
         }
+
+    	//System.out.println(this.measureTreeDepth());
+
+        numInstances++;
+
+		//System.out.println(numInstances);
+
+
+    	if(numInstances > 200510 && numInstances < 200513 && numInstances % 1 == 0){
+    		StringBuilder out = new StringBuilder();
+    		this.treeRoot.describeSubtree(this, out, 8);
+    		System.out.println("===== " + numInstances + " =======");
+    		System.out.print(out);
+    		writer.println(numInstances);
+    		writer.print(out);
+    	}
+    	if(numInstances > 300000){
+    		writer.close();
+    	}
+
+
+
+
     }
 
     @Override
@@ -672,10 +715,12 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                 }
             }
             if (shouldSplit) {
+            	//System.err.println("SPLITTING - VVVVVVVV");
+
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins
-                    deactivateLearningNode(node, parent, parentIndex);
+                    //deactivateLearningNode(node, parent, parentIndex);
                 } else {
                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(),splitDecision.numSplits() );
@@ -728,10 +773,10 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
             int cutoff = learningNodes.length - maxActive;
             for (int i = 0; i < cutoff; i++) {
                 if (learningNodes[i].node instanceof ActiveLearningNode) {
-                    deactivateLearningNode(
-                            (ActiveLearningNode) learningNodes[i].node,
-                            learningNodes[i].parent,
-                            learningNodes[i].parentBranch);
+//                    deactivateLearningNode(
+//                            (ActiveLearningNode) learningNodes[i].node,
+//                            learningNodes[i].parent,
+//                            learningNodes[i].parentBranch);
                 }
             }
             for (int i = cutoff; i < learningNodes.length; i++) {
@@ -779,9 +824,9 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
         FoundNode[] learningNodes = findLearningNodes();
         for (int i = 0; i < learningNodes.length; i++) {
             if (learningNodes[i].node instanceof ActiveLearningNode) {
-                deactivateLearningNode(
-                        (ActiveLearningNode) learningNodes[i].node,
-                        learningNodes[i].parent, learningNodes[i].parentBranch);
+//                deactivateLearningNode(
+//                        (ActiveLearningNode) learningNodes[i].node,
+//                        learningNodes[i].parent, learningNodes[i].parentBranch);
             }
         }
     }

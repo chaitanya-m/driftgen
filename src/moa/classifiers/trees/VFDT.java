@@ -720,7 +720,7 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins
-                    //deactivateLearningNode(node, parent, parentIndex);
+                    deactivateLearningNode(node, parent, parentIndex);
                 } else {
                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(),splitDecision.numSplits() );
@@ -773,10 +773,10 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
             int cutoff = learningNodes.length - maxActive;
             for (int i = 0; i < cutoff; i++) {
                 if (learningNodes[i].node instanceof ActiveLearningNode) {
-//                    deactivateLearningNode(
-//                            (ActiveLearningNode) learningNodes[i].node,
-//                            learningNodes[i].parent,
-//                            learningNodes[i].parentBranch);
+                    deactivateLearningNode(
+                            (ActiveLearningNode) learningNodes[i].node,
+                            learningNodes[i].parent,
+                            learningNodes[i].parentBranch);
                 }
             }
             for (int i = cutoff; i < learningNodes.length; i++) {
@@ -824,9 +824,9 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
         FoundNode[] learningNodes = findLearningNodes();
         for (int i = 0; i < learningNodes.length; i++) {
             if (learningNodes[i].node instanceof ActiveLearningNode) {
-//                deactivateLearningNode(
-//                        (ActiveLearningNode) learningNodes[i].node,
-//                        learningNodes[i].parent, learningNodes[i].parentBranch);
+                deactivateLearningNode(
+                        (ActiveLearningNode) learningNodes[i].node,
+                        learningNodes[i].parent, learningNodes[i].parentBranch);
             }
         }
     }

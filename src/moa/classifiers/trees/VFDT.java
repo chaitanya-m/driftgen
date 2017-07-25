@@ -159,7 +159,7 @@ public class VFDT extends AbstractClassifier {
             't', "Threshold below which a split will be forced to break ties.",
             0.05, 0.0, 1.0);
 
-public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
+    public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
         "Only allow binary splits.");
 
     public FlagOption stopMemManagementOption = new FlagOption(
@@ -547,8 +547,8 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                     && (learningNode instanceof ActiveLearningNode)) {
                 ActiveLearningNode activeLearningNode = (ActiveLearningNode) learningNode;
                 double weightSeen = activeLearningNode.getWeightSeen();
-                if (weightSeen
-                        - activeLearningNode.getWeightSeenAtLastSplitEvaluation() >= this.gracePeriodOption.getValue()) {
+                if (weightSeen - activeLearningNode.getWeightSeenAtLastSplitEvaluation()
+                		>= this.gracePeriodOption.getValue()) {
                     attemptToSplit(activeLearningNode, foundNode.parent,
                             foundNode.parentBranch);
                     activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen);
@@ -578,9 +578,6 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
     	if(numInstances > 300000){
     		writer.close();
     	}
-
-
-
 
     }
 
@@ -723,7 +720,7 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                     deactivateLearningNode(node, parent, parentIndex);
                 } else {
                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
-                            node.getObservedClassDistribution(),splitDecision.numSplits() );
+                            node.getObservedClassDistribution(), splitDecision.numSplits());
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
                         newSplit.setChild(i, newChild);
@@ -735,6 +732,31 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
                         this.treeRoot = newSplit;
                     } else {
                         parent.setChild(parentIndex, newSplit);
+                    }
+
+                    // Lazy check to find if a parent and child have the same split attribute (Since we only split on one attribute at a time)
+                    if(parent!=null){
+                    	if(parent.splitTest.getAttsTestDependsOn()[0] == splitDecision.splitTest.getAttsTestDependsOn()[0]){
+
+                    		System.out.println(" ::::	" + numInstances + " ::::");
+
+                    		System.out.println(" ::	Parent and child split on same attribute :: ");
+
+                    		System.out.println(" ::	There were :: " + bestSplitSuggestions.length + " :: split suggestions :: ");
+
+                    		 double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
+                                     this.splitConfidenceOption.getValue(), node.getWeightSeen());
+                             AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+                             AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
+                             if (bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound) {
+                            	 System.out.println("The top two attributes differ in infogain... strange... infogain should be zero...");
+                             }
+
+                             if (hoeffdingBound < this.tieThresholdOption.getValue()) {
+                            	 System.out.println("The top two attributes don't differ in infogain... A tiebreaker is causing this node to re-split!");
+                             }
+
+                    	}
                     }
                 }
                 // manage memory

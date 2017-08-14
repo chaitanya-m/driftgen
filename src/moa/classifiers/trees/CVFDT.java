@@ -844,7 +844,11 @@ public class CVFDT extends HoeffdingTree {
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
 
-                if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
+                if(bestSuggestion.merit < 1e-10){
+                	shouldSplit = false;
+                }
+
+                else if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
                     shouldSplit = true;
                 }

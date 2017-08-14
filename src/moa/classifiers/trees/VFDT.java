@@ -669,12 +669,19 @@ public class VFDT extends AbstractClassifier {
             boolean shouldSplit = false;
             if (bestSplitSuggestions.length < 2) {
                 shouldSplit = bestSplitSuggestions.length > 0;
-            } else {
+            }
+
+            else {
                 double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
-                if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
+
+                if(bestSuggestion.merit < 1e-10){
+                	shouldSplit = false;
+                }
+
+                else if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
                     shouldSplit = true;
                 }
@@ -738,7 +745,7 @@ public class VFDT extends AbstractClassifier {
                     if(parent!=null){
                     	if(parent.splitTest.getAttsTestDependsOn()[0] == splitDecision.splitTest.getAttsTestDependsOn()[0]){
 
-                    		System.out.println(" ::::	" + numInstances + " ::::");
+                    		System.out.println(" :::: " + numInstances + " :::: ");
 
                     		System.out.println(" ::	Parent and child split on same attribute :: ");
 
@@ -755,7 +762,6 @@ public class VFDT extends AbstractClassifier {
                              if (hoeffdingBound < this.tieThresholdOption.getValue()) {
                             	 System.out.println("The top two attributes don't differ in infogain... A tiebreaker is causing this node to re-split!");
                              }
-
                     	}
                     }
                 }

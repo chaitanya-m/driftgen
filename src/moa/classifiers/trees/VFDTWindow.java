@@ -86,7 +86,7 @@ import com.google.common.collect.EvictingQueue;
  */
 
 
-public class CVFDT extends HoeffdingTree {
+public class VFDTWindow extends VFDT {
 
     private static final long serialVersionUID = 1L;
 
@@ -120,7 +120,7 @@ public class CVFDT extends HoeffdingTree {
         //public boolean getErrorChange();
         public int numberLeaves();
 
-		void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
+		void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs);
 
 		void setAlternateStatusForSubtreeNodes(boolean isAlternate);
@@ -131,7 +131,7 @@ public class CVFDT extends HoeffdingTree {
 
         public boolean isNullError();
 
-        public void killTreeChilds(CVFDT ht);
+        public void killTreeChilds(VFDTWindow ht);
 
         public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch, List<FoundNode> foundNodes,
                 boolean updateSplitterCounts);
@@ -156,7 +156,7 @@ public class CVFDT extends HoeffdingTree {
 
         public void setUniqueID(long uniqueID);
 
-		public void forgetInstance(Instance inst, CVFDT ht, AdaSplitNode adaSplitNode, int childBranch, long maxNodeID);
+		public void forgetInstance(Instance inst, VFDTWindow ht, AdaSplitNode adaSplitNode, int childBranch, long maxNodeID);
     }
 
 
@@ -292,7 +292,7 @@ public class CVFDT extends HoeffdingTree {
         // LearningNodes can split, but SplitNodes can't
         // Parent nodes are allways SplitNodes
         @Override
-		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
+		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
 
             //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
@@ -301,15 +301,15 @@ public class CVFDT extends HoeffdingTree {
         	assert (this.createdFromInitializedLearningNode = true);
 
 
-        	if(numInstances > 200510 && numInstances < 200513){
+        	/*if(numInstances > 200510 && numInstances < 200513){
         		System.out.println(this.observedClassDistribution.toString()+ "-----------");
-        	}
+        	}*/
 
             this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
 
-            if(numInstances > 200510 && numInstances < 200513){
+            /*if(numInstances > 200510 && numInstances < 200513){
         		System.out.println(this.observedClassDistribution.toString()+ "-----------");
-        	}
+        	}*/
             for (int i = 0; i < inst.numAttributes() - 1; i++) {
                 int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
                 AttributeClassObserver obs = this.attributeObservers.get(i);
@@ -338,7 +338,7 @@ public class CVFDT extends HoeffdingTree {
 
         }
 		@Override
-        public void forgetInstance(Instance inst, CVFDT ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
+        public void forgetInstance(Instance inst, VFDTWindow ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
 
             //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
@@ -393,7 +393,7 @@ public class CVFDT extends HoeffdingTree {
 
 
         @Override
-        public void killTreeChilds(CVFDT ht) {
+        public void killTreeChilds(VFDTWindow ht) {
             for (Node child : this.children) {
                 if (child != null) {
                     //Delete alternate tree if it exists
@@ -570,25 +570,24 @@ public class CVFDT extends HoeffdingTree {
         }
 
         @Override
-        public void killTreeChilds(CVFDT ht) {
+        public void killTreeChilds(VFDTWindow ht) {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
+        public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
 
             Instance weightedInst = inst.copy();
 
-        	if(numInstances > 200510 && numInstances < 200513){
+        	/*if(numInstances > 200510 && numInstances < 200513){
         		System.out.println(this.observedClassDistribution.toString()+ "+++++++++++");
-        	}
+        	}*/
 
 //Update statistics
             learnFromInstance(weightedInst, ht);
             //this is where we call VFDT's learnFromInstance which then calls a super that updates statistics... but only for learning nodes at this time
-            if(numInstances > 200510 && numInstances < 200513){
+            /*if(numInstances > 200510 && numInstances < 200513){
         		System.out.println(this.observedClassDistribution.toString()+ "+++++++++++");
-        	}
-
+        	}*/
 
 
             //Check for Split condition
@@ -605,9 +604,9 @@ public class CVFDT extends HoeffdingTree {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, HoeffdingTree ht) {
+        public double[] getClassVotes(Instance inst, VFDT ht) {
             double[] dist;
-            int predictionOption = ((CVFDT) ht).leafpredictionOption.getChosenIndex();
+            int predictionOption = ((VFDTWindow) ht).leafpredictionOption.getChosenIndex();
             if (predictionOption == 0) { //MC
                 dist = this.observedClassDistribution.getArrayCopy();
             } else if (predictionOption == 1) { //NB
@@ -675,7 +674,7 @@ public class CVFDT extends HoeffdingTree {
 		}
 
 		@Override
-		public void forgetInstance(Instance inst, CVFDT ht, AdaSplitNode adaSplitNode, int childBranch,
+		public void forgetInstance(Instance inst, VFDTWindow ht, AdaSplitNode adaSplitNode, int childBranch,
 				long maxNodeID) {
 			//if(numInstances < ht.windowSize.getValue() + 10000){
 
@@ -734,7 +733,6 @@ public class CVFDT extends HoeffdingTree {
     @Override
     public void trainOnInstanceImpl(Instance inst) {
 
-
     	// If treeRoot is null, create a new tree, rooted with a learning node.
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode(false); // root cannot be alternate
@@ -751,9 +749,9 @@ public class CVFDT extends HoeffdingTree {
     	// Forget an instance. The window stores along with each instance the maximum node reached. So look at the head of the queue and forget the instance there.
     	Instance forgetInst;
         if(window.remainingCapacity() == 0){
-        	//forgetInst = window.peek().getFirst();
-        	//forgetInst.setWeight(-0.95);
-            //((AdaNode) this.treeRoot).forgetInstance(forgetInst, this, null, -1, window.peek().getSecond());
+        	forgetInst = window.peek().getFirst();
+        	forgetInst.setWeight(-1.0);
+            ((AdaNode) this.treeRoot).forgetInstance(forgetInst, this, null, -1, window.peek().getSecond());
         }
 
         // Create an object to store the IDs visited while learning this instance. Pass a reference so you add all the IDs...
@@ -784,17 +782,17 @@ public class CVFDT extends HoeffdingTree {
 		//System.out.println(numInstances);
 
 
-    	if(numInstances > 200510 && numInstances < 200513 && numInstances % 1 == 0){
+    	/*if(numInstances > 200510 && numInstances < 200513 && numInstances % 1 == 0){
     		StringBuilder out = new StringBuilder();
     		this.treeRoot.describeSubtree(this, out, 8);
     		System.out.println("===== " + numInstances + " =======");
     		System.out.print(out);
-    		writer.println(numInstances);
-    		writer.print(out);
+    		//writer.println(numInstances);
+    		//writer.print(out);
     	}
     	if(numInstances > 300000){
-    		writer.close();
-    	}
+    		//writer.close();
+    	}*/
 
 
 //        for(int i = 0; i < reachedNodeIDs.size(); i ++){ System.out.print(reachedNodeIDs.get(i) + " ");}
@@ -889,7 +887,7 @@ public class CVFDT extends HoeffdingTree {
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins
-                    deactivateLearningNode(node, ((AdaNode)node).getParent(), parentIndex);
+                    //deactivateLearningNode(node, ((AdaNode)node).getParent(), parentIndex);
                 } else {
                     AdaSplitNode newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(),splitDecision.numSplits(), ((AdaNode)(node)).isAlternate());

@@ -19,10 +19,6 @@
  */
 package moa.classifiers.trees;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -96,15 +92,9 @@ import com.yahoo.labs.samoa.instances.Instance;
  * @author Richard Kirkby (rkirkby@cs.waikato.ac.nz)
  * @version $Revision: 7 $
  */
-public class VFDT extends AbstractClassifier {
+public class VFDTDecay extends AbstractClassifier {
 
     private static final long serialVersionUID = 1L;
-
-    private int i = 0;
-
-    private int numInstances = 0;
-
-	private PrintWriter writer = null;
 
     @Override
     public String getPurposeString() {
@@ -158,6 +148,10 @@ public class VFDT extends AbstractClassifier {
     public FloatOption tieThresholdOption = new FloatOption("tieThreshold",
             't', "Threshold below which a split will be forced to break ties.",
             0.05, 0.0, 1.0);
+
+    public FloatOption decayOption = new FloatOption("decay",
+            'D', "Decay or fading factor",
+            0.9999, 0.0, 1.0);
 
     public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
         "Only allow binary splits.");
@@ -218,7 +212,7 @@ public class VFDT extends AbstractClassifier {
             return this.observedClassDistribution.getArrayCopy();
         }
 
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, VFDTDecay ht) {
             return this.observedClassDistribution.getArrayCopy();
         }
 
@@ -226,7 +220,7 @@ public class VFDT extends AbstractClassifier {
             return this.observedClassDistribution.numNonZeroEntries() < 2;
         }
 
-        public void describeSubtree(VFDT ht, StringBuilder out,
+        public void describeSubtree(VFDTDecay ht, StringBuilder out,
                 int indent) {
             StringUtils.appendIndented(out, indent, "Leaf ");
             out.append(ht.getClassNameString());
@@ -293,7 +287,6 @@ public class VFDT extends AbstractClassifier {
             this.children = new AutoExpandVector<Node>();
         }
 
-
         public int numChildren() {
             return this.children.size();
         }
@@ -334,7 +327,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void describeSubtree(VFDT ht, StringBuilder out,
+        public void describeSubtree(VFDTDecay ht, StringBuilder out,
                 int indent) {
             for (int branch = 0; branch < numChildren(); branch++) {
                 Node child = getChild(branch);
@@ -372,7 +365,7 @@ public class VFDT extends AbstractClassifier {
             super(initialClassObservations);
         }
 
-        public abstract void learnFromInstance(Instance inst, VFDT ht);
+        public abstract void learnFromInstance(Instance inst, VFDTDecay ht);
     }
 
     public static class InactiveLearningNode extends LearningNode {
@@ -384,7 +377,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {
+        public void learnFromInstance(Instance inst, VFDTDecay ht) {
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
         }
@@ -413,11 +406,15 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {
+        public void learnFromInstance(Instance inst, VFDTDecay ht) {
             if (this.isInitialized == false) {
                 this.attributeObservers = new AutoExpandVector<AttributeClassObserver>(inst.numAttributes());
                 this.isInitialized = true;
             }
+
+            //decay
+            this.observedClassDistribution.scaleValues(ht.decayOption.getValue());
+
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
             for (int i = 0; i < inst.numAttributes() - 1; i++) {
@@ -444,14 +441,15 @@ public class VFDT extends AbstractClassifier {
         }
 
         public AttributeSplitSuggestion[] getBestSplitSuggestions(
-                SplitCriterion criterion, VFDT ht) {
+                SplitCriterion criterion, VFDTDecay ht) {
             List<AttributeSplitSuggestion> bestSuggestions = new LinkedList<AttributeSplitSuggestion>();
             double[] preSplitDist = this.observedClassDistribution.getArrayCopy();
             if (!ht.noPrePruneOption.isSet()) {
                 // add null split as an option
                 bestSuggestions.add(new AttributeSplitSuggestion(null,
                         new double[0][], criterion.getMeritOfSplit(
-                        preSplitDist, new double[][]{preSplitDist})));
+                        preSplitDist,
+                        new double[][]{preSplitDist})));
             }
             for (int i = 0; i < this.attributeObservers.size(); i++) {
                 AttributeClassObserver obs = this.attributeObservers.get(i);
@@ -514,21 +512,10 @@ public class VFDT extends AbstractClassifier {
         if (this.leafpredictionOption.getChosenIndex()>0) {
             this.removePoorAttsOption = null;
         }
-
-    	if (numInstances == 0){
-    		try {
-				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),false));
-				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),true));
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-    	}
-
     }
 
     @Override
     public void trainOnInstanceImpl(Instance inst) {
-    	//System.err.println(i++);
         if (this.treeRoot == null) {
             this.treeRoot = newLearningNode();
             this.activeLeafNodeCount = 1;
@@ -547,8 +534,8 @@ public class VFDT extends AbstractClassifier {
                     && (learningNode instanceof ActiveLearningNode)) {
                 ActiveLearningNode activeLearningNode = (ActiveLearningNode) learningNode;
                 double weightSeen = activeLearningNode.getWeightSeen();
-                if (weightSeen - activeLearningNode.getWeightSeenAtLastSplitEvaluation()
-                		>= this.gracePeriodOption.getValue()) {
+                if (weightSeen
+                        - activeLearningNode.getWeightSeenAtLastSplitEvaluation() >= this.gracePeriodOption.getValue()) {
                     attemptToSplit(activeLearningNode, foundNode.parent,
                             foundNode.parentBranch);
                     activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen);
@@ -559,26 +546,6 @@ public class VFDT extends AbstractClassifier {
                 % this.memoryEstimatePeriodOption.getValue() == 0) {
             estimateModelByteSizes();
         }
-
-    	//System.out.println(this.measureTreeDepth());
-
-        numInstances++;
-
-		//System.out.println(numInstances);
-
-
-    	/*if(numInstances > 200510 && numInstances < 200513 && numInstances % 1 == 0){
-    		StringBuilder out = new StringBuilder();
-    		this.treeRoot.describeSubtree(this, out, 8);
-    		System.out.println("===== " + numInstances + " =======");
-    		System.out.print(out);
-    		writer.println(numInstances);
-    		writer.print(out);
-    	}
-    	if(numInstances > 300000){
-    		writer.close();
-    	}*/
-
     }
 
     @Override
@@ -669,9 +636,7 @@ public class VFDT extends AbstractClassifier {
             boolean shouldSplit = false;
             if (bestSplitSuggestions.length < 2) {
                 shouldSplit = bestSplitSuggestions.length > 0;
-            }
-
-            else {
+            } else {
                 double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
@@ -680,6 +645,7 @@ public class VFDT extends AbstractClassifier {
                 if(bestSuggestion.merit < 1e-10){
                 	shouldSplit = false;
                 }
+
 
                 else if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
@@ -719,15 +685,13 @@ public class VFDT extends AbstractClassifier {
                 }
             }
             if (shouldSplit) {
-            	//System.err.println("SPLITTING - VVVVVVVV");
-
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins
                     deactivateLearningNode(node, parent, parentIndex);
                 } else {
                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
-                            node.getObservedClassDistribution(), splitDecision.numSplits());
+                            node.getObservedClassDistribution(),splitDecision.numSplits() );
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
                         newSplit.setChild(i, newChild);
@@ -739,30 +703,6 @@ public class VFDT extends AbstractClassifier {
                         this.treeRoot = newSplit;
                     } else {
                         parent.setChild(parentIndex, newSplit);
-                    }
-
-                    // Lazy check to find if a parent and child have the same split attribute (Since we only split on one attribute at a time)
-                    if(parent!=null){
-                    	if(parent.splitTest.getAttsTestDependsOn()[0] == splitDecision.splitTest.getAttsTestDependsOn()[0]){
-
-                    		System.out.println(" :::: " + numInstances + " :::: ");
-
-                    		System.out.println(" ::	Parent and child split on same attribute :: ");
-
-                    		System.out.println(" ::	There were :: " + bestSplitSuggestions.length + " :: split suggestions :: ");
-
-                    		 double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
-                                     this.splitConfidenceOption.getValue(), node.getWeightSeen());
-                             AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
-                             AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
-                             if (bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound) {
-                            	 System.out.println("The top two attributes differ in infogain... strange... infogain should be zero...");
-                             }
-
-                             if (hoeffdingBound < this.tieThresholdOption.getValue()) {
-                            	 System.out.println("The top two attributes don't differ in infogain... A tiebreaker is causing this node to re-split!");
-                             }
-                    	}
                     }
                 }
                 // manage memory
@@ -927,7 +867,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, VFDTDecay ht) {
             if (getWeightSeen() >= ht.nbThresholdOption.getValue()) {
                 return NaiveBayes.doNaiveBayesPrediction(inst,
                         this.observedClassDistribution,
@@ -955,7 +895,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {
+        public void learnFromInstance(Instance inst, VFDTDecay ht) {
             int trueClass = (int) inst.classValue();
             if (this.observedClassDistribution.maxIndex() == trueClass) {
                 this.mcCorrectWeight += inst.weight();
@@ -968,7 +908,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, VFDTDecay ht) {
             if (this.mcCorrectWeight > this.nbCorrectWeight) {
                 return this.observedClassDistribution.getArrayCopy();
             }

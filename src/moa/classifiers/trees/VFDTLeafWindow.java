@@ -15,7 +15,6 @@ import com.yahoo.labs.samoa.instances.Instance;
 
 import moa.classifiers.AbstractClassifier;
 import moa.classifiers.bayes.NaiveBayes;
-import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.trees.VFDT.ActiveLearningNode;
 import moa.classifiers.trees.VFDT.FoundNode;
 import moa.classifiers.trees.VFDT.LearningNode;
@@ -58,7 +57,7 @@ public class VFDTLeafWindow extends VFDT {
 	private static final long serialVersionUID = 1L;
 
     public IntOption windowSize = new IntOption("windowSize", 'W',
-            "Maximum moving window size", 2, 0, Integer.MAX_VALUE);
+            "Maximum moving window size", 5000, 0, Integer.MAX_VALUE);
     // Make the max window size sort of big if ADWIN is being used so ADWIN is mostly responsible
 
 	public class AdaLearningNode extends LearningNodeNBAdaptive{
@@ -66,8 +65,7 @@ public class VFDTLeafWindow extends VFDT {
 		// But the enclosing object is being passed around in previous code
 		// So let's just switch from static nested class to inner class
 
-	    private EvictingQueue<Instance> window = null; //each leaf gets a window
-	    protected ADWIN adwin = null; // each leaf has an ADWIN
+	    protected EvictingQueue<Instance> window = null; //each leaf gets a window
 
 	    // Now... we need to ensure that when an instance is learned, we update the ADWIN, and to forget an example if we've exceeded window size
 	    // If ADWIN needs to reset, we find out the size of the resized window and shrink our data window to the same size,
@@ -77,7 +75,6 @@ public class VFDTLeafWindow extends VFDT {
 		public AdaLearningNode(double[] initialClassObservations) {
 			super(initialClassObservations);
 			window = EvictingQueue.create(VFDTLeafWindow.this.windowSize.getValue());
-			adwin = new ADWIN();
 		}
 
 		// So far we've made this class an inner class instead of a static nested class so it has a reference to the enclosing

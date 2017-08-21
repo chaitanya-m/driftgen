@@ -281,7 +281,7 @@ public class HATADWIN extends HoeffdingTree {
             } // Check condition to replace tree
 
             else if (this.alternateTree != null && ((NewNode) this.alternateTree).isNullError() == false) {
-                if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) {
+                if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) { // magic number...
                     double oldErrorRate = this.getErrorEstimation();
                     double altErrorRate = ((NewNode) this.alternateTree).getErrorEstimation();
                     double fDelta = .05;

@@ -301,15 +301,15 @@ public class VFDTWindow extends VFDT {
         	assert (this.createdFromInitializedLearningNode = true);
 
 
-        	/*if(numInstances > 200510 && numInstances < 200513){
-        		System.out.println(this.observedClassDistribution.toString()+ "-----------");
-        	}*/
+        	//if(numInstances > 12998 && numInstances < 13201){
+        	//	System.out.println(this.observedClassDistribution.toString()+ "-----------");
+        	//}
 
             this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
 
-            /*if(numInstances > 200510 && numInstances < 200513){
-        		System.out.println(this.observedClassDistribution.toString()+ "-----------");
-        	}*/
+            //if(numInstances > 12998 && numInstances < 13201){
+        	//	System.out.println(this.observedClassDistribution.toString()+ "-----------");
+        	//}
             for (int i = 0; i < inst.numAttributes() - 1; i++) {
                 int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
                 AttributeClassObserver obs = this.attributeObservers.get(i);
@@ -384,9 +384,9 @@ public class VFDTWindow extends VFDT {
           this.setAlternate(isAlternate);
 
           for (Node child : this.children) {
-            if (child != null) {
-              ((AdaNode)child).setAlternateStatusForSubtreeNodes(isAlternate);
-            }
+        	  if (child != null) {
+        		  ((AdaNode)child).setAlternateStatusForSubtreeNodes(isAlternate);
+        	}
           }
         }
 
@@ -578,9 +578,9 @@ public class VFDTWindow extends VFDT {
 
             Instance weightedInst = inst.copy();
 
-        	/*if(numInstances > 200510 && numInstances < 200513){
-        		System.out.println(this.observedClassDistribution.toString()+ "+++++++++++");
-        	}*/
+//        	if(numInstances > 12998 && numInstances < 13201){
+//        		System.out.println(this.observedClassDistribution.toString()+ "+++++++++++");
+//        	}
 
 //Update statistics
             learnFromInstance(weightedInst, ht);
@@ -782,7 +782,7 @@ public class VFDTWindow extends VFDT {
 		//System.out.println(numInstances);
 
 
-    	/*if(numInstances > 200510 && numInstances < 200513 && numInstances % 1 == 0){
+    	/*if(numInstances > 12998 && numInstances < 13001 && numInstances % 1 == 0){
     		StringBuilder out = new StringBuilder();
     		this.treeRoot.describeSubtree(this, out, 8);
     		System.out.println("===== " + numInstances + " =======");
@@ -883,6 +883,7 @@ public class VFDTWindow extends VFDT {
                     }
                 }
             }
+
             if (shouldSplit) {
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {

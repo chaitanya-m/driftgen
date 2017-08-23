@@ -10,9 +10,9 @@ import moa.classifiers.trees.VFDTLeafWindow.AdaLearningNode;
 import moa.core.MiscUtils;
 import moa.core.Utils;
 
-public class VFDTLeafWindowADWIN extends VFDTLeafWindow{
+public class VFDTLeafWindowADWIN extends VFDTLeafWindow {
 
-	public class AdaLearningNodeADWIN extends AdaLearningNode{
+	public class AdaLearningNodeADWIN extends AdaLearningNode {
 
 	    protected ADWIN adwin = null; // each leaf has an ADWIN
         protected boolean errorChange = false;

@@ -130,18 +130,9 @@ public class VFDTLeafWindow extends VFDT {
         return new AdaLearningNode(new double[0]);
     }
 
-
-/*    @Override
-    public void trainOnInstanceImpl(Instance inst) {
-
-    	// If treeRoot is null, create a new tree, rooted with a learning node.
-        if (this.treeRoot == null) {
-            this.treeRoot = newLearningNode();
-            this.activeLeafNodeCount = 1;
-        }
-
-        this.treeRoot.lea
-
-    }*/
+    @Override
+	protected LearningNode newLearningNode(double[] initialClassObservations) {
+        return new AdaLearningNode(initialClassObservations);
+    }
 
 }

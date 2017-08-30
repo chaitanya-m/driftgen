@@ -107,11 +107,33 @@ public class CVFDT extends VFDTWindow {
 							}
 
 						}
+						// replace with best alternate!!
+						if(bestAlternate != null){ //DRY!!! (copied from HAT-ADWIN)
+	                        // Switch alternate tree
+	                        ht.activeLeafNodeCount -= this.numberLeaves();
+	                        ht.activeLeafNodeCount += bestAlternate.numberLeaves();
+	                        this.killTreeChilds(ht);
+	                        bestAlternate.setAlternateStatusForSubtreeNodes(false);
+	                        bestAlternate.setMainlineNode(null);
 
-						if(bestAlternate != null){
 
+	                        if (!this.isRoot()) {
+	                            this.getParent().setChild(parentBranch, this.alternateTree);
+	                            bestAlternate.setRoot(false);
+	                            bestAlternate.setParent(this.getParent());
+	                            //((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
+	                        } else {
+	                            // Switch root tree
+	                        	bestAlternate.setRoot(true);
+	                        	bestAlternate.setParent(null);
+	                            ht.treeRoot = this.alternateTree;
+	                        }
+	                        this.alternateTree = null;
+	                        ht.switchedAlternateTrees++;
 						}
-
+						else{
+							// ALERT: TODO: prune alternates
+						}
 
 					}
 					testPhaseError = 0; //reset test phase error

@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.github.javacliparser.IntOption;
 import com.yahoo.labs.samoa.instances.Instance;
 
 import moa.classifiers.core.AttributeSplitSuggestion;
@@ -12,7 +13,6 @@ import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
 import moa.core.AutoExpandVector;
-
 
 public class CVFDT extends VFDTWindow {
 
@@ -22,6 +22,12 @@ public class CVFDT extends VFDTWindow {
 
 	// How do we add a counter?
 
+    public IntOption testPhaseFrequency = new IntOption("testPhaseFrequency", 'f',
+            "How frequently alternates are tested", 10000, 0, Integer.MAX_VALUE);
+
+    public IntOption testPhaseLength = new IntOption("testPhaseLength", 'l',
+            "How long each test phase is", 200, 0, Integer.MAX_VALUE);
+
 	public interface CVFDTAdaNode extends AdaNode{
 
 		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
@@ -29,6 +35,8 @@ public class CVFDT extends VFDTWindow {
 	}
 
 	public class CVFDTSplitNode extends AdaSplitNode implements CVFDTAdaNode {
+
+		private boolean inTestPhase = false;
 
 		// maintain a mapping from attributes to alternate trees
 		private Map<AttributeSplitSuggestion, AdaNode> alternates;
@@ -148,12 +156,17 @@ public class CVFDT extends VFDTWindow {
 
 			// note that we have to get rid of inefficient alternates as mentioned in paper... TODO
 
-			// We now need to compare error accumulated in the alternate with error accumulated in the mainline
+			// We now need to compare error accumulated in the alternates with error accumulated in the mainline
 			// Use ADWIN as error estimator? Or is that too slow?
 			// AdaNode needs a getAccumulatedError()
 
 			// how frequently do we check if accuracy has been beaten?
-			// just do it every time we re-evaluate... the paper doesn't say
+			// just do it every time we re-evaluate splits (default 200)... the paper doesn't say
+			// what happens to existing alternates when a substitution occurs? do they get destroyed?
+
+			// hold on, it's not that simple... every n instances, all alternates and mainline enter a testing phase where no learning happens!
+			// good for gradual drift perhaps? but so many examples are lost!
+			// so, just having a persistent error counter might do better than CVFDT, and a windowed error tracker may do even better
 
 			// Then we will find the best split X_b other than X_n -  this could be X_a
 

@@ -165,7 +165,7 @@ public class CVFDT extends VFDTWindow {
 			// what happens to existing alternates when a substitution occurs? do they get destroyed?
 
 			// hold on, it's not that simple... every n instances, all alternates and mainline enter a testing phase where no learning happens!
-			// good for gradual drift perhaps? but so many examples are lost!
+			// good for gradual drift perhaps? but so many examples are lost! And if you make the intervals too long you won't replace!
 			// so, just having a persistent error counter might do better than CVFDT, and a windowed error tracker may do even better
 
 			// Then we will find the best split X_b other than X_n -  this could be X_a

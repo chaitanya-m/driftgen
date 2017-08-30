@@ -2,6 +2,7 @@ package moa.classifiers.trees;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,9 @@ public class CVFDT extends VFDTWindow {
 
 		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs);
+
+		public int getTestPhaseError();
+
 	}
 
 	public class CVFDTSplitNode extends AdaSplitNode implements CVFDTAdaNode {
@@ -43,6 +47,7 @@ public class CVFDT extends VFDTWindow {
 
 		private int testPhaseError = 0;
 
+		@Override
 		public int getTestPhaseError() {
 			return testPhaseError;
 		}
@@ -83,7 +88,29 @@ public class CVFDT extends VFDTWindow {
 				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
 				if (getNumInstances() % testPhaseFrequency.getValue() == testPhaseLength.getValue() - 1){
 					if(!this.isAlternate() && !this.alternates.isEmpty()){
+
 						//pick the option with lowest test phase error... and replace...
+						int lowestError = testPhaseError;
+
+						AdaNode bestAlternate = null;
+
+						Iterator iter = alternates.values().iterator();
+
+						while (iter.hasNext()){
+							CVFDTAdaNode alt = (CVFDTAdaNode)iter.next();
+
+							if(alt.getTestPhaseError() < lowestError){
+
+								lowestError = alt.getTestPhaseError();
+								bestAlternate = alt;
+
+							}
+
+						}
+
+						if(bestAlternate != null){
+
+						}
 
 
 					}
@@ -133,11 +160,8 @@ public class CVFDT extends VFDTWindow {
 			// We need to re-evaluate splits at each split node...
 
 			reEvaluateBestSplit();
-			// excellent! are any of the evaluated splits better than current?
-			// if so, give it an alternate!
 
-			// If a split is better, we build an alternate
-			// We ignore evaluating attributes that already have a corresponding alternate
+
 			// ALERT: We're missing code for going down alternate paths here
 
 			int childBranch = this.instanceChildIndex(inst);
@@ -212,24 +236,42 @@ public class CVFDT extends VFDTWindow {
 				}
 			}
 
-			// note that we have to get rid of inefficient alternates as mentioned in paper... TODO
-
-			// We now need to compare error accumulated in the alternates with error accumulated in the mainline
-			// Use ADWIN as error estimator? Or is that too slow?
-			// AdaNode needs a getAccumulatedError()
-
-			// how frequently do we check if accuracy has been beaten?
-			// just do it every time we re-evaluate splits (default 200)... the paper doesn't say
-			// what happens to existing alternates when a substitution occurs? do they get destroyed?
-
-			// hold on, it's not that simple... every n instances, all alternates and mainline enter a testing phase where no learning happens!
-			// good for gradual drift perhaps? but so many examples are lost! And if you make the intervals too long you won't replace!
-			// so, just having a persistent error counter might do better than CVFDT, and a windowed error tracker may do even better
-
-			// Then we will find the best split X_b other than X_n -  this could be X_a
-
 		}
 
+	}
+
+	public class CVFDTLearningNode extends AdaLearningNode implements CVFDTAdaNode {
+
+		private boolean inAlternateTestPhase = false;
+
+		private int testPhaseError = 0;
+
+		@Override
+		public int getTestPhaseError() {
+			return testPhaseError;
+		}
+
+		public CVFDTLearningNode(double[] initialClassObservations) {
+			super(initialClassObservations);
+		}
+
+		@Override
+		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
+				AutoExpandVector<Long> reachedLeafIDs) {
+
+			if (getNumInstances() % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
+				inAlternateTestPhase = true;
+				if (inst.classValue() != Utils.maxIndex(this.getClassVotes(inst, ht))){
+					testPhaseError++;
+				}
+			}
+			else {
+				testPhaseError = 0;
+				inAlternateTestPhase = false;
+			}
+
+			super.learnFromInstance(inst, ht, parent, parentBranch, reachedLeafIDs);
+		}
 	}
 
 }

@@ -103,6 +103,10 @@ public class VFDTWindow extends VFDT {
             "Maximum moving window size", 20000, 0,
             Integer.MAX_VALUE);
 
+    public long getNumInstances(){
+    	return numInstances;
+    }
+
     @Override
     public String getPurposeString() {
         return "Hoeffding Adaptive Tree for evolving data streams that uses ADWIN to replace branches for new ones.";

@@ -26,7 +26,7 @@ public class CVFDT extends VFDTWindow {
             "How frequently alternates are tested", 10000, 0, Integer.MAX_VALUE);
 
     public IntOption testPhaseLength = new IntOption("testPhaseLength", 'l',
-            "How long each test phase is", 200, 0, Integer.MAX_VALUE);
+            "How long each test phase for alternates is", 200, 0, Integer.MAX_VALUE);
 
 	public interface CVFDTAdaNode extends AdaNode{
 
@@ -36,7 +36,7 @@ public class CVFDT extends VFDTWindow {
 
 	public class CVFDTSplitNode extends AdaSplitNode implements CVFDTAdaNode {
 
-		private boolean inTestPhase = false;
+		private boolean inAlternateTestPhase = false;
 
 		// maintain a mapping from attributes to alternate trees
 		private Map<AttributeSplitSuggestion, AdaNode> alternates;
@@ -52,6 +52,13 @@ public class CVFDT extends VFDTWindow {
 		@Override
 		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
+
+			if (getNumInstances() % testPhaseFrequency.getValue() < testPhaseLength.getValue()){
+				inAlternateTestPhase = true;
+			}
+			else {
+				inAlternateTestPhase = false;
+			}
 
 			//System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 

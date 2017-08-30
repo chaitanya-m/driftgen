@@ -1,6 +1,7 @@
 package moa.classifiers.trees;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +13,9 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.VFDT.Node;
 import moa.core.AutoExpandVector;
+import moa.core.Utils;
 
 public class CVFDT extends VFDTWindow {
 
@@ -38,6 +41,12 @@ public class CVFDT extends VFDTWindow {
 
 		private boolean inAlternateTestPhase = false;
 
+		private int testPhaseError = 0;
+
+		public int getTestPhaseError() {
+			return testPhaseError;
+		}
+
 		// maintain a mapping from attributes to alternate trees
 		private Map<AttributeSplitSuggestion, AdaNode> alternates;
 
@@ -46,6 +55,7 @@ public class CVFDT extends VFDTWindow {
 
 		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations) {
 			super(splitTest, classObservations);
+			alternates = new HashMap<AttributeSplitSuggestion, VFDTWindow.AdaNode>();
 			// TODO Auto-generated constructor stub
 		}
 
@@ -53,20 +63,51 @@ public class CVFDT extends VFDTWindow {
 		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
 
+			// if you're in a test phase
 			if (getNumInstances() % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
 				inAlternateTestPhase = true;
 
+				//increment error
+	            int trueClass = (int) inst.classValue();
+	            int ClassPrediction = 0;
+	            Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
+	            if (leaf != null) {
+	                ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
+	            } // what happens if leaf is null?
+	            boolean predictedCorrectly = (trueClass == ClassPrediction);
+
+	            if(!predictedCorrectly){
+	            	testPhaseError++;
+	            }
+
 				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
+				if (getNumInstances() % testPhaseFrequency.getValue() == testPhaseLength.getValue() - 1){
+					if(!this.isAlternate() && !this.alternates.isEmpty()){
+						//pick the option with lowest test phase error... and replace...
+
+
+					}
+					testPhaseError = 0; //reset test phase error
+					return; // skip learning and split evaluation!
+				}
+
 				// if you're alternate or not an alternate but have alternates, in the middle of the phase, just increment error and skip learning!
 
+				else if (this.isAlternate() || !this.alternates.isEmpty()){
 
-				return; // skip learning!
+					return; // skip learning and split evaluation!
+				}
+
+				// if neither of the above conditions apply continue as usual
+
 			}
+
+			// if you're not in a test phase, continue as usual
 			else {
 				inAlternateTestPhase = false;
 			}
 
-			// ALERT: remember you're not supposed to learn anything if you happen to be in a test phase and happen to have alternates...
+			// remember you're not supposed to learn anything if you happen to be in a test phase and happen to have alternates...
 			// or if you happen to be an alternate
 			// You're just supposed to keep track of error
 

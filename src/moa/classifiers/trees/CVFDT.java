@@ -307,7 +307,9 @@ public class CVFDT extends VFDTWindow {
 				inAlternateTestPhase = false;
 			}
 
-			super.learnFromInstance(inst, ht, parent, parentBranch, reachedLeafIDs);
+			if(!inAlternateTestPhase){
+				super.learnFromInstance(inst, ht, parent, parentBranch, reachedLeafIDs);
+			}
 		}
 	}
 

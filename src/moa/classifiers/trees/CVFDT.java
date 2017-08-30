@@ -53,14 +53,24 @@ public class CVFDT extends VFDTWindow {
 		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
 
-			if (getNumInstances() % testPhaseFrequency.getValue() < testPhaseLength.getValue()){
+			if (getNumInstances() % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
 				inAlternateTestPhase = true;
+
+				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
+				// if you're alternate or not an alternate but have alternates, in the middle of the phase, just increment error and skip learning!
+
+
+				return; // skip learning!
 			}
 			else {
 				inAlternateTestPhase = false;
 			}
 
-			//System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
+			// ALERT: remember you're not supposed to learn anything if you happen to be in a test phase and happen to have alternates...
+			// or if you happen to be an alternate
+			// You're just supposed to keep track of error
+
+			// System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
 			// First, update counts
 			assert (this.createdFromInitializedLearningNode = true);

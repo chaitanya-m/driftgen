@@ -44,6 +44,7 @@ import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.HoeffdingTree.Node;
 import moa.classifiers.trees.HoeffdingTree.SplitNode;
 import moa.core.AutoExpandVector;
 import moa.core.DoubleVector;
@@ -157,6 +158,8 @@ public class VFDTWindow extends VFDT {
         public void setUniqueID(long uniqueID);
 
 		public void forgetInstance(Instance inst, VFDTWindow ht, AdaSplitNode adaSplitNode, int childBranch, long maxNodeID);
+
+		public double getSimpleErrorEstimate();
     }
 
 
@@ -188,6 +191,8 @@ public class VFDTWindow extends VFDT {
 		protected AutoExpandVector<AttributeClassObserver> attributeObservers;
 
 		protected boolean createdFromInitializedLearningNode = false;
+
+		protected double simpleErrorEstimate = 0; //might  need to access this in a subclass, so protected...
 
 		@Override
 		public void setParent(AdaSplitNode parent) {
@@ -293,6 +298,26 @@ public class VFDTWindow extends VFDT {
         // Parent nodes are allways SplitNodes
         @Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
+
+
+        	// Note: this is kind of inefficient... you have to filter down every time to find out if you've made an error??
+        	// you'll be going down the same path several times
+        	// Not so bad for small trees though
+
+            int trueClass = (int) inst.classValue();
+            //Compute ClassPrediction using filterInstanceToLeaf
+            //int ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, null, -1).node.getClassVotes(inst, ht));
+            int ClassPrediction = 0;
+            Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
+            if (leaf != null) {
+                ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
+            } // what happens if leaf is null?
+            boolean predictedCorrectly = (trueClass == ClassPrediction);
+
+            if(!predictedCorrectly){
+            	simpleErrorEstimate++;
+            	// we only need one for the lifetime of the node...
+            }
 
             //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
@@ -440,7 +465,6 @@ public class VFDTWindow extends VFDT {
             }
             if (this.alternateTree != null) {
                 ((AdaNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
-
             }
         }
 
@@ -467,13 +491,17 @@ public class VFDTWindow extends VFDT {
 
 		@Override
 		public long getUniqueID() {
-
 			return this.uID;
 		}
 
 		@Override
 		public void setUniqueID(long uniqueID) {
 			this.uID = uniqueID;
+		}
+
+		@Override
+		public double getSimpleErrorEstimate() {
+			return simpleErrorEstimate;
 		}
 
 
@@ -500,6 +528,9 @@ public class VFDTWindow extends VFDT {
 		private AdaSplitNode parent = null;
 
 		private long uID;
+
+		protected double simpleErrorEstimate = 0; //might  need to access this in a subclass, so protected...
+
 
 		@Override
 		public void setParent(AdaSplitNode parent) {
@@ -577,6 +608,10 @@ public class VFDTWindow extends VFDT {
         public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
 
             Instance weightedInst = inst.copy();
+
+            if(inst.classValue() != Utils.maxIndex(this.getClassVotes(inst, ht))){
+            	this.simpleErrorEstimate++; // this is just 1-0 loss of course
+            }
 
 //        	if(numInstances > 12998 && numInstances < 13201){
 //        		System.out.println(this.observedClassDistribution.toString()+ "+++++++++++");
@@ -682,10 +717,13 @@ public class VFDTWindow extends VFDT {
 			//inst.setWeight(-1.0);
 
 			super.learnFromInstance(inst, ht);
-			//}
 
 		}
 
+		@Override
+		public double getSimpleErrorEstimate() {
+			return simpleErrorEstimate;
+		}
     }
 
     protected int alternateTrees;
@@ -842,6 +880,7 @@ public class VFDTWindow extends VFDT {
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
 
+                // Take out these lines to simulate the original bug in VFDT
                 if(bestSuggestion.merit < 1e-10){
                 	shouldSplit = false;
                 }

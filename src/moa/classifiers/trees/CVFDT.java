@@ -14,6 +14,7 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.HATADWIN.NewNode;
 import moa.classifiers.trees.VFDT.Node;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
@@ -94,10 +95,10 @@ public class CVFDT extends VFDTWindow {
 
 						AdaNode bestAlternate = null;
 
-						Iterator iter = alternates.values().iterator();
+						Iterator<AdaNode> iter = alternates.values().iterator();
 
 						while (iter.hasNext()){
-							CVFDTAdaNode alt = (CVFDTAdaNode)iter.next();
+							CVFDTAdaNode alt = (CVFDTAdaNode) iter.next();
 
 							if(alt.getTestPhaseError() < lowestError){
 
@@ -179,12 +180,25 @@ public class CVFDT extends VFDTWindow {
 			// DRY... for now this code is repeated...
 			// Counts have been updated for this node (make certain of this...)
 
-			// We need to re-evaluate splits at each split node...
+			// We need to re-evaluate splits at each mainline split node...
 
-			reEvaluateBestSplit();
+			if(!this.isAlternate()){
+				reEvaluateBestSplit();
+			}
 
 
-			// ALERT: We're missing code for going down alternate paths here
+			// Going down alternate paths here
+
+            if (this.alternates != null && !this.isAlternate()) {
+
+				Iterator<AdaNode> iter = alternates.values().iterator();
+
+				while (iter.hasNext()){
+					CVFDTAdaNode alt = (CVFDTAdaNode) iter.next();
+	                alt.learnFromInstance(inst, ht, this.getParent(), parentBranch, reachedLeafIDs);
+				}
+            }
+
 
 			int childBranch = this.instanceChildIndex(inst);
 			Node child = this.getChild(childBranch);
@@ -192,6 +206,9 @@ public class CVFDT extends VFDTWindow {
 				((AdaNode) child).learnFromInstance(inst, ht, this, childBranch, reachedLeafIDs);
 			}
 		}
+
+
+
 
 		// DRY... code duplicated from ActiveLearningNode in VFDT.java
 		public AttributeSplitSuggestion[] getBestSplitSuggestions(

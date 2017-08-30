@@ -30,7 +30,7 @@ public class CVFDT extends VFDTWindow {
     public IntOption testPhaseFrequency = new IntOption("testPhaseFrequency", 'f',
             "How frequently alternates are tested", 10000, 0, Integer.MAX_VALUE);
 
-    public IntOption testPhaseLength = new IntOption("testPhaseLength", 'l',
+    public IntOption testPhaseLength = new IntOption("testPhaseLength", 'L',
             "How long each test phase for alternates is", 200, 0, Integer.MAX_VALUE);
 
 	public interface CVFDTAdaNode extends AdaNode{
@@ -274,9 +274,7 @@ public class CVFDT extends VFDTWindow {
 					// we've just created an alternate, but only if the key is not already contained
 				}
 			}
-
 		}
-
 	}
 
 	public class CVFDTLearningNode extends AdaLearningNode implements CVFDTAdaNode {

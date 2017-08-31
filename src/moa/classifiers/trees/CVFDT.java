@@ -14,8 +14,6 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
-import moa.classifiers.trees.HATADWIN.NewNode;
-import moa.classifiers.trees.VFDT.Node;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
 
@@ -27,11 +25,11 @@ public class CVFDT extends VFDTWindow {
 
 	// How do we add a counter?
 
-    public IntOption testPhaseFrequency = new IntOption("testPhaseFrequency", 'f',
-            "How frequently alternates are tested", 10000, 0, Integer.MAX_VALUE);
+	public IntOption testPhaseFrequency = new IntOption("testPhaseFrequency", 'f',
+			"How frequently alternates are tested", 10000, 0, Integer.MAX_VALUE);
 
-    public IntOption testPhaseLength = new IntOption("testPhaseLength", 'L',
-            "How long each test phase for alternates is", 200, 0, Integer.MAX_VALUE);
+	public IntOption testPhaseLength = new IntOption("testPhaseLength", 'L',
+			"How long each test phase for alternates is", 200, 0, Integer.MAX_VALUE);
 
 	public interface CVFDTAdaNode extends AdaNode{
 
@@ -54,7 +52,7 @@ public class CVFDT extends VFDTWindow {
 		}
 
 		// maintain a mapping from attributes to alternate trees
-		private Map<AttributeSplitSuggestion, AdaNode> alternates;
+		protected Map<AttributeSplitSuggestion, AdaNode> alternates;
 
 		// static nested classes don't have a reference to the containing object while nonstatic nested classes do
 		// so changing over to a nonstatic nested class
@@ -74,17 +72,17 @@ public class CVFDT extends VFDTWindow {
 				inAlternateTestPhase = true;
 
 				//increment error
-	            int trueClass = (int) inst.classValue();
-	            int ClassPrediction = 0;
-	            Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
-	            if (leaf != null) {
-	                ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
-	            } // what happens if leaf is null?
-	            boolean predictedCorrectly = (trueClass == ClassPrediction);
+				int trueClass = (int) inst.classValue();
+				int ClassPrediction = 0;
+				Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
+				if (leaf != null) {
+					ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
+				} // what happens if leaf is null?
+				boolean predictedCorrectly = (trueClass == ClassPrediction);
 
-	            if(!predictedCorrectly){
-	            	testPhaseError++;
-	            }
+				if(!predictedCorrectly){
+					testPhaseError++;
+				}
 
 				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
 				if (getNumInstances() % testPhaseFrequency.getValue() == testPhaseLength.getValue() - 1){
@@ -110,27 +108,27 @@ public class CVFDT extends VFDTWindow {
 						}
 						// replace with best alternate!!
 						if(bestAlternate != null){ //DRY!!! (copied from HAT-ADWIN)
-	                        // Switch alternate tree
-	                        ht.activeLeafNodeCount -= this.numberLeaves();
-	                        ht.activeLeafNodeCount += bestAlternate.numberLeaves();
-	                        this.killTreeChilds(ht);
-	                        bestAlternate.setAlternateStatusForSubtreeNodes(false);
-	                        bestAlternate.setMainlineNode(null);
+							// Switch alternate tree
+							ht.activeLeafNodeCount -= this.numberLeaves();
+							ht.activeLeafNodeCount += bestAlternate.numberLeaves();
+							this.killTreeChilds(ht);
+							bestAlternate.setAlternateStatusForSubtreeNodes(false);
+							bestAlternate.setMainlineNode(null);
 
 
-	                        if (!this.isRoot()) {
-	                            this.getParent().setChild(parentBranch, this.alternateTree);
-	                            bestAlternate.setRoot(false);
-	                            bestAlternate.setParent(this.getParent());
-	                            //((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
-	                        } else {
-	                            // Switch root tree
-	                        	bestAlternate.setRoot(true);
-	                        	bestAlternate.setParent(null);
-	                            ht.treeRoot = this.alternateTree;
-	                        }
-	                        this.alternateTree = null;
-	                        ht.switchedAlternateTrees++;
+							if (!this.isRoot()) {
+								this.getParent().setChild(parentBranch, this.alternateTree);
+								bestAlternate.setRoot(false);
+								bestAlternate.setParent(this.getParent());
+								//((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
+							} else {
+								// Switch root tree
+								bestAlternate.setRoot(true);
+								bestAlternate.setParent(null);
+								ht.treeRoot = this.alternateTree;
+							}
+							this.alternateTree = null;
+							ht.switchedAlternateTrees++;
 						}
 						else{
 							// ALERT: TODO: prune alternates
@@ -156,55 +154,58 @@ public class CVFDT extends VFDTWindow {
 			else {
 				inAlternateTestPhase = false;
 			}
+			if(!inAlternateTestPhase) {
+				// remember you're not supposed to learn anything if you happen to be in a test phase and happen to have alternates...
+				// or if you happen to be an alternate
+				// You're just supposed to keep track of error
 
-			// remember you're not supposed to learn anything if you happen to be in a test phase and happen to have alternates...
-			// or if you happen to be an alternate
-			// You're just supposed to keep track of error
+				// System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
-			// System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
+				// First, update counts
+				assert (this.createdFromInitializedLearningNode = true);
 
-			// First, update counts
-			assert (this.createdFromInitializedLearningNode = true);
+				this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
 
-			this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
-
-			for (int i = 0; i < inst.numAttributes() - 1; i++) {
-				int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
-				AttributeClassObserver obs = this.attributeObservers.get(i);
-				if (obs == null) {
-					obs = inst.attribute(instAttIndex).isNominal() ? ht.newNominalClassObserver() : ht.newNumericClassObserver();
-					this.attributeObservers.set(i, obs);
+				for (int i = 0; i < inst.numAttributes() - 1; i++) {
+					int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
+					AttributeClassObserver obs = this.attributeObservers.get(i);
+					if (obs == null) {
+						obs = inst.attribute(instAttIndex).isNominal() ? ht.newNominalClassObserver() : ht.newNumericClassObserver();
+						this.attributeObservers.set(i, obs);
+					}
+					obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
 				}
-				obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
-			}
-			// DRY... for now this code is repeated...
-			// Counts have been updated for this node (make certain of this...)
+				// DRY... for now this code is repeated...
+				// Counts have been updated for this node (make certain of this...)
 
-			// We need to re-evaluate splits at each mainline split node...
+				// We need to re-evaluate splits at each mainline split node...
 
-			if(!this.isAlternate()){
-				reEvaluateBestSplit();
-			}
-
-
-			// Going down alternate paths here
-
-            if (this.alternates != null && !this.isAlternate()) {
-
-				Iterator<AdaNode> iter = alternates.values().iterator();
-
-				while (iter.hasNext()){
-					CVFDTAdaNode alt = (CVFDTAdaNode) iter.next();
-	                alt.learnFromInstance(inst, ht, this.getParent(), parentBranch, reachedLeafIDs);
+				if(!this.isAlternate()){
+					reEvaluateBestSplit();
 				}
-            }
 
 
-			int childBranch = this.instanceChildIndex(inst);
-			Node child = this.getChild(childBranch);
-			if (child != null) {
-				((AdaNode) child).learnFromInstance(inst, ht, this, childBranch, reachedLeafIDs);
+				// Going down alternate paths here
+
+				if (this.alternates != null && !this.isAlternate()) {
+
+					Iterator<AdaNode> iter = alternates.values().iterator();
+
+					while (iter.hasNext()){
+						CVFDTAdaNode alt = (CVFDTAdaNode) iter.next();
+						alt.learnFromInstance(inst, ht, this.getParent(), parentBranch, reachedLeafIDs);
+					}
+				}
+
+
+				int childBranch = this.instanceChildIndex(inst);
+				Node child = this.getChild(childBranch);
+				if (child != null) {
+					((AdaNode) child).learnFromInstance(inst, ht, this, childBranch, reachedLeafIDs);
+				}
+
 			}
+
 		}
 
 

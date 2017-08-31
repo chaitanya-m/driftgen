@@ -29,14 +29,26 @@ public class EFDT extends CVFDT{
 			double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(this.getObservedClassDistribution()),
 					EFDT.this.splitConfidenceOption.getValue(), this.observedClassDistribution.sumOfValues());
 
-			AttributeSplitSuggestion[] bestSplitSuggestions = this.getBestSplitSuggestions(splitCriterion, EFDT.this);
-			Arrays.sort(bestSplitSuggestions);
+			// should really be called allPossibleSplits
+			AttributeSplitSuggestion[] allPossibleSplits = this.getBestSplitSuggestions(splitCriterion, EFDT.this);
+			Arrays.sort(allPossibleSplits);
 
-			AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
-			AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
+			// should really be called allPossibleSplits
+
+			AttributeSplitSuggestion bestSuggestion = allPossibleSplits[allPossibleSplits.length - 1];
+			AttributeSplitSuggestion currentSuggestion = null;
+
+			for(int i = 0; i < allPossibleSplits.length; i++) {
+				if(allPossibleSplits[i].splitTest.getAttsTestDependsOn()[0] == currentSplit){
+					 currentSuggestion = allPossibleSplits[allPossibleSplits.length - 1];
+					 break;
+				}
+			}
+
+			assert(currentSuggestion != null);
 
 			double tieThreshold = EFDT.this.tieThresholdOption.getValue();
-			double deltaG = bestSuggestion.merit - secondBestSuggestion.merit;
+			double deltaG = bestSuggestion.merit - currentSuggestion.merit;
 
 			if(currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0])
 			{

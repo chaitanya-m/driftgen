@@ -1,5 +1,9 @@
 package moa.classifiers.trees;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -7,15 +11,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.math3.util.Pair;
+
 import com.github.javacliparser.IntOption;
+import com.google.common.collect.EvictingQueue;
 import com.yahoo.labs.samoa.instances.Instance;
 
 import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
-import moa.classifiers.trees.VFDT.LearningNode;
-import moa.classifiers.trees.VFDTWindow.AdaLearningNode;
 import moa.classifiers.trees.VFDTWindow.AdaNode;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
@@ -52,9 +57,6 @@ public class CVFDT extends VFDTWindow {
 
 	public class CVFDTSplitNode extends AdaSplitNode implements AdaNode, CVFDTAdaNode {
 
-		/**
-		 *
-		 */
 		private static final long serialVersionUID = 1L;
 
 		private boolean inAlternateTestPhase = false;
@@ -353,9 +355,6 @@ public class CVFDT extends VFDTWindow {
 
 	public class CVFDTLearningNode extends AdaLearningNode implements AdaNode, CVFDTAdaNode {
 
-		/**
-		 *
-		 */
 		private static final long serialVersionUID = -7477758640913802578L;
 
 		private boolean inAlternateTestPhase = false;
@@ -402,6 +401,59 @@ public class CVFDT extends VFDTWindow {
 
 		}
 	}
+
+
+    @Override
+    public void trainOnInstanceImpl(Instance inst) {
+
+    	// If treeRoot is null, create a new tree, rooted with a learning node.
+        if (this.treeRoot == null) {
+            this.treeRoot = newLearningNode(false, true, null); // root cannot be alternate
+            this.activeLeafNodeCount = 1;
+        }
+
+        // If you have no window, create one.
+    	if(window == null){
+    		window = EvictingQueue.create(windowSize.getValue());
+    	}
+
+    	// Forget an instance. The window stores along with each instance the maximum node reached. So look at the head of the queue and forget the instance there.
+    	Instance forgetInst;
+        if(window.remainingCapacity() == 0){
+        	forgetInst = window.peek().getFirst();
+        	forgetInst.setWeight(-1.0);
+            ((AdaNode) this.treeRoot).forgetInstance(forgetInst, this, null, -1, window.peek().getSecond());
+        }
+
+        // Create an object to store the IDs visited while learning this instance. Pass a reference so you add all the IDs...
+        AutoExpandVector<Long> reachedNodeIDs = new AutoExpandVector<>();
+        ((AdaNode) this.treeRoot).learnFromInstance(inst, this, null, -1, reachedNodeIDs);
+
+        // Store the max ID reached along with the instance in the window
+
+        long maxIDreached = 0;
+        for(int i = 0; i < reachedNodeIDs.size(); i++){
+        	maxIDreached = maxIDreached > reachedNodeIDs.get(i) ? maxIDreached : reachedNodeIDs.get(i);
+        }
+
+        window.add(new Pair<Instance, Long>(inst, maxIDreached));
+
+    	if (numInstances == 0){
+    		try {
+				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),false));
+				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),true));
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+    	}
+
+        numInstances++;
+
+    }
+
+
+
+
 
     @Override
 	protected LearningNode newLearningNode() {

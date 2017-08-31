@@ -36,7 +36,8 @@ public class CVFDT extends VFDTWindow {
 	public IntOption testPhaseLength = new IntOption("testPhaseLength", 'L',
 			"How long each test phase for alternates is", 200, 0, Integer.MAX_VALUE);
 
-	public interface CVFDTAdaNode extends AdaNode{
+/*	public interface CVFDTAdaNode extends AdaNode{
+
 
 		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs);
@@ -44,14 +45,22 @@ public class CVFDT extends VFDTWindow {
 		public int getTestPhaseError();
 
 	}
+*/
+	public interface CVFDTAdaNode extends AdaNode {
+		public int getTestPhaseError();
+	}
 
-	public class CVFDTSplitNode extends AdaSplitNode implements CVFDTAdaNode {
+	public class CVFDTSplitNode extends AdaSplitNode implements AdaNode {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 1L;
 
 		private boolean inAlternateTestPhase = false;
 
 		private int testPhaseError = 0;
 
-		@Override
 		public int getTestPhaseError() {
 			return testPhaseError;
 		}
@@ -65,26 +74,29 @@ public class CVFDT extends VFDTWindow {
 		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations) {
 			super(splitTest, classObservations);
 			alternates = new HashMap<AttributeSplitSuggestion, VFDTWindow.AdaNode>();
-			// TODO Auto-generated constructor stub
 		}
 
 		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size) {
 			super(splitTest, classObservations, size);
+			alternates = new HashMap<AttributeSplitSuggestion, VFDTWindow.AdaNode>();
 		}
 
 		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, boolean isAlternate) {
 			super(splitTest, classObservations, isAlternate);
+			alternates = new HashMap<AttributeSplitSuggestion, VFDTWindow.AdaNode>();
+
 		}
 
 		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size, boolean isAlternate) {
 			super(splitTest, classObservations, size, isAlternate);
+			alternates = new HashMap<AttributeSplitSuggestion, VFDTWindow.AdaNode>();
 		}
 
 		@Override
-		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
+		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
 
-			System.err.println("CVFDT SplitNode LearnFromInstance");
+			//System.err.println("CVFDT SplitNode LearnFromInstance");
 
 			// if you're in a test phase
 			if (getNumInstances() % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
@@ -115,11 +127,11 @@ public class CVFDT extends VFDTWindow {
 						Iterator<AdaNode> iter = alternates.values().iterator();
 
 						while (iter.hasNext()){
-							CVFDTAdaNode alt = (CVFDTAdaNode) iter.next();
+							AdaNode alt = iter.next();
 
-							if(alt.getTestPhaseError() < lowestError){
+							if(((CVFDTAdaNode)alt).getTestPhaseError() < lowestError){
 
-								lowestError = alt.getTestPhaseError();
+								lowestError = ((CVFDTAdaNode)alt).getTestPhaseError();
 								bestAlternate = alt;
 							}
 						}
@@ -161,9 +173,13 @@ public class CVFDT extends VFDTWindow {
 
 				// if you're alternate or not an alternate but have alternates, in the middle of the phase, just increment error and skip learning!
 
-				else if (this.isAlternate() || !this.alternates.isEmpty()){
+				else if (this.isAlternate()){
 
 					return; // skip learning and split evaluation!
+				}
+
+				else if (!this.alternates.isEmpty()){
+					return;
 				}
 
 				// if neither of the above conditions apply continue as usual
@@ -201,7 +217,7 @@ public class CVFDT extends VFDTWindow {
 				// We need to re-evaluate splits at each mainline split node...
 
 				if(!this.isAlternate()){
-					System.err.println("Re-evaluating internal node splits");
+					//System.err.println("Re-evaluating internal node splits");
 					reEvaluateBestSplit();
 				}
 
@@ -213,7 +229,7 @@ public class CVFDT extends VFDTWindow {
 					Iterator<AdaNode> iter = alternates.values().iterator();
 
 					while (iter.hasNext()){
-						CVFDTAdaNode alt = (CVFDTAdaNode) iter.next();
+						AdaNode alt = iter.next();
 						alt.learnFromInstance(inst, ht, this.getParent(), parentBranch, reachedLeafIDs);
 					}
 				}
@@ -284,11 +300,11 @@ public class CVFDT extends VFDTWindow {
 
 			else if (deltaG > hoeffdingBound
 					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
-				System.err.println("Bound exceeded");
+				//System.err.println("Bound exceeded");
 
 				// if it doesn't already have an alternate subtree, build one
 				if(!alternates.containsKey(bestSuggestion)) { // the hashcodes should match... this should work
-					System.err.println("Building alt subtree");
+					//System.err.println("Building alt subtree");
 
 					alternates.put(bestSuggestion, (AdaNode)CVFDT.this.newLearningNode(true));
 					// we've just created an alternate, but only if the key is not already contained
@@ -297,13 +313,17 @@ public class CVFDT extends VFDTWindow {
 		}
 	}
 
-	public class CVFDTLearningNode extends AdaLearningNode implements CVFDTAdaNode {
+	public class CVFDTLearningNode extends AdaLearningNode implements AdaNode {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = -7477758640913802578L;
 
 		private boolean inAlternateTestPhase = false;
 
 		private int testPhaseError = 0;
 
-		@Override
 		public int getTestPhaseError() {
 			return testPhaseError;
 		}
@@ -317,8 +337,10 @@ public class CVFDT extends VFDTWindow {
         }
 
 		@Override
-		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
+		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs) {
+
+			//System.err.println("CVFDT LearningNode LearnFromInstance");
 
 			if (getNumInstances() % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
 				inAlternateTestPhase = true;
@@ -340,19 +362,16 @@ public class CVFDT extends VFDTWindow {
 
 	@Override
     protected LearningNode newLearningNode(boolean isAlternate) {
-    	System.err.println("Creating new CVFDTLearningNode at ROOT");
         return new CVFDTLearningNode(new double[0], isAlternate);
     }
 
     @Override
 	protected LearningNode newLearningNode() {
-    	System.err.println("Creating new CVFDTLearningNode");
         return new CVFDTLearningNode(new double[0]);
     }
 
     @Override
 	protected LearningNode newLearningNode(double[] initialClassObservations) {
-    	System.err.println("Creating new CVFDTLearningNode");
         return new CVFDTLearningNode(initialClassObservations);
     }
 
@@ -370,14 +389,12 @@ public class CVFDT extends VFDTWindow {
 	@Override
 	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
             double[] classObservations, boolean isAlternate) {
-
     	return new CVFDTSplitNode(splitTest, classObservations, isAlternate);
     	}
 
    @Override
     protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
             double[] classObservations, int size) {
-
         return new CVFDTSplitNode(splitTest, classObservations, size);
     }
 

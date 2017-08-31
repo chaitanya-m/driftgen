@@ -16,7 +16,9 @@ import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
 import moa.classifiers.trees.VFDT.LearningNode;
+import moa.classifiers.trees.VFDT.SplitNode;
 import moa.classifiers.trees.VFDTLeafWindow.AdaLearningNode;
+import moa.classifiers.trees.VFDTWindow.AdaSplitNode;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
 
@@ -64,6 +66,18 @@ public class CVFDT extends VFDTWindow {
 			super(splitTest, classObservations);
 			alternates = new HashMap<AttributeSplitSuggestion, VFDTWindow.AdaNode>();
 			// TODO Auto-generated constructor stub
+		}
+
+		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size) {
+			super(splitTest, classObservations, size);
+		}
+
+		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, boolean isAlternate) {
+			super(splitTest, classObservations, isAlternate);
+		}
+
+		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size, boolean isAlternate) {
+			super(splitTest, classObservations, size, isAlternate);
 		}
 
 		@Override
@@ -341,5 +355,37 @@ public class CVFDT extends VFDTWindow {
     	System.err.println("Creating new CVFDTLearningNode");
         return new CVFDTLearningNode(initialClassObservations);
     }
+
+    @Override
+	protected LearningNode newLearningNode(double[] initialClassObservations, boolean isAlternate) {
+        return new CVFDTLearningNode(initialClassObservations, isAlternate);
+    }
+
+    @Override
+	protected AdaSplitNode newSplitNode(InstanceConditionalTest splitTest,
+            double[] classObservations, int size, boolean isAlternate) {
+    	return new CVFDTSplitNode(splitTest, classObservations, size, isAlternate);
+    }
+
+	@Override
+	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
+            double[] classObservations, boolean isAlternate) {
+
+    	return new CVFDTSplitNode(splitTest, classObservations, isAlternate);
+    	}
+
+   @Override
+    protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
+            double[] classObservations, int size) {
+
+        return new CVFDTSplitNode(splitTest, classObservations, size);
+    }
+
+    @Override
+    protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
+            double[] classObservations) {
+        return new CVFDTSplitNode(splitTest, classObservations);
+    }
+
 
 }

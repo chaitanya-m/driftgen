@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import com.github.javacliparser.IntOption;
 import com.yahoo.labs.samoa.instances.Instance;
@@ -14,6 +15,8 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.VFDT.LearningNode;
+import moa.classifiers.trees.VFDTLeafWindow.AdaLearningNode;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
 
@@ -67,6 +70,8 @@ public class CVFDT extends VFDTWindow {
 		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
 
+			System.err.println("CVFDT SplitNode LearnFromInstance");
+
 			// if you're in a test phase
 			if (getNumInstances() % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
 				inAlternateTestPhase = true;
@@ -102,13 +107,14 @@ public class CVFDT extends VFDTWindow {
 
 								lowestError = alt.getTestPhaseError();
 								bestAlternate = alt;
-
 							}
-
 						}
 						// replace with best alternate!!
 						if(bestAlternate != null){ //DRY!!! (copied from HAT-ADWIN)
 							// Switch alternate tree
+
+							System.err.println(getNumInstances() + "  " + " SWITCHING");
+
 							ht.activeLeafNodeCount -= this.numberLeaves();
 							ht.activeLeafNodeCount += bestAlternate.numberLeaves();
 							this.killTreeChilds(ht);
@@ -181,6 +187,7 @@ public class CVFDT extends VFDTWindow {
 				// We need to re-evaluate splits at each mainline split node...
 
 				if(!this.isAlternate()){
+					System.err.println("Re-evaluating internal node splits");
 					reEvaluateBestSplit();
 				}
 
@@ -197,19 +204,13 @@ public class CVFDT extends VFDTWindow {
 					}
 				}
 
-
 				int childBranch = this.instanceChildIndex(inst);
 				Node child = this.getChild(childBranch);
 				if (child != null) {
 					((AdaNode) child).learnFromInstance(inst, ht, this, childBranch, reachedLeafIDs);
 				}
-
 			}
-
 		}
-
-
-
 
 		// DRY... code duplicated from ActiveLearningNode in VFDT.java
 		public AttributeSplitSuggestion[] getBestSplitSuggestions(
@@ -268,9 +269,13 @@ public class CVFDT extends VFDTWindow {
 			}
 
 			else if (deltaG > hoeffdingBound
-					|| hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2) {
+					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
+				System.err.println("Bound exceeded");
+
 				// if it doesn't already have an alternate subtree, build one
 				if(!alternates.containsKey(bestSuggestion)) { // the hashcodes should match... this should work
+					System.err.println("Building alt subtree");
+
 					alternates.put(bestSuggestion, (AdaNode)CVFDT.this.newLearningNode(true));
 					// we've just created an alternate, but only if the key is not already contained
 				}
@@ -293,6 +298,10 @@ public class CVFDT extends VFDTWindow {
 			super(initialClassObservations);
 		}
 
+        public CVFDTLearningNode(double[] initialClassObservations, boolean isAlternate) {
+            super(initialClassObservations, isAlternate);
+        }
+
 		@Override
 		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs) {
@@ -303,6 +312,7 @@ public class CVFDT extends VFDTWindow {
 					testPhaseError++;
 				}
 			}
+
 			else {
 				testPhaseError = 0;
 				inAlternateTestPhase = false;
@@ -313,5 +323,23 @@ public class CVFDT extends VFDTWindow {
 			}
 		}
 	}
+
+	@Override
+    protected LearningNode newLearningNode(boolean isAlternate) {
+    	System.err.println("Creating new CVFDTLearningNode at ROOT");
+        return new CVFDTLearningNode(new double[0], isAlternate);
+    }
+
+    @Override
+	protected LearningNode newLearningNode() {
+    	System.err.println("Creating new CVFDTLearningNode");
+        return new CVFDTLearningNode(new double[0]);
+    }
+
+    @Override
+	protected LearningNode newLearningNode(double[] initialClassObservations) {
+    	System.err.println("Creating new CVFDTLearningNode");
+        return new CVFDTLearningNode(initialClassObservations);
+    }
 
 }

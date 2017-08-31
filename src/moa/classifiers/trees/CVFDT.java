@@ -306,7 +306,7 @@ public class CVFDT extends VFDTWindow {
 				if(!alternates.containsKey(bestSuggestion)) { // the hashcodes should match... this should work
 					//System.err.println("Building alt subtree");
 
-					alternates.put(bestSuggestion, (AdaNode)CVFDT.this.newLearningNode(true));
+					alternates.put(bestSuggestion, (AdaNode)CVFDT.this.newLearningNode(true, false, this));
 					// we've just created an alternate, but only if the key is not already contained
 				}
 			}
@@ -332,8 +332,8 @@ public class CVFDT extends VFDTWindow {
 			super(initialClassObservations);
 		}
 
-        public CVFDTLearningNode(double[] initialClassObservations, boolean isAlternate) {
-            super(initialClassObservations, isAlternate);
+        public CVFDTLearningNode(double[] initialClassObservations, boolean isAlternate, boolean isRoot) {
+            super(initialClassObservations, isAlternate, isRoot);
         }
 
 		@Override
@@ -361,8 +361,8 @@ public class CVFDT extends VFDTWindow {
 	}
 
 	@Override
-    protected LearningNode newLearningNode(boolean isAlternate) {
-        return new CVFDTLearningNode(new double[0], isAlternate);
+    protected LearningNode newLearningNode(boolean isAlternate, boolean isRoot) {
+        return new CVFDTLearningNode(new double[0], isAlternate, isRoot);
     }
 
     @Override
@@ -376,8 +376,8 @@ public class CVFDT extends VFDTWindow {
     }
 
     @Override
-	protected LearningNode newLearningNode(double[] initialClassObservations, boolean isAlternate) {
-        return new CVFDTLearningNode(initialClassObservations, isAlternate);
+	protected LearningNode newLearningNode(double[] initialClassObservations, boolean isAlternate, boolean isRoot, Node mainlineNode) {
+        return new CVFDTLearningNode(initialClassObservations, isAlternate, isRoot, mainlineNode);
     }
 
     @Override

@@ -51,6 +51,9 @@ import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
 import com.yahoo.labs.samoa.instances.Instance;
+
+import meka.gui.core.MaximizationFixWindowListener;
+
 import com.github.javacliparser.IntOption;
 import com.google.common.collect.EvictingQueue;
 
@@ -125,10 +128,10 @@ public class VFDTWindow extends VFDT {
         //public boolean getErrorChange();
         public int numberLeaves();
 
-		void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
+		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs);
 
-		void setAlternateStatusForSubtreeNodes(boolean isAlternate);
+		public void setAlternateStatusForSubtreeNodes(boolean isAlternate);
 
 		public double getErrorEstimation();
 
@@ -149,9 +152,9 @@ public class VFDTWindow extends VFDT {
 
 		public void setRoot(boolean isRoot);
 
-		public void setMainlineNode(AdaSplitNode parent);
+		public void setMainlineNode(AdaNode mainlineNode);
 
-		public AdaSplitNode getMainlineNode();
+		public AdaNode getMainlineNode();
 
 		public void setParent(AdaSplitNode parent);
 
@@ -173,8 +176,6 @@ public class VFDTWindow extends VFDT {
 
         private long uID;
 
-        protected Node alternateTree;
-
         protected ADWIN estimationErrorWeight;
         //public boolean isAlternateTree = false;
 
@@ -188,7 +189,7 @@ public class VFDTWindow extends VFDT {
 
         private boolean isRoot = false;
 
-		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
+		private AdaNode mainlineNode = null; //null by default unless there is an attachment point
 
 		private AdaSplitNode parent = null;
 
@@ -302,7 +303,7 @@ public class VFDTWindow extends VFDT {
         // Parent nodes are allways SplitNodes
         @Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
-
+        	//System.out.println("VFDTWindow LearnFromInstance");
 
         	// Note: this is kind of inefficient... you have to filter down every time to find out if you've made an error??
         	// you'll be going down the same path several times
@@ -484,12 +485,12 @@ public class VFDTWindow extends VFDT {
 		}
 
 		@Override
-		public void setMainlineNode(AdaSplitNode mainlineNode) {
+		public void setMainlineNode(AdaNode mainlineNode) {
 			this.mainlineNode  = mainlineNode;
 		}
 
 		@Override
-		public AdaSplitNode getMainlineNode() {
+		public AdaNode getMainlineNode() {
 			return this.mainlineNode;
 		}
 
@@ -527,7 +528,7 @@ public class VFDTWindow extends VFDT {
 
 		private boolean isRoot = false;
 
-		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
+		private AdaNode mainlineNode = null; //null by default unless there is an attachment point
 
 		private AdaSplitNode parent = null;
 
@@ -573,10 +574,15 @@ public class VFDTWindow extends VFDT {
             this.uID = nodeIDGenerator++;
         }
 
-        public AdaLearningNode(double[] initialClassObservations, boolean isAlternate) {
+        public AdaLearningNode(double[] initialClassObservations, boolean isAlternate, boolean isRoot, AdaNode mainlineNode) {
             super(initialClassObservations);
             this.classifierRandom = new Random(this.randomSeed);
             this.setAlternate(isAlternate);
+            this.setRoot(isRoot);
+            this.setMainlineNode(mainlineNode);
+            if(isRoot){
+            	this.setParent(null);
+            }
             this.uID = nodeIDGenerator++;
         }
 
@@ -687,12 +693,12 @@ public class VFDTWindow extends VFDT {
 
 		}
 		@Override
-		public void setMainlineNode(AdaSplitNode mainlineNode) {
+		public void setMainlineNode(AdaNode mainlineNode) {
 			this.mainlineNode  = mainlineNode;
 		}
 
 		@Override
-		public AdaSplitNode getMainlineNode() {
+		public AdaNode getMainlineNode() {
 			return this.mainlineNode;
 		}
 
@@ -737,11 +743,11 @@ public class VFDTWindow extends VFDT {
     protected int switchedAlternateTrees;
 
 
-    protected LearningNode newLearningNode(boolean isAlternate) {
-        return new AdaLearningNode(new double[0], isAlternate);
+    protected LearningNode newLearningNode(boolean isAlternate, boolean isRoot, AdaNode mainlineNode) {
+        return new AdaLearningNode(new double[0], isAlternate, isRoot, mainlineNode);
     }
-    protected LearningNode newLearningNode(double[] initialClassObservations, boolean isAlternate) {
-        return new AdaLearningNode(initialClassObservations, isAlternate);
+    protected LearningNode newLearningNode(double[] initialClassObservations, boolean isAlternate, boolean isRoot, AdaNode mainlineNode) {
+        return new AdaLearningNode(initialClassObservations, isAlternate, isRoot, mainlineNode);
     }
 
     @Override
@@ -777,9 +783,7 @@ public class VFDTWindow extends VFDT {
 
     	// If treeRoot is null, create a new tree, rooted with a learning node.
         if (this.treeRoot == null) {
-            this.treeRoot = newLearningNode(false); // root cannot be alternate
-            ((AdaNode) this.treeRoot).setRoot(true);
-            ((AdaNode) this.treeRoot).setParent(null);
+            this.treeRoot = newLearningNode(false, true, null); // root cannot be alternate
             this.activeLeafNodeCount = 1;
         }
 
@@ -945,7 +949,8 @@ public class VFDTWindow extends VFDT {
                     newSplit.attributeObservers = node.attributeObservers; // copy the attribute observers
 
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
-                        Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i), ((AdaNode)newSplit).isAlternate());
+                        Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i),
+                        		((AdaNode)newSplit).isAlternate(), false, ((AdaNode)node).getMainlineNode());
                         ((AdaNode)newChild).setParent(newSplit);
                         newSplit.setChild(i, newChild);
                     }
@@ -958,11 +963,14 @@ public class VFDTWindow extends VFDT {
                     	((AdaNode)newSplit).setParent(null);
                         this.treeRoot = newSplit;
                     }
-                    else if (((AdaNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is alternate
+
+                    else if (((AdaNode)node).isAlternate() != null) { // if the node happens to have a mainline attachment, i.e it is alternate
                     	((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
                     	((AdaNode)node).getMainlineNode().alternateTree = newSplit;
                     }
+
                     else { //if the node is neither root nor an alternate, it must have a mainline split parent
+                    	System.err.println(((AdaNode)node).isRoot());
                     	((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
                     	((AdaNode)node).getParent().setChild(parentIndex, newSplit);
                     }
@@ -1000,7 +1008,6 @@ public class VFDTWindow extends VFDT {
 
     					return result.getArrayRef();
     		}
-
     	}
     	return new double[0];
     }

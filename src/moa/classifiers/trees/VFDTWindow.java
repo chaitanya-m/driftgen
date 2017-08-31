@@ -139,8 +139,6 @@ public class VFDTWindow extends VFDT {
 
         public boolean isNullError();
 
-        public void killTreeChilds(VFDTWindow ht);
-
         public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch, List<FoundNode> foundNodes,
                 boolean updateSplitterCounts);
 
@@ -227,11 +225,8 @@ public class VFDTWindow extends VFDT {
         //		return ErrorChange;
         //}
         @Override
-        public int calcByteSizeIncludingSubtree() {
+        public int calcByteSizeIncludingSubtree() { // ALERT: override for alternates
             int byteSize = calcByteSize();
-            if (alternateTree != null) {
-                byteSize += alternateTree.calcByteSizeIncludingSubtree();
-            }
             if (estimationErrorWeight != null) {
                 byteSize += estimationErrorWeight.measureByteSize();
             }
@@ -421,30 +416,8 @@ public class VFDTWindow extends VFDT {
         }
 
 
+		// ALERT: write a kill tree children function
 
-        @Override
-        public void killTreeChilds(VFDTWindow ht) {
-            for (Node child : this.children) {
-                if (child != null) {
-                    //Delete alternate tree if it exists
-                    if (child instanceof AdaSplitNode && ((AdaSplitNode) child).alternateTree != null) {
-                        ((AdaNode) ((AdaSplitNode) child).alternateTree).killTreeChilds(ht);
-                        ht.prunedAlternateTrees++;
-                    }
-                    //Recursive delete of SplitNodes
-                    if (child instanceof AdaSplitNode) {
-                        ((AdaNode) child).killTreeChilds(ht);
-                    }
-                    if (child instanceof ActiveLearningNode) {
-                        child = null;
-                        ht.activeLeafNodeCount--;
-                    } else if (child instanceof InactiveLearningNode) {
-                        child = null;
-                        ht.inactiveLeafNodeCount--;
-                    }
-                }
-            }
-        }
 
         //New for option votes
         //@Override
@@ -468,9 +441,7 @@ public class VFDTWindow extends VFDT {
                     // Only killTreeChilds would create null child nodes
                 }
             }
-            if (this.alternateTree != null) {
-                ((AdaNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
-            }
+            // ALERT: override for alternates
         }
 
 		@Override
@@ -608,10 +579,6 @@ public class VFDTWindow extends VFDT {
         @Override
         public boolean isNullError() {
             return (this.estimationErrorWeight == null);
-        }
-
-        @Override
-        public void killTreeChilds(VFDTWindow ht) {
         }
 
         @Override
@@ -962,11 +929,6 @@ public class VFDTWindow extends VFDT {
                     	((AdaNode)newSplit).setRoot(true);
                     	((AdaNode)newSplit).setParent(null);
                         this.treeRoot = newSplit;
-                    }
-
-                    else if (((AdaNode)node).isAlternate() != null) { // if the node happens to have a mainline attachment, i.e it is alternate
-                    	((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
-                    	((AdaNode)node).getMainlineNode().alternateTree = newSplit;
                     }
 
                     else { //if the node is neither root nor an alternate, it must have a mainline split parent

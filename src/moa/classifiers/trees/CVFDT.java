@@ -15,6 +15,10 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.HATADWIN.NewNode;
+import moa.classifiers.trees.HoeffdingTree.ActiveLearningNode;
+import moa.classifiers.trees.HoeffdingTree.InactiveLearningNode;
+import moa.classifiers.trees.HoeffdingTree.Node;
 import moa.classifiers.trees.VFDT.LearningNode;
 import moa.classifiers.trees.VFDT.SplitNode;
 import moa.classifiers.trees.VFDTLeafWindow.AdaLearningNode;
@@ -48,6 +52,8 @@ public class CVFDT extends VFDTWindow {
 */
 	public interface CVFDTAdaNode extends AdaNode {
 		public int getTestPhaseError();
+
+		public void killSubtree(CVFDT ht);
 	}
 
 	public class CVFDTSplitNode extends AdaSplitNode implements AdaNode {
@@ -143,13 +149,12 @@ public class CVFDT extends VFDTWindow {
 
 							ht.activeLeafNodeCount -= this.numberLeaves();
 							ht.activeLeafNodeCount += bestAlternate.numberLeaves();
-							this.killTreeChilds(ht);
+							this.killSubtree((CVFDT)ht);
 							bestAlternate.setAlternateStatusForSubtreeNodes(false);
 							bestAlternate.setMainlineNode(null);
 
-
 							if (!this.isRoot()) {
-								this.getParent().setChild(parentBranch, this.alternateTree);
+								this.getParent().setChild(parentBranch, (Node)bestAlternate);
 								bestAlternate.setRoot(false);
 								bestAlternate.setParent(this.getParent());
 								//((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
@@ -157,9 +162,8 @@ public class CVFDT extends VFDTWindow {
 								// Switch root tree
 								bestAlternate.setRoot(true);
 								bestAlternate.setParent(null);
-								ht.treeRoot = this.alternateTree;
+								ht.treeRoot = (Node)bestAlternate;
 							}
-							this.alternateTree = null;
 							ht.switchedAlternateTrees++;
 						}
 						else{
@@ -266,6 +270,38 @@ public class CVFDT extends VFDTWindow {
 			return bestSuggestions.toArray(new AttributeSplitSuggestion[bestSuggestions.size()]);
 		}
 
+        public void killSubtree(CVFDT ht) {
+            for (Node child : this.children) {
+                if (child != null) {
+                    //Delete alternate tree if it exists
+                    if (child instanceof CVFDTSplitNode && !((CVFDTSplitNode) child).alternates.isEmpty()) {
+                    	Iterator iter = alternates.values().iterator();
+                    	while (iter.hasNext()){
+                    		((CVFDTAdaNode)(iter.next())).killSubtree(ht);
+                    	}
+                        ht.prunedAlternateTrees++;
+                    }
+                    //Recursive delete of SplitNodes
+                    if (child instanceof AdaSplitNode) {
+                        ((CVFDTAdaNode) child).killSubtree(ht);
+                    }
+                    else if (child instanceof ActiveLearningNode) {
+                        child = null;
+                        ht.activeLeafNodeCount--;
+                    }
+                    else if (child instanceof InactiveLearningNode) {
+                        child = null;
+                        ht.inactiveLeafNodeCount--;
+                    }
+                    else{
+
+                    }
+                }
+            }
+        }
+
+
+
 		protected void reEvaluateBestSplit() {
 
 			int currentSplit = -1; // for no split
@@ -332,9 +368,10 @@ public class CVFDT extends VFDTWindow {
 			super(initialClassObservations);
 		}
 
-        public CVFDTLearningNode(double[] initialClassObservations, boolean isAlternate, boolean isRoot) {
-            super(initialClassObservations, isAlternate, isRoot);
-        }
+		public CVFDTLearningNode(double[] initialClassObservations, boolean isAlternate, boolean isRoot,
+				AdaNode mainlineNode) {
+			super(initialClassObservations, isAlternate, isRoot, mainlineNode);
+		}
 
 		@Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
@@ -360,11 +397,6 @@ public class CVFDT extends VFDTWindow {
 		}
 	}
 
-	@Override
-    protected LearningNode newLearningNode(boolean isAlternate, boolean isRoot) {
-        return new CVFDTLearningNode(new double[0], isAlternate, isRoot);
-    }
-
     @Override
 	protected LearningNode newLearningNode() {
         return new CVFDTLearningNode(new double[0]);
@@ -376,7 +408,7 @@ public class CVFDT extends VFDTWindow {
     }
 
     @Override
-	protected LearningNode newLearningNode(double[] initialClassObservations, boolean isAlternate, boolean isRoot, Node mainlineNode) {
+	protected LearningNode newLearningNode(double[] initialClassObservations, boolean isAlternate, boolean isRoot, AdaNode mainlineNode) {
         return new CVFDTLearningNode(initialClassObservations, isAlternate, isRoot, mainlineNode);
     }
 

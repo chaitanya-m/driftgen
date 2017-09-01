@@ -89,108 +89,109 @@ public class CVFDT extends VFDTWindow {
 			super(splitTest, classObservations, size, isAlternate);
 			alternates = new HashMap<AttributeSplitSuggestion, CVFDTAdaNode>();
 		}
-		/*
+
+/////////////////////////////////////////////////////////
 		@Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
 
-			// if you're in a test phase
-			if (nodeTime % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
-				inAlternateTestPhase = true;
-
-				//increment error
-				int trueClass = (int) inst.classValue();
-				int ClassPrediction = 0;
-				Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
-				if (leaf != null) {
-					ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
-				} // what happens if leaf is null?
-				boolean predictedCorrectly = (trueClass == ClassPrediction);
-
-				if(!predictedCorrectly){
-					testPhaseError++;
-				}
-
-				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
-				if (nodeTime % testPhaseFrequency.getValue() == testPhaseLength.getValue() - 1){
-					System.out.println(">>> " + getNumInstances());
-
-					if(!this.alternates.isEmpty()){
-						System.out.println("=======================================");
-					}
-
-					if(!this.isAlternate() && !this.alternates.isEmpty()){
-
-						System.err.println("Picking a replacement");
-						//pick the option with lowest test phase error... and replace...
-						int lowestError = testPhaseError;
-
-						AdaNode bestAlternate = null;
-
-						Iterator<CVFDTAdaNode> iter = alternates.values().iterator();
-
-						while (iter.hasNext()){
-							AdaNode alt = iter.next();
-
-							if(((CVFDTAdaNode)alt).getTestPhaseError() < lowestError){
-
-								lowestError = ((CVFDTAdaNode)alt).getTestPhaseError();
-								bestAlternate = alt;
-							}
-						}
-
-						// replace with best alternate!!
-						if(bestAlternate != null){ //DRY!!! (copied from HAT-ADWIN)
-							// Switch alternate tree
-
-							System.err.println(getNumInstances() + "  " + " SWITCHING");
-
-							ht.activeLeafNodeCount -= this.numberLeaves();
-							ht.activeLeafNodeCount += bestAlternate.numberLeaves();
-							this.killSubtree((CVFDT)ht);
-							bestAlternate.setAlternateStatusForSubtreeNodes(false);
-							bestAlternate.setMainlineNode(null);
-
-							if (!this.isRoot()) {
-								bestAlternate.setRoot(false);
-								bestAlternate.setParent(this.getParent());
-								this.getParent().setChild(parentBranch, (Node)bestAlternate);
-
-								//((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
-							} else {
-								// Switch root tree
-								bestAlternate.setRoot(true);
-								bestAlternate.setParent(null);
-								ht.treeRoot = (Node)bestAlternate;
-							}
-							ht.switchedAlternateTrees++;
-						}
-						else{
-							// ALERT: TODO: prune alternates
-						}
-
-					}
-					testPhaseError = 0; //reset test phase error
-					return; // skip learning and split evaluation!
-				}
-
-				// if you're alternate or not an alternate but have alternates, in the middle of the phase, just increment error and skip learning!
-
-				else if (this.isAlternate()){
-
-					return; // skip learning and split evaluation!
-				}
-
-				else if (this.alternates.isEmpty()){
-					return;
-				}
-
-			}
-
-			// if you're not in a test phase, continue as usual
-			else {
-				inAlternateTestPhase = false;
-			}
+			//			// if you're in a test phase
+//			if (nodeTime % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
+//				inAlternateTestPhase = true;
+//
+//				//increment error
+//				int trueClass = (int) inst.classValue();
+//				int ClassPrediction = 0;
+//				Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
+//				if (leaf != null) {
+//					ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
+//				} // what happens if leaf is null?
+//				boolean predictedCorrectly = (trueClass == ClassPrediction);
+//
+//				if(!predictedCorrectly){
+//					testPhaseError++;
+//				}
+//
+//				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
+//				if (nodeTime % testPhaseFrequency.getValue() == testPhaseLength.getValue() - 1){
+//					System.out.println(">>> " + getNumInstances());
+//
+//					if(!this.alternates.isEmpty()){
+//						System.out.println("=======================================");
+//					}
+//
+//					if(!this.isAlternate() && !this.alternates.isEmpty()){
+//
+//						System.err.println("Picking a replacement");
+//						//pick the option with lowest test phase error... and replace...
+//						int lowestError = testPhaseError;
+//
+//						AdaNode bestAlternate = null;
+//
+//						Iterator<CVFDTAdaNode> iter = alternates.values().iterator();
+//
+//						while (iter.hasNext()){
+//							AdaNode alt = iter.next();
+//
+//							if(((CVFDTAdaNode)alt).getTestPhaseError() < lowestError){
+//
+//								lowestError = ((CVFDTAdaNode)alt).getTestPhaseError();
+//								bestAlternate = alt;
+//							}
+//						}
+//
+//						// replace with best alternate!!
+//						if(bestAlternate != null){ //DRY!!! (copied from HAT-ADWIN)
+//							// Switch alternate tree
+//
+//							System.err.println(getNumInstances() + "  " + " SWITCHING");
+//
+//							ht.activeLeafNodeCount -= this.numberLeaves();
+//							ht.activeLeafNodeCount += bestAlternate.numberLeaves();
+//							this.killSubtree((CVFDT)ht);
+//							bestAlternate.setAlternateStatusForSubtreeNodes(false);
+//							bestAlternate.setMainlineNode(null);
+//
+//							if (!this.isRoot()) {
+//								bestAlternate.setRoot(false);
+//								bestAlternate.setParent(this.getParent());
+//								this.getParent().setChild(parentBranch, (Node)bestAlternate);
+//
+//								//((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
+//							} else {
+//								// Switch root tree
+//								bestAlternate.setRoot(true);
+//								bestAlternate.setParent(null);
+//								ht.treeRoot = (Node)bestAlternate;
+//							}
+//							ht.switchedAlternateTrees++;
+//						}
+//						else{
+//							// ALERT: TODO: prune alternates
+//						}
+//
+//					}
+//					testPhaseError = 0; //reset test phase error
+//					return; // skip learning and split evaluation!
+//				}
+//
+//				// if you're alternate or not an alternate but have alternates, in the middle of the phase, just increment error and skip learning!
+//
+//				else if (this.isAlternate()){
+//
+//					return; // skip learning and split evaluation!
+//				}
+//
+//				else if (this.alternates.isEmpty()){
+//					return;
+//				}
+//
+//			}
+//
+//			// if you're not in a test phase, continue as usual
+//			else {
+//				inAlternateTestPhase = false;
+//			}
 			if(!inAlternateTestPhase) {
 				// remember you're not supposed to learn anything if you happen to be in a test phase and happen to have alternates...
 				// or if you happen to be an alternate
@@ -217,10 +218,10 @@ public class CVFDT extends VFDTWindow {
 
 				// We need to re-evaluate splits at each mainline split node...
 
-				if(!this.isAlternate() && nodeTime%200 ==0){ //magic number alert
-					//System.err.println("Re-evaluating internal node splits");
-					reEvaluateBestSplit();
-				}
+//				if(!this.isAlternate() && nodeTime%200 ==0){ //magic number alert
+//					//System.err.println("Re-evaluating internal node splits");
+//					reEvaluateBestSplit();
+//				}
 
 				// Going down alternate paths here
 
@@ -241,9 +242,10 @@ public class CVFDT extends VFDTWindow {
 				}
 			}
 			nodeTime++;
-
 		}
-*/
+
+/////////////////////////////////////////////////////////
+
 		// DRY... code duplicated from ActiveLearningNode in VFDT.java
 		public AttributeSplitSuggestion[] getBestSplitSuggestions(
 				SplitCriterion criterion, VFDT ht) {

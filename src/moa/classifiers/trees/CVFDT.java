@@ -43,9 +43,9 @@ public class CVFDT extends VFDTWindow {
 
 		public int getTestPhaseError();
 
-//		public void killSubtree(CVFDT ht);
+		public void killSubtree(CVFDT ht);
 
-//		public long getNodeTime();
+		public long getNodeTime();
 	}
 
 	public class CVFDTSplitNode extends AdaSplitNode implements AdaNode, CVFDTAdaNode {
@@ -267,10 +267,10 @@ public class CVFDT extends VFDTWindow {
 			}
 			return bestSuggestions.toArray(new AttributeSplitSuggestion[bestSuggestions.size()]);
 		}
-
+*/
         @Override
 		public void killSubtree(CVFDT ht) {
-            for (Node child : this.children) {
+/*            for (Node child : this.children) {
                 if (child != null) {
                     //Delete alternate tree if it exists
                     if (child instanceof CVFDTSplitNode && !((CVFDTSplitNode) child).alternates.isEmpty()) {
@@ -296,10 +296,10 @@ public class CVFDT extends VFDTWindow {
 
                     }
                 }
-            }
+            }*/
         }
 
-
+/*
 		protected void reEvaluateBestSplit() {
 
 			int currentSplit = -1; // for no split
@@ -347,11 +347,11 @@ public class CVFDT extends VFDTWindow {
 				}
 			}
 		}
-
+*/
 		@Override
 		public long getNodeTime() {
 			return nodeTime;
-		}*/
+		}
 	}
 
 	public class CVFDTLearningNode extends AdaLearningNode implements AdaNode, CVFDTAdaNode {
@@ -377,7 +377,7 @@ public class CVFDT extends VFDTWindow {
 				AdaNode mainlineNode) {
 			super(initialClassObservations, isAlternate, isRoot, mainlineNode);
 		}
-/*
+
 		@Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs) {
@@ -408,7 +408,7 @@ public class CVFDT extends VFDTWindow {
 		@Override
 		public long getNodeTime() {
 			return nodeTime;
-		}*/
+		}
 	}
 
 

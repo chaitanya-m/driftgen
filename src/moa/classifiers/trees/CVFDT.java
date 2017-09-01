@@ -243,7 +243,7 @@ public class CVFDT extends VFDTWindow {
 			nodeTime++;
 
 		}
-
+*/
 		// DRY... code duplicated from ActiveLearningNode in VFDT.java
 		public AttributeSplitSuggestion[] getBestSplitSuggestions(
 				SplitCriterion criterion, VFDT ht) {
@@ -267,7 +267,7 @@ public class CVFDT extends VFDTWindow {
 			}
 			return bestSuggestions.toArray(new AttributeSplitSuggestion[bestSuggestions.size()]);
 		}
-*/
+
         @Override
 		public void killSubtree(CVFDT ht) {
             for (Node child : this.children) {

@@ -174,7 +174,7 @@ public class CVFDT extends VFDTWindow {
 						}
 						testPhaseError = 0; //reset test phase error
 						inAlternateTestPhase = false;
-						return; // skip learning and split evaluation!
+						//return; // skip learning and split evaluation!
 
 					}
 				}
@@ -182,13 +182,12 @@ public class CVFDT extends VFDTWindow {
 				// if you're alternate or not an alternate but have alternates, in the middle of the phase, just increment error and skip learning!
 
 				else if (this.isAlternate()){
-					return; // skip learning and split evaluation!
+					//return; // skip learning and split evaluation!
 				}
-/*
+
 				else if (this.alternates.isEmpty()){
-					return;
+					//return;
 				}
-				*/
 			}
 
 			//			// if you're not in a test phase, continue as usual
@@ -197,6 +196,9 @@ public class CVFDT extends VFDTWindow {
 			}
 			if(!inAlternateTestPhase) {
 				testPhaseError = 0;
+			}
+
+			if(inAlternateTestPhase) { // don't update stats when in alternate test phase
 
 				assert (this.createdFromInitializedLearningNode = true);
 
@@ -211,6 +213,10 @@ public class CVFDT extends VFDTWindow {
 					}
 					obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
 				}
+			}
+
+
+
 				// DRY... for now this code is repeated...
 				// Counts have been updated for this node (make certain of this...)
 
@@ -238,7 +244,7 @@ public class CVFDT extends VFDTWindow {
 				if (child != null) {
 					((AdaNode) child).learnFromInstance(inst, ht, this, childBranch, reachedLeafIDs);
 				}
-			}
+
 			nodeTime++;
 		}
 

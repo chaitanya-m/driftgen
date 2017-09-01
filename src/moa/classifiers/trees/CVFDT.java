@@ -50,9 +50,12 @@ public class CVFDT extends VFDTWindow {
 	}
 */
 	public interface CVFDTAdaNode extends AdaNode {
+
 		public int getTestPhaseError();
 
 		public void killSubtree(CVFDT ht);
+
+		public long getNodeTime();
 	}
 
 	public class CVFDTSplitNode extends AdaSplitNode implements AdaNode, CVFDTAdaNode {
@@ -62,6 +65,8 @@ public class CVFDT extends VFDTWindow {
 		private boolean inAlternateTestPhase = false;
 
 		private int testPhaseError = 0;
+
+		private int nodeTime = 0;
 
 		@Override
 		public int getTestPhaseError() {
@@ -99,9 +104,8 @@ public class CVFDT extends VFDTWindow {
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
 
-
 			// if you're in a test phase
-			if (getNumInstances() % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
+			if (nodeTime % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
 				inAlternateTestPhase = true;
 
 				//increment error
@@ -118,7 +122,7 @@ public class CVFDT extends VFDTWindow {
 				}
 
 				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
-				if (getNumInstances() % testPhaseFrequency.getValue() == testPhaseLength.getValue() - 1){
+				if (nodeTime % testPhaseFrequency.getValue() == testPhaseLength.getValue() - 1){
 					System.out.println(">>> " + getNumInstances());
 
 					if(!this.alternates.isEmpty()){
@@ -223,7 +227,7 @@ public class CVFDT extends VFDTWindow {
 
 				// We need to re-evaluate splits at each mainline split node...
 
-				if(!this.isAlternate() && getNumInstances()%200 ==0){ //magic number alert
+				if(!this.isAlternate() && nodeTime%200 ==0){ //magic number alert
 					//System.err.println("Re-evaluating internal node splits");
 					reEvaluateBestSplit();
 				}
@@ -246,6 +250,8 @@ public class CVFDT extends VFDTWindow {
 					((AdaNode) child).learnFromInstance(inst, ht, this, childBranch, reachedLeafIDs);
 				}
 			}
+			nodeTime++;
+
 		}
 
 		// DRY... code duplicated from ActiveLearningNode in VFDT.java
@@ -351,6 +357,11 @@ public class CVFDT extends VFDTWindow {
 				}
 			}
 		}
+
+		@Override
+		public long getNodeTime() {
+			return nodeTime;
+		}
 	}
 
 	public class CVFDTLearningNode extends AdaLearningNode implements AdaNode, CVFDTAdaNode {
@@ -360,6 +371,8 @@ public class CVFDT extends VFDTWindow {
 		private boolean inAlternateTestPhase = false;
 
 		private int testPhaseError = 0;
+
+		private long nodeTime = 0;
 
 		@Override
 		public int getTestPhaseError() {
@@ -379,7 +392,7 @@ public class CVFDT extends VFDTWindow {
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs) {
 
-			if (getNumInstances() % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
+			if (nodeTime % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
 				inAlternateTestPhase = true;
 				if (inst.classValue() != Utils.maxIndex(this.getClassVotes(inst, ht))){
 					testPhaseError++;
@@ -394,11 +407,17 @@ public class CVFDT extends VFDTWindow {
 			if(!inAlternateTestPhase){
 				super.learnFromInstance(inst, ht, parent, parentBranch, reachedLeafIDs);
 			}
+			nodeTime++;
 		}
 
 		@Override
 		public void killSubtree(CVFDT ht) {
 
+		}
+
+		@Override
+		public long getNodeTime() {
+			return nodeTime;
 		}
 	}
 
@@ -451,10 +470,6 @@ public class CVFDT extends VFDTWindow {
 
     }
 
-
-
-
-
     @Override
 	protected LearningNode newLearningNode() {
         return new CVFDTLearningNode(new double[0]);
@@ -485,7 +500,7 @@ public class CVFDT extends VFDTWindow {
 	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
             double[] classObservations, boolean isAlternate) {
     	return new CVFDTSplitNode(splitTest, classObservations, isAlternate);
-    	}
+    }
 
    @Override
     protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
@@ -498,6 +513,5 @@ public class CVFDT extends VFDTWindow {
             double[] classObservations) {
         return new CVFDTSplitNode(splitTest, classObservations);
     }
-
 
 }

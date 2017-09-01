@@ -270,7 +270,7 @@ public class CVFDT extends VFDTWindow {
 */
         @Override
 		public void killSubtree(CVFDT ht) {
-/*            for (Node child : this.children) {
+            for (Node child : this.children) {
                 if (child != null) {
                     //Delete alternate tree if it exists
                     if (child instanceof CVFDTSplitNode && !((CVFDTSplitNode) child).alternates.isEmpty()) {
@@ -296,7 +296,7 @@ public class CVFDT extends VFDTWindow {
 
                     }
                 }
-            }*/
+            }
         }
 
 /*

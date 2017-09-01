@@ -90,116 +90,114 @@ public class CVFDT extends VFDTWindow {
 			alternates = new HashMap<AttributeSplitSuggestion, CVFDTAdaNode>();
 		}
 
-/////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////
 		@Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
 
-			//			// if you're in a test phase
-//			if (nodeTime % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
-//				inAlternateTestPhase = true;
-//
-//				//increment error
-//				int trueClass = (int) inst.classValue();
-//				int ClassPrediction = 0;
-//				Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
-//				if (leaf != null) {
-//					ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
-//				} // what happens if leaf is null?
-//				boolean predictedCorrectly = (trueClass == ClassPrediction);
-//
-//				if(!predictedCorrectly){
-//					testPhaseError++;
-//				}
-//
-//				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
-//				if (nodeTime % testPhaseFrequency.getValue() == testPhaseLength.getValue() - 1){
-//					System.out.println(">>> " + getNumInstances());
-//
-//					if(!this.alternates.isEmpty()){
-//						System.out.println("=======================================");
-//					}
-//
-//					if(!this.isAlternate() && !this.alternates.isEmpty()){
-//
-//						System.err.println("Picking a replacement");
-//						//pick the option with lowest test phase error... and replace...
-//						int lowestError = testPhaseError;
-//
-//						AdaNode bestAlternate = null;
-//
-//						Iterator<CVFDTAdaNode> iter = alternates.values().iterator();
-//
-//						while (iter.hasNext()){
-//							AdaNode alt = iter.next();
-//
-//							if(((CVFDTAdaNode)alt).getTestPhaseError() < lowestError){
-//
-//								lowestError = ((CVFDTAdaNode)alt).getTestPhaseError();
-//								bestAlternate = alt;
-//							}
-//						}
-//
-//						// replace with best alternate!!
-//						if(bestAlternate != null){ //DRY!!! (copied from HAT-ADWIN)
-//							// Switch alternate tree
-//
-//							System.err.println(getNumInstances() + "  " + " SWITCHING");
-//
-//							ht.activeLeafNodeCount -= this.numberLeaves();
-//							ht.activeLeafNodeCount += bestAlternate.numberLeaves();
-//							this.killSubtree((CVFDT)ht);
-//							bestAlternate.setAlternateStatusForSubtreeNodes(false);
-//							bestAlternate.setMainlineNode(null);
-//
-//							if (!this.isRoot()) {
-//								bestAlternate.setRoot(false);
-//								bestAlternate.setParent(this.getParent());
-//								this.getParent().setChild(parentBranch, (Node)bestAlternate);
-//
-//								//((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
-//							} else {
-//								// Switch root tree
-//								bestAlternate.setRoot(true);
-//								bestAlternate.setParent(null);
-//								ht.treeRoot = (Node)bestAlternate;
-//							}
-//							ht.switchedAlternateTrees++;
-//						}
-//						else{
-//							// ALERT: TODO: prune alternates
-//						}
-//
-//					}
-//					testPhaseError = 0; //reset test phase error
-//					return; // skip learning and split evaluation!
-//				}
-//
-//				// if you're alternate or not an alternate but have alternates, in the middle of the phase, just increment error and skip learning!
-//
-//				else if (this.isAlternate()){
-//
-//					return; // skip learning and split evaluation!
-//				}
-//
-//				else if (this.alternates.isEmpty()){
-//					return;
-//				}
-//
-//			}
-//
-//			// if you're not in a test phase, continue as usual
-//			else {
-//				inAlternateTestPhase = false;
-//			}
+			// if you're in a test phase
+			if (nodeTime % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
+				//System.out.println("nodeTime " + nodeTime + " testPhaseFrequency " + testPhaseFrequency.getValue() +
+				//		" testPhaseLength " + testPhaseLength.getValue() + " modulus " + nodeTime % testPhaseFrequency.getValue());
+				inAlternateTestPhase = true;
+
+				//increment error
+				int trueClass = (int) inst.classValue();
+				int ClassPrediction = 0;
+				Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
+				if (leaf != null) {
+					ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
+				} // what happens if leaf is null?
+				boolean predictedCorrectly = (trueClass == ClassPrediction);
+
+				if(!predictedCorrectly){
+					testPhaseError++;
+				}
+
+				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
+				if (nodeTime % testPhaseFrequency.getValue() == testPhaseLength.getValue() - 1){
+					System.out.println(">>> " + getNumInstances() + " == " + testPhaseError);
+
+
+					if(!this.alternates.isEmpty()){
+						System.out.println("=======================================");
+					}
+
+					if(!this.isAlternate() && !this.alternates.isEmpty()){
+
+						System.err.println("Picking a replacement");
+						//pick the option with lowest test phase error... and replace...
+						int lowestError = testPhaseError;
+
+						AdaNode bestAlternate = null;
+
+						Iterator<CVFDTAdaNode> iter = alternates.values().iterator();
+
+						while (iter.hasNext()){
+							AdaNode alt = iter.next();
+
+							if(((CVFDTAdaNode)alt).getTestPhaseError() < lowestError){
+
+								lowestError = ((CVFDTAdaNode)alt).getTestPhaseError();
+								bestAlternate = alt;
+							}
+						}
+
+						// replace with best alternate!!
+						if(bestAlternate != null){ //DRY!!! (copied from HAT-ADWIN)
+							// Switch alternate tree
+
+							System.err.println(getNumInstances() + "  " + " SWITCHING");
+
+							ht.activeLeafNodeCount -= this.numberLeaves();
+							ht.activeLeafNodeCount += bestAlternate.numberLeaves();
+							this.killSubtree((CVFDT)ht);
+							bestAlternate.setAlternateStatusForSubtreeNodes(false);
+							bestAlternate.setMainlineNode(null);
+
+							if (!this.isRoot()) {
+								bestAlternate.setRoot(false);
+								bestAlternate.setParent(this.getParent());
+								this.getParent().setChild(parentBranch, (Node)bestAlternate);
+
+								//((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
+							} else {
+								// Switch root tree
+								bestAlternate.setRoot(true);
+								bestAlternate.setParent(null);
+								ht.treeRoot = (Node)bestAlternate;
+							}
+							ht.switchedAlternateTrees++;
+
+							// ALERT: TODO: prune alternates
+
+						}
+						testPhaseError = 0; //reset test phase error
+						inAlternateTestPhase = false;
+						return; // skip learning and split evaluation!
+
+					}
+				}
+
+				// if you're alternate or not an alternate but have alternates, in the middle of the phase, just increment error and skip learning!
+
+				else if (this.isAlternate()){
+					return; // skip learning and split evaluation!
+				}
+/*
+				else if (this.alternates.isEmpty()){
+					return;
+				}
+				*/
+			}
+
+			//			// if you're not in a test phase, continue as usual
+			else {
+				inAlternateTestPhase = false;
+			}
 			if(!inAlternateTestPhase) {
-				// remember you're not supposed to learn anything if you happen to be in a test phase and happen to have alternates...
-				// or if you happen to be an alternate
-				// You're just supposed to keep track of error
+				testPhaseError = 0;
 
-				// System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
-
-				// First, update counts
 				assert (this.createdFromInitializedLearningNode = true);
 
 				this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
@@ -218,10 +216,10 @@ public class CVFDT extends VFDTWindow {
 
 				// We need to re-evaluate splits at each mainline split node...
 
-//				if(!this.isAlternate() && nodeTime%200 ==0){ //magic number alert
-//					//System.err.println("Re-evaluating internal node splits");
-//					reEvaluateBestSplit();
-//				}
+				//				if(!this.isAlternate() && nodeTime%200 ==0){ //magic number alert
+				//					//System.err.println("Re-evaluating internal node splits");
+				//					reEvaluateBestSplit();
+				//				}
 
 				// Going down alternate paths here
 
@@ -244,7 +242,7 @@ public class CVFDT extends VFDTWindow {
 			nodeTime++;
 		}
 
-/////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////
 
 		// DRY... code duplicated from ActiveLearningNode in VFDT.java
 		public AttributeSplitSuggestion[] getBestSplitSuggestions(
@@ -270,85 +268,85 @@ public class CVFDT extends VFDTWindow {
 			return bestSuggestions.toArray(new AttributeSplitSuggestion[bestSuggestions.size()]);
 		}
 
-        @Override
+		@Override
 		public void killSubtree(CVFDT ht) {
-            for (Node child : this.children) {
-                if (child != null) {
-                    //Delete alternate tree if it exists
-                    if (child instanceof CVFDTSplitNode && !((CVFDTSplitNode) child).alternates.isEmpty()) {
-                    	Iterator iter = alternates.values().iterator();
-                    	while (iter.hasNext()){
-                    		((CVFDTAdaNode)(iter.next())).killSubtree(ht);
-                    	}
-                        ht.prunedAlternateTrees++;
-                    }
-                    //Recursive delete of SplitNodes
-                    if (child instanceof AdaSplitNode) {
-                        ((CVFDTAdaNode) child).killSubtree(ht);
-                    }
-                    else if (child instanceof ActiveLearningNode) {
-                        child = null;
-                        ht.activeLeafNodeCount--;
-                    }
-                    else if (child instanceof InactiveLearningNode) {
-                        child = null;
-                        ht.inactiveLeafNodeCount--;
-                    }
-                    else{
+			for (Node child : this.children) {
+				if (child != null) {
+					//Delete alternate tree if it exists
+					if (child instanceof CVFDTSplitNode && !((CVFDTSplitNode) child).alternates.isEmpty()) {
+						Iterator iter = alternates.values().iterator();
+						while (iter.hasNext()){
+							((CVFDTAdaNode)(iter.next())).killSubtree(ht);
+						}
+						ht.prunedAlternateTrees++;
+					}
+					//Recursive delete of SplitNodes
+					if (child instanceof AdaSplitNode) {
+						((CVFDTAdaNode) child).killSubtree(ht);
+					}
+					else if (child instanceof ActiveLearningNode) {
+						child = null;
+						ht.activeLeafNodeCount--;
+					}
+					else if (child instanceof InactiveLearningNode) {
+						child = null;
+						ht.inactiveLeafNodeCount--;
+					}
+					else{
 
-                    }
-                }
-            }
-        }
+					}
+				}
+			}
+		}
 
 
-//		protected void reEvaluateBestSplit() {
-//
-//			int currentSplit = -1; // for no split
-//
-//			//lets first find out X_a, the current split
-//			if(this.splitTest != null){
-//				currentSplit = this.splitTest.getAttsTestDependsOn()[0];
-//				// given the current implementations in MOA, we're only ever expecting one int to be returned
-//			}
-//
-//			// Now let's find the best split X_n other than X_a that doesn't already have an attached alternate subtree
-//			// Would that be an improvement over CVFDT? Does CVFDT always compute the X_n, even if it won't be used because it has an attached alternate?
-//			SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(CVFDT.this.splitCriterionOption);
-//
-//			double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(this.getObservedClassDistribution()),
-//					CVFDT.this.splitConfidenceOption.getValue(), this.observedClassDistribution.sumOfValues());
-//
-//			AttributeSplitSuggestion[] bestSplitSuggestions = this.getBestSplitSuggestions(splitCriterion, CVFDT.this);
-//			Arrays.sort(bestSplitSuggestions);
-//
-//			AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
-//			AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
-//
-//			double tieThreshold = CVFDT.this.tieThresholdOption.getValue();
-//			double deltaG = bestSuggestion.merit - secondBestSuggestion.merit;
-//
-//			if(currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0])
-//			{
-//				// do nothing, because the current split is the best split
-//				// this is different but equivalent to algorithm listing...
-//			}
-//
-//			else if (deltaG > hoeffdingBound
-//					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
-//
-//				// if it doesn't already have an alternate subtree, build one
-//				if(!alternates.containsKey(bestSuggestion)) { // the hashcodes should match... this should work
-//					//System.err.println("Building alt subtree");
-//
-//					System.err.println(getNumInstances() + " Building alt subtree ");
-//
-//					this.alternates.put(bestSuggestion, (CVFDTAdaNode)newLearningNode(true, false, this));
-//
-//					// we've just created an alternate, but only if the key is not already contained
-//				}
-//			}
-//		}
+		//		protected void reEvaluateBestSplit() {
+		//
+		//			int currentSplit = -1; // for no split
+		//
+		//			//lets first find out X_a, the current split
+		//			if(this.splitTest != null){
+		//				currentSplit = this.splitTest.getAttsTestDependsOn()[0];
+		//				// given the current implementations in MOA, we're only ever expecting one int to be returned
+		//			}
+		//
+		//			// Now let's find the best split X_n other than X_a that doesn't already have an attached alternate subtree
+		//			// Would that be an improvement over CVFDT? Does CVFDT always compute the X_n, even if it won't be used because it has an attached alternate?
+		//			SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(CVFDT.this.splitCriterionOption);
+		//
+		//			double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(this.getObservedClassDistribution()),
+		//					CVFDT.this.splitConfidenceOption.getValue(), this.observedClassDistribution.sumOfValues());
+		//
+		//			AttributeSplitSuggestion[] bestSplitSuggestions = this.getBestSplitSuggestions(splitCriterion, CVFDT.this);
+		//			Arrays.sort(bestSplitSuggestions);
+		//
+		//			AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+		//			AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
+		//
+		//			double tieThreshold = CVFDT.this.tieThresholdOption.getValue();
+		//			double deltaG = bestSuggestion.merit - secondBestSuggestion.merit;
+		//
+		//			if(currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0])
+		//			{
+		//				// do nothing, because the current split is the best split
+		//				// this is different but equivalent to algorithm listing...
+		//			}
+		//
+		//			else if (deltaG > hoeffdingBound
+		//					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
+		//
+		//				// if it doesn't already have an alternate subtree, build one
+		//				if(!alternates.containsKey(bestSuggestion)) { // the hashcodes should match... this should work
+		//					//System.err.println("Building alt subtree");
+		//
+		//					System.err.println(getNumInstances() + " Building alt subtree ");
+		//
+		//					this.alternates.put(bestSuggestion, (CVFDTAdaNode)newLearningNode(true, false, this));
+		//
+		//					// we've just created an alternate, but only if the key is not already contained
+		//				}
+		//			}
+		//		}
 
 		@Override
 		public long getNodeTime() {
@@ -414,96 +412,94 @@ public class CVFDT extends VFDTWindow {
 	}
 
 
-    @Override
-    public void trainOnInstanceImpl(Instance inst) {
+	@Override
+	public void trainOnInstanceImpl(Instance inst) {
 
-    	// If treeRoot is null, create a new tree, rooted with a learning node.
-        if (this.treeRoot == null) {
-            this.treeRoot = newLearningNode(false, true, null); // root cannot be alternate
-            this.activeLeafNodeCount = 1;
-        }
+		// If treeRoot is null, create a new tree, rooted with a learning node.
+		if (this.treeRoot == null) {
+			this.treeRoot = newLearningNode(false, true, null); // root cannot be alternate
+			this.activeLeafNodeCount = 1;
+		}
 
-        // If you have no window, create one.
-    	if(window == null){
-    		window = EvictingQueue.create(windowSize.getValue());
-    	}
+		// If you have no window, create one.
+		if(window == null){
+			window = EvictingQueue.create(windowSize.getValue());
+		}
 
-    	// Forget an instance. The window stores along with each instance the maximum node reached. So look at the head of the queue and forget the instance there.
-    	Instance forgetInst;
-        if(window.remainingCapacity() == 0){
-        	forgetInst = window.peek().getFirst();
-        	forgetInst.setWeight(-1.0);
-            ((AdaNode) this.treeRoot).forgetInstance(forgetInst, this, null, -1, window.peek().getSecond());
-        }
+		// Forget an instance. The window stores along with each instance the maximum node reached. So look at the head of the queue and forget the instance there.
+		Instance forgetInst;
+		if(window.remainingCapacity() == 0){
+			forgetInst = window.peek().getFirst();
+			forgetInst.setWeight(-1.0);
+			((AdaNode) this.treeRoot).forgetInstance(forgetInst, this, null, -1, window.peek().getSecond());
+		}
 
-        // Create an object to store the IDs visited while learning this instance. Pass a reference so you add all the IDs...
-        AutoExpandVector<Long> reachedNodeIDs = new AutoExpandVector<>();
-        ((AdaNode) this.treeRoot).learnFromInstance(inst, this, null, -1, reachedNodeIDs);
+		// Create an object to store the IDs visited while learning this instance. Pass a reference so you add all the IDs...
+		AutoExpandVector<Long> reachedNodeIDs = new AutoExpandVector<>();
+		((AdaNode) this.treeRoot).learnFromInstance(inst, this, null, -1, reachedNodeIDs);
 
-        // Store the max ID reached along with the instance in the window
+		// Store the max ID reached along with the instance in the window
 
-        long maxIDreached = 0;
-        for(int i = 0; i < reachedNodeIDs.size(); i++){
-        	maxIDreached = maxIDreached > reachedNodeIDs.get(i) ? maxIDreached : reachedNodeIDs.get(i);
-        }
+		long maxIDreached = 0;
+		for(int i = 0; i < reachedNodeIDs.size(); i++){
+			maxIDreached = maxIDreached > reachedNodeIDs.get(i) ? maxIDreached : reachedNodeIDs.get(i);
+		}
 
-        window.add(new Pair<Instance, Long>(inst, maxIDreached));
+		window.add(new Pair<Instance, Long>(inst, maxIDreached));
 
-    	if (numInstances == 0){
-    		try {
+		if (numInstances == 0){
+			try {
 				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),false));
 				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),true));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
-    	}
+		}
+		numInstances++;
+	}
 
-        numInstances++;
-
-    }
-
-    @Override
+	@Override
 	protected LearningNode newLearningNode() {
-        return new CVFDTLearningNode(new double[0]);
-    }
+		return new CVFDTLearningNode(new double[0]);
+	}
 
-    @Override
+	@Override
 	protected LearningNode newLearningNode(double[] initialClassObservations) {
-        return new CVFDTLearningNode(initialClassObservations);
-    }
+		return new CVFDTLearningNode(initialClassObservations);
+	}
 
-    @Override
-    protected LearningNode newLearningNode(boolean isAlternate, boolean isRoot, AdaNode mainlineNode) {
-        return new CVFDTLearningNode(new double[0], isAlternate, isRoot, mainlineNode);
-    }
+	@Override
+	protected LearningNode newLearningNode(boolean isAlternate, boolean isRoot, AdaNode mainlineNode) {
+		return new CVFDTLearningNode(new double[0], isAlternate, isRoot, mainlineNode);
+	}
 
-    @Override
+	@Override
 	protected LearningNode newLearningNode(double[] initialClassObservations, boolean isAlternate, boolean isRoot, AdaNode mainlineNode) {
-        return new CVFDTLearningNode(initialClassObservations, isAlternate, isRoot, mainlineNode);
-    }
+		return new CVFDTLearningNode(initialClassObservations, isAlternate, isRoot, mainlineNode);
+	}
 
-    @Override
+	@Override
 	protected AdaSplitNode newSplitNode(InstanceConditionalTest splitTest,
-            double[] classObservations, int size, boolean isAlternate) {
-    	return new CVFDTSplitNode(splitTest, classObservations, size, isAlternate);
-    }
+			double[] classObservations, int size, boolean isAlternate) {
+		return new CVFDTSplitNode(splitTest, classObservations, size, isAlternate);
+	}
 
 	@Override
 	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
-            double[] classObservations, boolean isAlternate) {
-    	return new CVFDTSplitNode(splitTest, classObservations, isAlternate);
-    }
+			double[] classObservations, boolean isAlternate) {
+		return new CVFDTSplitNode(splitTest, classObservations, isAlternate);
+	}
 
-   @Override
-    protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
-            double[] classObservations, int size) {
-        return new CVFDTSplitNode(splitTest, classObservations, size);
-    }
+	@Override
+	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
+			double[] classObservations, int size) {
+		return new CVFDTSplitNode(splitTest, classObservations, size);
+	}
 
-    @Override
-    protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
-            double[] classObservations) {
-        return new CVFDTSplitNode(splitTest, classObservations);
-    }
+	@Override
+	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
+			double[] classObservations) {
+		return new CVFDTSplitNode(splitTest, classObservations);
+	}
 
 }

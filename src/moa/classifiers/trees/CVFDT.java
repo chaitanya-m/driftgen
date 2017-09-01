@@ -38,17 +38,7 @@ public class CVFDT extends VFDTWindow {
 
 	public IntOption testPhaseLength = new IntOption("testPhaseLength", 'L',
 			"How long each test phase for alternates is", 200, 0, Integer.MAX_VALUE);
-
-/*	public interface CVFDTAdaNode extends AdaNode{
-
-
-		public void learnFromInstance(Instance inst, CVFDT ht, SplitNode parent, int parentBranch,
-				AutoExpandVector<Long> reachedLeafIDs);
-
-		public int getTestPhaseError();
-
-	}
-*/
+/*
 	public interface CVFDTAdaNode extends AdaNode {
 
 		public int getTestPhaseError();
@@ -421,7 +411,7 @@ public class CVFDT extends VFDTWindow {
 		}
 	}
 
-
+*/
     @Override
     public void trainOnInstanceImpl(Instance inst) {
 
@@ -469,7 +459,7 @@ public class CVFDT extends VFDTWindow {
         numInstances++;
 
     }
-
+/*
     @Override
 	protected LearningNode newLearningNode() {
         return new CVFDTLearningNode(new double[0]);
@@ -513,5 +503,5 @@ public class CVFDT extends VFDTWindow {
             double[] classObservations) {
         return new CVFDTSplitNode(splitTest, classObservations);
     }
-
+*/
 }

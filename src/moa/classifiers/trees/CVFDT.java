@@ -38,14 +38,14 @@ public class CVFDT extends VFDTWindow {
 
 	public IntOption testPhaseLength = new IntOption("testPhaseLength", 'L',
 			"How long each test phase for alternates is", 200, 0, Integer.MAX_VALUE);
-/*
+
 	public interface CVFDTAdaNode extends AdaNode {
 
 		public int getTestPhaseError();
 
-		public void killSubtree(CVFDT ht);
+//		public void killSubtree(CVFDT ht);
 
-		public long getNodeTime();
+//		public long getNodeTime();
 	}
 
 	public class CVFDTSplitNode extends AdaSplitNode implements AdaNode, CVFDTAdaNode {
@@ -89,7 +89,7 @@ public class CVFDT extends VFDTWindow {
 			super(splitTest, classObservations, size, isAlternate);
 			alternates = new HashMap<AttributeSplitSuggestion, CVFDTAdaNode>();
 		}
-
+		/*
 		@Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
@@ -351,7 +351,7 @@ public class CVFDT extends VFDTWindow {
 		@Override
 		public long getNodeTime() {
 			return nodeTime;
-		}
+		}*/
 	}
 
 	public class CVFDTLearningNode extends AdaLearningNode implements AdaNode, CVFDTAdaNode {
@@ -377,7 +377,7 @@ public class CVFDT extends VFDTWindow {
 				AdaNode mainlineNode) {
 			super(initialClassObservations, isAlternate, isRoot, mainlineNode);
 		}
-
+/*
 		@Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs) {
@@ -408,10 +408,10 @@ public class CVFDT extends VFDTWindow {
 		@Override
 		public long getNodeTime() {
 			return nodeTime;
-		}
+		}*/
 	}
 
-*/
+
     @Override
     public void trainOnInstanceImpl(Instance inst) {
 
@@ -459,7 +459,7 @@ public class CVFDT extends VFDTWindow {
         numInstances++;
 
     }
-/*
+
     @Override
 	protected LearningNode newLearningNode() {
         return new CVFDTLearningNode(new double[0]);
@@ -503,5 +503,5 @@ public class CVFDT extends VFDTWindow {
             double[] classObservations) {
         return new CVFDTSplitNode(splitTest, classObservations);
     }
-*/
+
 }

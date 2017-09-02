@@ -402,6 +402,15 @@ public class CVFDT extends VFDTWindow {
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs) {
 
+			// BUG! The mainline node and it's alternates will have separate nodeTimes!
+			// They've GOT to be in the test phase concurrently
+
+			if(this.isAlternate() && this.getMainlineNode()!=null){
+				this.nodeTime = ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime();
+			}
+
+			// This fixes it!
+
 			if (nodeTime % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
 				inAlternateTestPhase = true;
 				if (inst.classValue() != Utils.maxIndex(this.getClassVotes(inst, ht))){

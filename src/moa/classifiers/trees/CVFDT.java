@@ -234,6 +234,10 @@ public class CVFDT extends VFDTWindow {
 
 				while (iter.hasNext()){
 					AdaNode alt = iter.next();
+					if(alt.getMainlineNode()==null && alt !=null ){
+						System.err.println(getNumInstances() + " alternate should ALWAYS have a mainline ");
+					}
+
 					alt.learnFromInstance(inst, ht, this.getParent(), parentBranch, reachedLeafIDs);
 				}
 			}

@@ -39,8 +39,10 @@ public class EFDT extends CVFDT{
 			AttributeSplitSuggestion currentSuggestion = null;
 
 			for(int i = 0; i < allPossibleSplits.length; i++) {
-				if(allPossibleSplits[i].splitTest.getAttsTestDependsOn()[0] == currentSplit){
-					 currentSuggestion = allPossibleSplits[allPossibleSplits.length - 1];
+
+				if(allPossibleSplits[i].splitTest != null
+						&& allPossibleSplits[i].splitTest.getAttsTestDependsOn()[0] == currentSplit){
+					 currentSuggestion = allPossibleSplits[i];
 					 break;
 				}
 			}

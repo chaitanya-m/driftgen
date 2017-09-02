@@ -6,10 +6,12 @@ import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.math3.util.Pair;
 
@@ -21,7 +23,11 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.VFDT.ActiveLearningNode;
+import moa.classifiers.trees.VFDT.Node;
+import moa.classifiers.trees.VFDT.SplitNode;
 import moa.classifiers.trees.VFDTWindow.AdaNode;
+import moa.classifiers.trees.VFDTWindow.AdaSplitNode;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
 
@@ -228,14 +234,14 @@ public class CVFDT extends VFDTWindow {
 
 			// Going down alternate paths here
 
-			if (this.alternates != null && !this.isAlternate()) {
+			if (!this.alternates.isEmpty() && !this.isAlternate()) {
 
 				Iterator<CVFDTAdaNode> iter = alternates.values().iterator();
 
 				while (iter.hasNext()){
 					AdaNode alt = iter.next();
 					if(alt.getMainlineNode()==null && alt !=null ){
-						System.err.println(getNumInstances() + " alternate should ALWAYS have a mainline ");
+						System.err.println(getNumInstances() + " alternate should ALWAYS have a mainline " + alt.getClass());
 					}
 
 					alt.learnFromInstance(inst, ht, this.getParent(), parentBranch, reachedLeafIDs);
@@ -349,8 +355,11 @@ public class CVFDT extends VFDTWindow {
 					//System.err.println("Building alt subtree");
 
 					//System.err.println(getNumInstances() + " Building alt subtree ");
-
-					this.alternates.put(bestSuggestion, (CVFDTAdaNode)newLearningNode(true, false, this));
+					CVFDTAdaNode newAlternate = (CVFDTAdaNode)newLearningNode(true, false, this);
+					this.alternates.put(bestSuggestion, newAlternate);
+					if(newAlternate.getMainlineNode() != null){
+						//System.out.println(getNumInstances() + " " + newAlternate.getMainlineNode().getClass());// + newAlternate!=null);//.getMainlineNode()==null);
+					}
 
 					// we've just created an alternate, but only if the key is not already contained
 				}
@@ -466,6 +475,119 @@ public class CVFDT extends VFDTWindow {
 		}
 		numInstances++;
 	}
+
+    @Override
+	protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
+            int parentIndex) {
+        if (!node.observedClassDistributionIsPure()) {
+            SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
+            AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
+            Arrays.sort(bestSplitSuggestions);
+            boolean shouldSplit = false;
+            if (bestSplitSuggestions.length < 2) {
+                shouldSplit = bestSplitSuggestions.length > 0;
+            } else {
+                double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
+                        this.splitConfidenceOption.getValue(), node.getWeightSeen());
+
+                AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+                AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
+
+                // Take out these lines to simulate the original bug in VFDT
+                if(bestSuggestion.merit < 1e-10){
+                	shouldSplit = false;
+                }
+
+                else if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
+                        || (hoeffdingBound < this.tieThresholdOption.getValue())) {
+                    shouldSplit = true;
+                }
+
+                if ((this.removePoorAttsOption != null)
+                        && this.removePoorAttsOption.isSet()) {
+                    Set<Integer> poorAtts = new HashSet<Integer>();
+                    // scan 1 - add any poor to set
+                    for (int i = 0; i < bestSplitSuggestions.length; i++) {
+                        if (bestSplitSuggestions[i].splitTest != null) {
+                            int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
+                            if (splitAtts.length == 1) {
+                                if (bestSuggestion.merit
+                                        - bestSplitSuggestions[i].merit > hoeffdingBound) {
+                                    poorAtts.add(new Integer(splitAtts[0]));
+                                }
+                            }
+                        }
+                    }
+                    // scan 2 - remove good ones from set
+                    for (int i = 0; i < bestSplitSuggestions.length; i++) {
+                        if (bestSplitSuggestions[i].splitTest != null) {
+                            int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
+                            if (splitAtts.length == 1) {
+                                if (bestSuggestion.merit
+                                        - bestSplitSuggestions[i].merit < hoeffdingBound) {
+                                    poorAtts.remove(new Integer(splitAtts[0]));
+                                }
+                            }
+                        }
+                    }
+                    for (int poorAtt : poorAtts) {
+                        node.disableAttribute(poorAtt);
+                    }
+                }
+            }
+
+            if (shouldSplit) {
+                AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+                if (splitDecision.splitTest == null) {
+                    // preprune - null wins
+                    //deactivateLearningNode(node, ((AdaNode)node).getParent(), parentIndex);
+                } else {
+                    AdaSplitNode newSplit = newSplitNode(splitDecision.splitTest,
+                            node.getObservedClassDistribution(),splitDecision.numSplits(), ((AdaNode)(node)).isAlternate());
+
+                    ((AdaNode)newSplit).setUniqueID(((AdaNode)node).getUniqueID());
+                    //Ensure that the split node's ID is the same as it's ID as a leaf
+
+                    // Copy statistics from the learning node being replaced
+                    newSplit.createdFromInitializedLearningNode = node.isInitialized;
+                    newSplit.observedClassDistribution = node.observedClassDistribution; // copy the class distribution
+                    newSplit.attributeObservers = node.attributeObservers; // copy the attribute observers
+                    newSplit.setMainlineNode(((AdaNode)node).getMainlineNode()); //  Copy the mainline attachment, if any
+
+                    for (int i = 0; i < splitDecision.numSplits(); i++) {
+                        Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i),
+                        		((AdaNode)newSplit).isAlternate(), false, ((AdaNode)node).getMainlineNode());
+                        ((AdaNode)newChild).setParent(newSplit);
+                        newSplit.setChild(i, newChild);
+                    }
+                    this.activeLeafNodeCount--;
+                    this.decisionNodeCount++;
+                    this.activeLeafNodeCount += splitDecision.numSplits();
+
+                    if (((AdaNode)node).isRoot()) {
+                    	((AdaNode)newSplit).setRoot(true);
+                    	((AdaNode)newSplit).setParent(null);
+                        this.treeRoot = newSplit;
+                    }
+
+                    else if(((AdaNode)node).getMainlineNode() != null) { // its alternate and is attached directly to a mainline node, must have a mainline split parent
+                    	((AdaNode)newSplit).setParent(((AdaNode)node).getMainlineNode().getParent());
+                    }
+
+                    else { //if the node is neither root nor an alternate attached directly to mainline, it must have a non-null split parent
+                    	((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
+                    	((AdaNode)node).getParent().setChild(parentIndex, newSplit);
+                    }
+
+
+                }
+                // manage memory
+                enforceTrackerLimit();
+            }
+        }
+    }
+
+
 
 	@Override
 	protected LearningNode newLearningNode() {

@@ -120,12 +120,12 @@ public class CVFDT extends VFDTWindow {
 
 
 					if(!this.alternates.isEmpty()){
-						System.out.println("=======================================");
+						//System.out.println("=======================================");
 					}
 
 					if(!this.isAlternate() && !this.alternates.isEmpty()){
 
-						System.err.println("Picking a replacement");
+						//System.err.println("Picking a replacement");
 						//pick the option with lowest test phase error... and replace...
 						int lowestError = testPhaseError;
 
@@ -147,7 +147,7 @@ public class CVFDT extends VFDTWindow {
 						if(bestAlternate != null){ //DRY!!! (copied from HAT-ADWIN)
 							// Switch alternate tree
 
-							System.err.println(getNumInstances() + "  " + " SWITCHING");
+							//System.err.println(getNumInstances() + "  " + " SWITCHING");
 
 							ht.activeLeafNodeCount -= this.numberLeaves();
 							ht.activeLeafNodeCount += bestAlternate.numberLeaves();
@@ -217,33 +217,32 @@ public class CVFDT extends VFDTWindow {
 
 
 
-				// DRY... for now this code is repeated...
-				// Counts have been updated for this node (make certain of this...)
+			// DRY... for now this code is repeated...
+			// Counts have been updated for this node (make certain of this...)
 
-				// We need to re-evaluate splits at each mainline split node...
+			// We need to re-evaluate splits at each mainline split node...
 
-								if(!this.isAlternate() && nodeTime%200 ==0 && !inAlternateTestPhase){ //magic number alert
-									//System.err.println("Re-evaluating internal node splits");
-									reEvaluateBestSplit();
-								}
+			if(!this.isAlternate() && nodeTime%200 ==0 && !inAlternateTestPhase){ //ALERT magic number alert
+				reEvaluateBestSplit();
+			}
 
-				// Going down alternate paths here
+			// Going down alternate paths here
 
-				if (this.alternates != null && !this.isAlternate()) {
+			if (this.alternates != null && !this.isAlternate()) {
 
-					Iterator<CVFDTAdaNode> iter = alternates.values().iterator();
+				Iterator<CVFDTAdaNode> iter = alternates.values().iterator();
 
-					while (iter.hasNext()){
-						AdaNode alt = iter.next();
-						alt.learnFromInstance(inst, ht, this.getParent(), parentBranch, reachedLeafIDs);
-					}
+				while (iter.hasNext()){
+					AdaNode alt = iter.next();
+					alt.learnFromInstance(inst, ht, this.getParent(), parentBranch, reachedLeafIDs);
 				}
+			}
 
-				int childBranch = this.instanceChildIndex(inst);
-				Node child = this.getChild(childBranch);
-				if (child != null) {
-					((AdaNode) child).learnFromInstance(inst, ht, this, childBranch, reachedLeafIDs);
-				}
+			int childBranch = this.instanceChildIndex(inst);
+			Node child = this.getChild(childBranch);
+			if (child != null) {
+				((AdaNode) child).learnFromInstance(inst, ht, this, childBranch, reachedLeafIDs);
+			}
 
 			nodeTime++;
 		}
@@ -306,53 +305,53 @@ public class CVFDT extends VFDTWindow {
 		}
 
 
-				protected void reEvaluateBestSplit() {
+		protected void reEvaluateBestSplit() {
 
-					int currentSplit = -1; // for no split
+			int currentSplit = -1; // for no split
 
-					//lets first find out X_a, the current split
-					if(this.splitTest != null){
-						currentSplit = this.splitTest.getAttsTestDependsOn()[0];
-						// given the current implementations in MOA, we're only ever expecting one int to be returned
-					}
+			//lets first find out X_a, the current split
+			if(this.splitTest != null){
+				currentSplit = this.splitTest.getAttsTestDependsOn()[0];
+				// given the current implementations in MOA, we're only ever expecting one int to be returned
+			}
 
-					// Now let's find the best split X_n other than X_a that doesn't already have an attached alternate subtree
-					// Would that be an improvement over CVFDT? Does CVFDT always compute the X_n, even if it won't be used because it has an attached alternate?
-					SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(CVFDT.this.splitCriterionOption);
+			// Now let's find the best split X_n other than X_a that doesn't already have an attached alternate subtree
+			// Would that be an improvement over CVFDT? Does CVFDT always compute the X_n, even if it won't be used because it has an attached alternate?
+			SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(CVFDT.this.splitCriterionOption);
 
-					double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(this.getObservedClassDistribution()),
-							CVFDT.this.splitConfidenceOption.getValue(), this.observedClassDistribution.sumOfValues());
+			double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(this.getObservedClassDistribution()),
+					CVFDT.this.splitConfidenceOption.getValue(), this.observedClassDistribution.sumOfValues());
 
-					AttributeSplitSuggestion[] bestSplitSuggestions = this.getBestSplitSuggestions(splitCriterion, CVFDT.this);
-					Arrays.sort(bestSplitSuggestions);
+			AttributeSplitSuggestion[] bestSplitSuggestions = this.getBestSplitSuggestions(splitCriterion, CVFDT.this);
+			Arrays.sort(bestSplitSuggestions);
 
-					AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
-					AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
+			AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+			AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
 
-					double tieThreshold = CVFDT.this.tieThresholdOption.getValue();
-					double deltaG = bestSuggestion.merit - secondBestSuggestion.merit;
+			double tieThreshold = CVFDT.this.tieThresholdOption.getValue();
+			double deltaG = bestSuggestion.merit - secondBestSuggestion.merit;
 
-					if(currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0])
-					{
-						// do nothing, because the current split is the best split
-						// this is different but equivalent to algorithm listing...
-					}
+			if(currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0])
+			{
+				// do nothing, because the current split is the best split
+				// this is different but equivalent to algorithm listing...
+			}
 
-					else if (deltaG > hoeffdingBound
-							|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
+			else if (deltaG > hoeffdingBound
+					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
 
-						// if it doesn't already have an alternate subtree, build one
-						if(!alternates.containsKey(bestSuggestion)) { // the hashcodes should match... this should work
-							//System.err.println("Building alt subtree");
+				// if it doesn't already have an alternate subtree, build one
+				if(!alternates.containsKey(bestSuggestion)) { // the hashcodes should match... this should work
+					//System.err.println("Building alt subtree");
 
-							System.err.println(getNumInstances() + " Building alt subtree ");
+					//System.err.println(getNumInstances() + " Building alt subtree ");
 
-							this.alternates.put(bestSuggestion, (CVFDTAdaNode)newLearningNode(true, false, this));
+					this.alternates.put(bestSuggestion, (CVFDTAdaNode)newLearningNode(true, false, this));
 
-							// we've just created an alternate, but only if the key is not already contained
-						}
-					}
+					// we've just created an alternate, but only if the key is not already contained
 				}
+			}
+		}
 
 		@Override
 		public long getNodeTime() {

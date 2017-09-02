@@ -70,8 +70,8 @@ public class EFDT extends CVFDT{
 				// if it doesn't already have an alternate subtree, build one
 				if(!alternates.containsKey(bestSuggestion)) { // the hashcodes should match... this should work
 					alternates.put(bestSuggestion, (CVFDTAdaNode)newLearningNode(true, false, this));
-					System.out.println(
-							"secondBestSuggestion.merit-currentSuggestion.merit " + (secondBestSuggestion.merit-currentSuggestion.merit) + " \n " +
+					System.out.println(getNumInstances() +
+							" secondBestSuggestion.merit-currentSuggestion.merit " + (secondBestSuggestion.merit-currentSuggestion.merit) + " \n " +
 							"bestSuggestion.merit-currentSuggestion.merit " + (bestSuggestion.merit-currentSuggestion.merit) + " \n "
 							+ " bestSuggestion.merit "	+	bestSuggestion.merit + " \n "
 							+ " currentSuggestion.merit " + currentSuggestion.merit +"\n"

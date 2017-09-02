@@ -23,12 +23,7 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
-import moa.classifiers.trees.CVFDT.CVFDTAdaNode;
-import moa.classifiers.trees.VFDT.ActiveLearningNode;
-import moa.classifiers.trees.VFDT.Node;
-import moa.classifiers.trees.VFDT.SplitNode;
-import moa.classifiers.trees.VFDTWindow.AdaNode;
-import moa.classifiers.trees.VFDTWindow.AdaSplitNode;
+
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
 
@@ -134,18 +129,18 @@ public class CVFDT extends VFDTWindow {
 
 						//System.err.println("Picking a replacement");
 						//pick the option with lowest test phase error... and replace...
-						int lowestError = testPhaseError;
+						int lowestError = this.testPhaseError;
 
-						AdaNode bestAlternate = null;
+						CVFDTAdaNode bestAlternate = null;
 
 						Iterator<CVFDTAdaNode> iter = alternates.values().iterator();
 
 						while (iter.hasNext()){
-							AdaNode alt = iter.next();
+							CVFDTAdaNode alt = iter.next();
 
-							if(((CVFDTAdaNode)alt).getTestPhaseError() < lowestError){
+							if(alt.getTestPhaseError() < lowestError){
 
-								lowestError = ((CVFDTAdaNode)alt).getTestPhaseError();
+								lowestError = alt.getTestPhaseError();
 								bestAlternate = alt;
 							}
 						}
@@ -258,8 +253,6 @@ public class CVFDT extends VFDTWindow {
 
 			nodeTime++;
 		}
-
-		/////////////////////////////////////////////////////////
 
 		// DRY... code duplicated from ActiveLearningNode in VFDT.java
 		public AttributeSplitSuggestion[] getBestSplitSuggestions(

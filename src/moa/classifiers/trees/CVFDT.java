@@ -153,7 +153,7 @@ public class CVFDT extends VFDTWindow {
 						if(bestAlternate != null){ //DRY!!! (copied from HAT-ADWIN)
 							// Switch alternate tree
 
-							//System.err.println(getNumInstances() + "  " + " SWITCHING");
+							System.err.println(getNumInstances() + "  " + " SWITCHING");
 
 							ht.activeLeafNodeCount -= this.numberLeaves();
 							ht.activeLeafNodeCount += bestAlternate.numberLeaves();

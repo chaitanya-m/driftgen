@@ -23,6 +23,7 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.CVFDT.CVFDTAdaNode;
 import moa.classifiers.trees.VFDT.ActiveLearningNode;
 import moa.classifiers.trees.VFDT.Node;
 import moa.classifiers.trees.VFDT.SplitNode;
@@ -176,8 +177,9 @@ public class CVFDT extends VFDTWindow {
 							ht.switchedAlternateTrees++;
 
 							// ALERT: TODO: prune alternates
-
+							return; // Once you've switched, you shouldn't continue...
 						}
+
 						testPhaseError = 0; //reset test phase error
 						inAlternateTestPhase = false;
 						//return; // skip learning and split evaluation!
@@ -289,9 +291,9 @@ public class CVFDT extends VFDTWindow {
 				if (child != null) {
 					//Delete alternate tree if it exists
 					if (child instanceof CVFDTSplitNode && !((CVFDTSplitNode) child).alternates.isEmpty()) {
-						Iterator iter = alternates.values().iterator();
+						Iterator<CVFDTAdaNode> iter = alternates.values().iterator();
 						while (iter.hasNext()){
-							((CVFDTAdaNode)(iter.next())).killSubtree(ht);
+							(iter.next()).killSubtree(ht);
 						}
 						ht.prunedAlternateTrees++;
 					}

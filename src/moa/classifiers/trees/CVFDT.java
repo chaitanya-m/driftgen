@@ -58,7 +58,7 @@ public class CVFDT extends VFDTWindow {
 
 		private int testPhaseError = 0;
 
-		private int nodeTime = 0;
+		private long nodeTime = 0;
 
 		@Override
 		public int getTestPhaseError() {
@@ -96,6 +96,11 @@ public class CVFDT extends VFDTWindow {
 		@Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
+
+			if(this.isAlternate() && this.getMainlineNode()!=null){
+				this.nodeTime = ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime();
+			}
+
 
 			// if you're in a test phase
 			if (nodeTime % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {

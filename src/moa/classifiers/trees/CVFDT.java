@@ -48,6 +48,11 @@ public class CVFDT extends VFDTWindow {
 		public void killSubtree(CVFDT ht);
 
 		public long getNodeTime();
+
+		public int getLowestErrorDiff(); // only top level alternates should get this... REFACTOR!!!
+
+		public void setLowestErrorDiff(int errorDiff); // only top level alternates should get this... REFACTOR!!!
+
 	}
 
 	public class CVFDTSplitNode extends AdaSplitNode implements AdaNode, CVFDTAdaNode {
@@ -59,6 +64,8 @@ public class CVFDT extends VFDTWindow {
 		private int testPhaseError = 0;
 
 		private long nodeTime = 0;
+
+		private int lowestErrorDiff = Integer.MAX_VALUE; // only top level alternates should get this... REFACTOR!!!
 
 		@Override
 		public int getTestPhaseError() {
@@ -147,6 +154,11 @@ public class CVFDT extends VFDTWindow {
 
 								lowestError = alt.getTestPhaseError();
 								bestAlternate = alt;
+
+//								int currentAltErrorDiff = alt.getTestPhaseError() - this.getTestPhaseError();
+//								if(alt.getLowestErrorDiff() )
+//								alt.setLowestErrorDiff(currentAltErrorDiff < alt.getLowestErrorDiff() ? currentAltErrorDiff : alt.getLowestErrorDiff());
+
 							}
 						}
 
@@ -185,6 +197,7 @@ public class CVFDT extends VFDTWindow {
 						//return; // skip learning and split evaluation!
 
 					}
+
 				}
 
 				// if you're alternate or not an alternate but have alternates, in the middle of the phase, just increment error and skip learning!
@@ -370,6 +383,16 @@ public class CVFDT extends VFDTWindow {
 		public long getNodeTime() {
 			return nodeTime;
 		}
+
+		@Override
+		public int getLowestErrorDiff() {
+			return lowestErrorDiff;
+		}
+
+		@Override
+		public void setLowestErrorDiff(int errorDiff) {
+			this.lowestErrorDiff = errorDiff;
+		}
 	}
 
 	public class CVFDTLearningNode extends AdaLearningNode implements AdaNode, CVFDTAdaNode {
@@ -381,6 +404,8 @@ public class CVFDT extends VFDTWindow {
 		private int testPhaseError = 0;
 
 		private long nodeTime = 0;
+
+		private int lowestErrorDiff;
 
 		@Override
 		public int getTestPhaseError() {

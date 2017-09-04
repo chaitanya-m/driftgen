@@ -49,9 +49,9 @@ public class CVFDT extends VFDTWindow {
 
 		public long getNodeTime();
 
-		public int getLowestErrorDiff(); // only top level alternates should get this... REFACTOR!!!
+		//public int getLowestErrorDiff(); // only top level alternates should get this... REFACTOR!!!
 
-		public void setLowestErrorDiff(int errorDiff); // only top level alternates should get this... REFACTOR!!!
+		//public void setLowestErrorDiff(int errorDiff); // only top level alternates should get this... REFACTOR!!!
 
 	}
 
@@ -384,15 +384,15 @@ public class CVFDT extends VFDTWindow {
 			return nodeTime;
 		}
 
-		@Override
-		public int getLowestErrorDiff() {
-			return lowestErrorDiff;
-		}
-
-		@Override
-		public void setLowestErrorDiff(int errorDiff) {
-			this.lowestErrorDiff = errorDiff;
-		}
+//		@Override
+//		public int getLowestErrorDiff() {
+//			return lowestErrorDiff;
+//		}
+//
+//		@Override
+//		public void setLowestErrorDiff(int errorDiff) {
+//			this.lowestErrorDiff = errorDiff;
+//		}
 	}
 
 	public class CVFDTLearningNode extends AdaLearningNode implements AdaNode, CVFDTAdaNode {

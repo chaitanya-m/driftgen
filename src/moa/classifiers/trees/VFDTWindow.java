@@ -94,13 +94,13 @@ public class VFDTWindow extends VFDT {
 
     private static final long serialVersionUID = 1L;
 
-    private static long numInstances = 0;
+    protected static long numInstances = 0;
 
     private static long nodeIDGenerator = 0; // nodeIDs start from 0 (incremented with post ++ operator)
 
-    private EvictingQueue<Pair<Instance, Long>> window = null;
+    protected EvictingQueue<Pair<Instance, Long>> window = null;
 
-	private PrintWriter writer = null;
+	protected PrintWriter writer = null;
 
     public IntOption windowSize = new IntOption("windowSize", 'W',
             "Maximum moving window size", 20000, 0,
@@ -931,13 +931,15 @@ public class VFDTWindow extends VFDT {
                         this.treeRoot = newSplit;
                     }
 
-                    else { //if the node is neither root nor an alternate, it must have a mainline split parent
-                    	System.err.println(((AdaNode)node).isRoot());
+                    else if(((AdaNode)node).getMainlineNode() != null) { // its alternate and is attached directly to a mainline node, must have a mainline split parent
+                    	((AdaNode)newSplit).setParent(((AdaNode)node).getMainlineNode().getParent());
+                    }
+
+                    else { //if the node is neither root nor an alternate attached directly to mainline, it must have a non-null split parent
                     	((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
                     	((AdaNode)node).getParent().setChild(parentIndex, newSplit);
                     }
 
-                    // Now transfer all the statistics from the learning node being replaced
 
                 }
                 // manage memory

@@ -110,10 +110,16 @@ public class CVFDT extends VFDTWindow {
 
 
 			// if you're in a test phase
-			if (nodeTime % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
+			if (nodeTime %  (testPhaseFrequency.getValue() + testPhaseLength.getValue())  >= testPhaseFrequency.getValue()) {
 				//System.out.println("nodeTime " + nodeTime + " testPhaseFrequency " + testPhaseFrequency.getValue() +
 				//		" testPhaseLength " + testPhaseLength.getValue() + " modulus " + nodeTime % testPhaseFrequency.getValue());
 				inAlternateTestPhase = true;
+
+				if(this.isAlternate() && this.getMainlineNode()!=null){
+
+					System.out.println(this.getNodeTime() + " " + (testPhaseFrequency.getValue() + testPhaseLength.getValue()) +
+							" " + (nodeTime %  (testPhaseFrequency.getValue() + testPhaseLength.getValue())));// + " " + ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime());
+				}
 
 				//increment error
 				int trueClass = (int) inst.classValue();
@@ -138,6 +144,7 @@ public class CVFDT extends VFDTWindow {
 					}
 
 					if(!this.isAlternate() && !this.alternates.isEmpty()){
+
 
 						//System.err.println("Picking a replacement");
 						//pick the option with lowest test phase error... and replace...
@@ -219,7 +226,7 @@ public class CVFDT extends VFDTWindow {
 				testPhaseError = 0;
 			}
 
-			if(inAlternateTestPhase) { // don't update stats when in alternate test phase
+			if(!inAlternateTestPhase) { // only update stats when not in alternate test phase
 
 				assert (this.createdFromInitializedLearningNode = true);
 
@@ -430,16 +437,33 @@ public class CVFDT extends VFDTWindow {
 
 			if(this.isAlternate() && this.getMainlineNode()!=null){
 
-				System.out.println(this.getNodeTime() + " " + ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime());
+				//System.out.println(this.getNodeTime() + " " + ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime());
 
 				//this.nodeTime = ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime();
 			}
 
 			// This fixes it!
 
-			if (nodeTime % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
+			if (nodeTime %  (testPhaseFrequency.getValue() + testPhaseLength.getValue())  >= testPhaseFrequency.getValue()) {
+
+				if(this.isAlternate() && this.getMainlineNode()!=null){
+
+					if(
+							(this.getNodeTime() % (testPhaseFrequency.getValue() + testPhaseLength.getValue())) !=
+							(((CVFDTAdaNode)this.getMainlineNode()).getNodeTime() % (testPhaseFrequency.getValue() + testPhaseLength.getValue()))){
+
+						System.out.println(this.getNodeTime() % (testPhaseFrequency.getValue() + testPhaseLength.getValue()) + " " +
+								(((CVFDTAdaNode)this.getMainlineNode()).getNodeTime() % (testPhaseFrequency.getValue() + testPhaseLength.getValue()))
+								);
+					}
+					//should never be false!
+
+					// + " " + ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime());
+				}
+
 				// THIS ISN'T THE WAY TO CHECK IF YOU'RE IN TEST PHASE OR NOT! THE CODE IS COMPLICATED ENOUGH NOW FOR MORE OO
 				inAlternateTestPhase = true;
+
 				if (inst.classValue() != Utils.maxIndex(this.getClassVotes(inst, ht))){
 					testPhaseError++;
 				}
@@ -453,6 +477,7 @@ public class CVFDT extends VFDTWindow {
 			if(!inAlternateTestPhase){
 				super.learnFromInstance(inst, ht, parent, parentBranch, reachedLeafIDs);
 			}
+			// remember, we use the learn function regardless of whether we are in a test phase or not- we just disable updating stats
 			nodeTime++;
 		}
 

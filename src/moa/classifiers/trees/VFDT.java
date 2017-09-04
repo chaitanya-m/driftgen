@@ -102,7 +102,7 @@ public class VFDT extends AbstractClassifier {
 
     private int i = 0;
 
-    private int numInstances = 0;
+    protected int numInstances = 0;
 
 	private PrintWriter writer = null;
 
@@ -472,7 +472,7 @@ public class VFDT extends AbstractClassifier {
         }
     }
 
-    protected Node treeRoot;
+    protected Node treeRoot = null;
 
     protected int decisionNodeCount;
 
@@ -535,11 +535,13 @@ public class VFDT extends AbstractClassifier {
         }
         FoundNode foundNode = this.treeRoot.filterInstanceToLeaf(inst, null, -1);
         Node leafNode = foundNode.node;
+
         if (leafNode == null) {
             leafNode = newLearningNode();
             foundNode.parent.setChild(foundNode.parentBranch, leafNode);
             this.activeLeafNodeCount++;
         }
+
         if (leafNode instanceof LearningNode) {
             LearningNode learningNode = (LearningNode) leafNode;
             learningNode.learnFromInstance(inst, this);
@@ -555,6 +557,7 @@ public class VFDT extends AbstractClassifier {
                 }
             }
         }
+
         if (this.trainingWeightSeenByModel
                 % this.memoryEstimatePeriodOption.getValue() == 0) {
             estimateModelByteSizes();
@@ -566,8 +569,7 @@ public class VFDT extends AbstractClassifier {
 
 		//System.out.println(numInstances);
 
-
-    	/*if(numInstances > 200510 && numInstances < 200513 && numInstances % 1 == 0){
+    	/*if(numInstances > 50510 && numInstances < 50513 && numInstances % 1 == 0){
     		StringBuilder out = new StringBuilder();
     		this.treeRoot.describeSubtree(this, out, 8);
     		System.out.println("===== " + numInstances + " =======");

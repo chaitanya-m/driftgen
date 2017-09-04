@@ -105,7 +105,7 @@ public class CVFDT extends VFDTWindow {
 				AutoExpandVector<Long> reachedLeafIDs){
 
 			if(this.isAlternate() && this.getMainlineNode()!=null){
-				this.nodeTime = ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime();
+				//this.nodeTime = ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime();
 			}
 
 
@@ -429,12 +429,16 @@ public class CVFDT extends VFDTWindow {
 			// They've GOT to be in the test phase concurrently
 
 			if(this.isAlternate() && this.getMainlineNode()!=null){
-				this.nodeTime = ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime();
+
+				System.out.println(this.getNodeTime() + " " + ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime());
+
+				//this.nodeTime = ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime();
 			}
 
 			// This fixes it!
 
 			if (nodeTime % testPhaseFrequency.getValue() < testPhaseLength.getValue()) {
+				// THIS ISN'T THE WAY TO CHECK IF YOU'RE IN TEST PHASE OR NOT! THE CODE IS COMPLICATED ENOUGH NOW FOR MORE OO
 				inAlternateTestPhase = true;
 				if (inst.classValue() != Utils.maxIndex(this.getClassVotes(inst, ht))){
 					testPhaseError++;

@@ -254,6 +254,10 @@ public class CVFDT extends VFDTWindow {
 				reEvaluateBestSplit();
 			}
 
+			// an alternate can be created midway through a training phase
+			// so it won't sync with it's mainline for it's test phase
+			// the logical solution to this is to start the comparison, in step with the mainline node, once we have at least testInterval examples
+
 			// Going down alternate paths here
 
 			if (!this.alternates.isEmpty() && !this.isAlternate()) {
@@ -605,7 +609,7 @@ public class CVFDT extends VFDTWindow {
                     // preprune - null wins
                     //deactivateLearningNode(node, ((AdaNode)node).getParent(), parentIndex);
                 } else {
-                    AdaSplitNode newSplit = newSplitNode(splitDecision.splitTest,
+                    CVFDTSplitNode newSplit = (CVFDTSplitNode)newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(),splitDecision.numSplits(), ((AdaNode)(node)).isAlternate());
 
                     ((AdaNode)newSplit).setUniqueID(((AdaNode)node).getUniqueID());
@@ -616,6 +620,7 @@ public class CVFDT extends VFDTWindow {
                     newSplit.observedClassDistribution = node.observedClassDistribution; // copy the class distribution
                     newSplit.attributeObservers = node.attributeObservers; // copy the attribute observers
                     newSplit.setMainlineNode(((AdaNode)node).getMainlineNode()); //  Copy the mainline attachment, if any
+                    newSplit.nodeTime = ((CVFDTAdaNode)node).getNodeTime();
 
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i),

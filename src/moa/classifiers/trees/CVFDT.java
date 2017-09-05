@@ -82,9 +82,9 @@ public class CVFDT extends VFDTWindow {
 		}
 
 		// maintain a mapping from attributes to alternate trees
-		protected Map<AttributeSplitSuggestion, CVFDTAdaNode> alternates;
+		protected Map<Integer, CVFDTAdaNode> alternates;
 
-		// maintain a mapping from attributes to alternate trees
+		// maintain a mapping from alternate trees to error
 		protected Map<CVFDTAdaNode, Integer> alternateError;
 
 		// static nested classes don't have a reference to the containing object while nonstatic nested classes do
@@ -92,23 +92,23 @@ public class CVFDT extends VFDTWindow {
 
 		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations) {
 			super(splitTest, classObservations);
-			alternates = new HashMap<AttributeSplitSuggestion, CVFDTAdaNode>();
+			alternates = new HashMap<Integer, CVFDTAdaNode>();
 		}
 
 		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size) {
 			super(splitTest, classObservations, size);
-			alternates = new HashMap<AttributeSplitSuggestion, CVFDTAdaNode>();
+			alternates = new HashMap<Integer, CVFDTAdaNode>();
 		}
 
 		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, boolean isAlternate) {
 			super(splitTest, classObservations, isAlternate);
-			alternates = new HashMap<AttributeSplitSuggestion, CVFDTAdaNode>();
+			alternates = new HashMap<Integer, CVFDTAdaNode>();
 
 		}
 
 		public CVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size, boolean isAlternate) {
 			super(splitTest, classObservations, size, isAlternate);
-			alternates = new HashMap<AttributeSplitSuggestion, CVFDTAdaNode>();
+			alternates = new HashMap<Integer, CVFDTAdaNode>();
 		}
 
 		@Override
@@ -119,7 +119,6 @@ public class CVFDT extends VFDTWindow {
 			// alternate nodes shouldn't get to the point of actually learning
 			// launch test phase
 			if(nodeTrainingTime % testPhaseFrequency.getValue() == 0 && !this.alternates.isEmpty() && !this.isAlternate()){
-				System.err.println(subtreeTestingTime + " In alternate test phase " + this.alternates.size());
 				inAlternateTestPhase = true;
 			} // this check will remain the same for the length of the test phase unless the only remaining alternate is pruned
 
@@ -161,23 +160,20 @@ public class CVFDT extends VFDTWindow {
 					} // what happens if leaf is null?
 					boolean altPredictedCorrectly = (trueClass == altClassPrediction);
 
-					if(alternateError == null){
+					if (alternateError == null){
 						alternateError = new HashMap<CVFDTAdaNode, Integer>();
 					}
 
-
-					if(!alternateError.containsKey(alt)){
+					if (!alternateError.containsKey(alt)){
 						alternateError.put(alt, 0);
 					}
 
-					if(!altPredictedCorrectly && alt.isAlternate() && ! this.isAlternate()){
+					if (!altPredictedCorrectly && alt.isAlternate() && ! this.isAlternate()){
 						int altCurrentError = alternateError.get(alt);
 						alternateError.put(alt, (altCurrentError+1));
-
 					}
 
 				}
-
 
 				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
 				if (subtreeTestingTime == testPhaseLength.getValue() - 1){
@@ -196,7 +192,8 @@ public class CVFDT extends VFDTWindow {
 						CVFDTAdaNode bestAlternate = null;
 
 						for (CVFDTAdaNode alt: alternates.values()){
-							System.err.println(this.testPhaseError + " " + alternateError.get(alt) + " " );
+							System.err.println(getNumInstances() + " " + this.testPhaseError + " " + alternateError.get(alt) + " " +
+						this.observedClassDistribution + " " + ((Node)alt).observedClassDistribution);
 
 							if(alternateError.get(alt) < lowestError){
 
@@ -393,6 +390,17 @@ public class CVFDT extends VFDTWindow {
 
 				AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
 				AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
+				AttributeSplitSuggestion currentSuggestion = null;
+
+				// Find attribute suggestion corresponding to current split
+				for(int i = 0; i < bestSplitSuggestions.length; i++) {
+
+					if(bestSplitSuggestions[i].splitTest != null
+							&& bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0] == currentSplit){
+						 currentSuggestion = bestSplitSuggestions[i];
+						 break;
+					}
+				}
 
 				double tieThreshold = CVFDT.this.tieThresholdOption.getValue();
 				double deltaG = bestSuggestion.merit - secondBestSuggestion.merit;
@@ -407,14 +415,20 @@ public class CVFDT extends VFDTWindow {
 						|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
 
 					// if it doesn't already have an alternate subtree, build one
-					if(!alternates.containsKey(bestSuggestion)) { // the hashcodes should match... this should work
+					if(!alternates.containsKey(bestSuggestion.splitTest.getAttsTestDependsOn()[0])) {
 						//System.err.println("Building alt subtree");
 
 						//System.err.println(getNumInstances() + " Building alt subtree ");
 						CVFDTAdaNode newAlternate = (CVFDTAdaNode)newLearningNode(true, false, this);
 						newAlternate.setTopAlternate(true);
-						this.alternates.put(bestSuggestion, newAlternate); //THIS IS CREATING UNBOUNDED ALTERNATES... containsKey isn't working as imagined
-
+						this.alternates.put(bestSuggestion.splitTest.getAttsTestDependsOn()[0], newAlternate);
+						System.out.println(getNumInstances() + " " + this.getUniqueID() +
+								" bestSuggestion.merit-secondBestSuggestion.merit " + (bestSuggestion.merit-secondBestSuggestion.merit) + " \n " +
+								" secondBestSuggestion.merit-currentSuggestion.merit " + (secondBestSuggestion.merit-currentSuggestion.merit) + " \n " +
+								" bestSuggestion.merit-currentSuggestion.merit " + (bestSuggestion.merit-currentSuggestion.merit) + " \n "
+								+ " bestSuggestion.merit "	+	bestSuggestion.merit + " \n "
+								+ " currentSuggestion.merit " + currentSuggestion.merit +"\n"
+								+ " secondBestSuggestion.merit " + secondBestSuggestion.merit +"\n");
 						// we've just created an alternate, but only if the key is not already contained
 					}
 				}
@@ -657,7 +671,6 @@ public class CVFDT extends VFDTWindow {
 							((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
 							((AdaNode)node).getParent().setChild(parentIndex, newSplit);
 						}
-
 
 					}
 					// manage memory

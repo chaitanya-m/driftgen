@@ -132,10 +132,12 @@ public class CVFDT extends VFDTWindow {
 			}
 			else{
 				nodeTrainingTime++;
+				testPhaseError = 0;
+				inAlternateTestPhase = false;
 			}
-/*
-			if(inAlternateTestPhase){
 
+			if(inAlternateTestPhase){
+/*
 				//increment error
 				int trueClass = (int) inst.classValue();
 
@@ -149,9 +151,9 @@ public class CVFDT extends VFDTWindow {
 				if(!predictedCorrectly){
 					this.testPhaseError++;
 				}
-
+*/
 				// increment error for alternates
-				for (CVFDTAdaNode alt : alternates.values()){
+				/*for (CVFDTAdaNode alt : alternates.values()){
 
 					int altClassPrediction = 0;
 					Node altLeaf = filterInstanceToLeaf(inst, alt.getParent(), parentBranch).node;
@@ -173,10 +175,10 @@ public class CVFDT extends VFDTWindow {
 						alternateError.put(alt, (altCurrentError+1));
 					}
 
-				}
+				}*/
 
 				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
-				if (subtreeTestingTime == testPhaseLength.getValue() - 1){
+				/*if (subtreeTestingTime == testPhaseLength.getValue() - 1){
 
 					if(!this.alternates.isEmpty()){
 						//System.out.println("=======================================");
@@ -245,17 +247,13 @@ public class CVFDT extends VFDTWindow {
 						alternateError.put(alt, 0);
 					}
 
-				}
+				}*/
 			}
 
 			//			// if you're not in a test phase, continue as usual
-			else {*/
+			//else {
 
 				//System.out.println(this.observedClassDistribution);
-
-				inAlternateTestPhase = false;
-
-				testPhaseError = 0;
 
 				assert (this.createdFromInitializedLearningNode = true);
 

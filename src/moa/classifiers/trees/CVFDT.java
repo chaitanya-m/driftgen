@@ -114,7 +114,7 @@ public class CVFDT extends VFDTWindow {
 		@Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
-
+/*
 			// only mainline split nodes are capable of launching a test phase
 			// alternate nodes shouldn't get to the point of actually learning
 			// launch test phase
@@ -192,8 +192,8 @@ public class CVFDT extends VFDTWindow {
 						CVFDTAdaNode bestAlternate = null;
 
 						for (CVFDTAdaNode alt: alternates.values()){
-							System.err.println(getNumInstances() + " " + this.testPhaseError + " " + alternateError.get(alt) + " " +
-						this.observedClassDistribution + " " + ((Node)alt).observedClassDistribution);
+							//System.err.println(getNumInstances() + " " + this.testPhaseError + " " + alternateError.get(alt) + " " +
+						//this.observedClassDistribution + " " + ((Node)alt).observedClassDistribution);
 
 							if(alternateError.get(alt) < lowestError){
 
@@ -249,7 +249,7 @@ public class CVFDT extends VFDTWindow {
 			}
 
 			//			// if you're not in a test phase, continue as usual
-			else {
+			else {*/
 				inAlternateTestPhase = false;
 
 				testPhaseError = 0;
@@ -292,7 +292,7 @@ public class CVFDT extends VFDTWindow {
 				if (child != null) {
 					((CVFDTAdaNode) child).learnFromInstance(inst, ht, this, childBranch, reachedLeafIDs);
 				}
-			}
+			//}
 		}
 
 			@Override

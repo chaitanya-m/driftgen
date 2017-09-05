@@ -23,7 +23,8 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
-
+import moa.classifiers.trees.VFDT.Node;
+import moa.classifiers.trees.VFDTWindow.AdaNode;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
 
@@ -49,6 +50,10 @@ public class CVFDT extends VFDTWindow {
 
 		public long getNodeTime();
 
+		public boolean isTopAlternate();
+
+		public void setTopAlternate(boolean isTopAlt);
+
 		//public int getLowestErrorDiff(); // only top level alternates should get this... REFACTOR!!!
 
 		//public void setLowestErrorDiff(int errorDiff); // only top level alternates should get this... REFACTOR!!!
@@ -64,6 +69,8 @@ public class CVFDT extends VFDTWindow {
 		private int testPhaseError = 0;
 
 		private long nodeTime = 0;
+
+		private boolean isTopAlternate = false;
 
 		private int lowestErrorDiff = Integer.MAX_VALUE; // only top level alternates should get this... REFACTOR!!!
 
@@ -104,22 +111,22 @@ public class CVFDT extends VFDTWindow {
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
 
-			if(this.isAlternate() && this.getMainlineNode()!=null){
-				//this.nodeTime = ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime();
+
+			if(this.isAlternate()){
+				if (((CVFDTAdaNode)this.getMainlineNode()).getNodeTime() %  (testPhaseFrequency.getValue() + testPhaseLength.getValue())  >= testPhaseFrequency.getValue()) {
+					inAlternateTestPhase = true;
+				}
+			}
+
+			if(!this.isAlternate() && !this.alternates.isEmpty()){
+				if (nodeTime %  (testPhaseFrequency.getValue() + testPhaseLength.getValue())  >= testPhaseFrequency.getValue()) {
+					inAlternateTestPhase = true;
+				}
+
 			}
 
 
-			// if you're in a test phase
-			if (nodeTime %  (testPhaseFrequency.getValue() + testPhaseLength.getValue())  >= testPhaseFrequency.getValue()) {
-				//System.out.println("nodeTime " + nodeTime + " testPhaseFrequency " + testPhaseFrequency.getValue() +
-				//		" testPhaseLength " + testPhaseLength.getValue() + " modulus " + nodeTime % testPhaseFrequency.getValue());
-				inAlternateTestPhase = true;
-
-				if(this.isAlternate() && this.getMainlineNode()!=null){
-
-					System.out.println(this.getNodeTime() + " " + (testPhaseFrequency.getValue() + testPhaseLength.getValue()) +
-							" " + (nodeTime %  (testPhaseFrequency.getValue() + testPhaseLength.getValue())));// + " " + ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime());
-				}
+			if(inAlternateTestPhase){
 
 				//increment error
 				int trueClass = (int) inst.classValue();
@@ -162,9 +169,9 @@ public class CVFDT extends VFDTWindow {
 								lowestError = alt.getTestPhaseError();
 								bestAlternate = alt;
 
-//								int currentAltErrorDiff = alt.getTestPhaseError() - this.getTestPhaseError();
-//								if(alt.getLowestErrorDiff() )
-//								alt.setLowestErrorDiff(currentAltErrorDiff < alt.getLowestErrorDiff() ? currentAltErrorDiff : alt.getLowestErrorDiff());
+								//								int currentAltErrorDiff = alt.getTestPhaseError() - this.getTestPhaseError();
+								//								if(alt.getLowestErrorDiff() )
+								//								alt.setLowestErrorDiff(currentAltErrorDiff < alt.getLowestErrorDiff() ? currentAltErrorDiff : alt.getLowestErrorDiff());
 
 							}
 						}
@@ -179,6 +186,7 @@ public class CVFDT extends VFDTWindow {
 							ht.activeLeafNodeCount += bestAlternate.numberLeaves();
 							this.killSubtree((CVFDT)ht);
 							bestAlternate.setAlternateStatusForSubtreeNodes(false);
+							bestAlternate.setTopAlternate(false);
 							bestAlternate.setMainlineNode(null);
 
 							if (!this.isRoot()) {
@@ -266,9 +274,6 @@ public class CVFDT extends VFDTWindow {
 
 				while (iter.hasNext()){
 					AdaNode alt = iter.next();
-					if(alt.getMainlineNode()==null && alt !=null ){
-						System.err.println(getNumInstances() + " alternate should ALWAYS have a mainline " + alt.getClass());
-					}
 
 					alt.learnFromInstance(inst, ht, this.getParent(), parentBranch, reachedLeafIDs);
 				}
@@ -282,6 +287,23 @@ public class CVFDT extends VFDTWindow {
 
 			nodeTime++;
 		}
+
+        @Override
+		public void setAlternateStatusForSubtreeNodes(boolean isAlternate) {
+
+          this.setAlternate(isAlternate);
+
+          for (Node child : this.children) {
+        	  if (child != null) {
+        		  ((AdaNode)child).setAlternateStatusForSubtreeNodes(isAlternate);
+        		  if(isAlternate == false){
+        			  ((CVFDTAdaNode)child).setMainlineNode(null);
+        		  }
+        	}
+          }
+        }
+
+
 
 		// DRY... code duplicated from ActiveLearningNode in VFDT.java
 		public AttributeSplitSuggestion[] getBestSplitSuggestions(
@@ -380,10 +402,8 @@ public class CVFDT extends VFDTWindow {
 
 					//System.err.println(getNumInstances() + " Building alt subtree ");
 					CVFDTAdaNode newAlternate = (CVFDTAdaNode)newLearningNode(true, false, this);
+					newAlternate.setTopAlternate(true);
 					this.alternates.put(bestSuggestion, newAlternate);
-					if(newAlternate.getMainlineNode() != null){
-						//System.out.println(getNumInstances() + " " + newAlternate.getMainlineNode().getClass());// + newAlternate!=null);//.getMainlineNode()==null);
-					}
 
 					// we've just created an alternate, but only if the key is not already contained
 				}
@@ -395,15 +415,25 @@ public class CVFDT extends VFDTWindow {
 			return nodeTime;
 		}
 
-//		@Override
-//		public int getLowestErrorDiff() {
-//			return lowestErrorDiff;
-//		}
-//
-//		@Override
-//		public void setLowestErrorDiff(int errorDiff) {
-//			this.lowestErrorDiff = errorDiff;
-//		}
+		@Override
+		public boolean isTopAlternate() {
+			return isTopAlternate;
+		}
+
+		@Override
+		public void setTopAlternate(boolean isTopAlt) {
+			isTopAlternate = isTopAlt;
+		}
+
+		//		@Override
+		//		public int getLowestErrorDiff() {
+		//			return lowestErrorDiff;
+		//		}
+		//
+		//		@Override
+		//		public void setLowestErrorDiff(int errorDiff) {
+		//			this.lowestErrorDiff = errorDiff;
+		//		}
 	}
 
 	public class CVFDTLearningNode extends AdaLearningNode implements AdaNode, CVFDTAdaNode {
@@ -415,6 +445,8 @@ public class CVFDT extends VFDTWindow {
 		private int testPhaseError = 0;
 
 		private long nodeTime = 0;
+
+		private boolean isTopAlternate = false;
 
 		private int lowestErrorDiff;
 
@@ -436,23 +468,15 @@ public class CVFDT extends VFDTWindow {
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs) {
 
-			// BUG! The mainline node and it's alternates will have separate nodeTimes!
-			// They've GOT to be in the test phase concurrently
 
-			if(this.isAlternate() && this.getMainlineNode()!=null){
+				if(this.isAlternate()){
+					if (((CVFDTAdaNode)this.getMainlineNode()).getNodeTime() %  (testPhaseFrequency.getValue() + testPhaseLength.getValue())  >= testPhaseFrequency.getValue()) {
+						inAlternateTestPhase = true;
 
-				//System.out.println(this.getNodeTime() + " " + ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime());
+					}
+				}
 
-				//this.nodeTime = ((CVFDTAdaNode)this.getMainlineNode()).getNodeTime();
-			}
-
-			// This fixes it!
-
-			if (nodeTime %  (testPhaseFrequency.getValue() + testPhaseLength.getValue())  >= testPhaseFrequency.getValue()) {
-
-				if(this.isAlternate() && this.getMainlineNode()!=null){
-
-					if(
+				else if(
 							(this.getNodeTime() % (testPhaseFrequency.getValue() + testPhaseLength.getValue())) !=
 							(((CVFDTAdaNode)this.getMainlineNode()).getNodeTime() % (testPhaseFrequency.getValue() + testPhaseLength.getValue()))){
 
@@ -466,7 +490,6 @@ public class CVFDT extends VFDTWindow {
 				}
 
 				// THIS ISN'T THE WAY TO CHECK IF YOU'RE IN TEST PHASE OR NOT! THE CODE IS COMPLICATED ENOUGH NOW FOR MORE OO
-				inAlternateTestPhase = true;
 
 				if (inst.classValue() != Utils.maxIndex(this.getClassVotes(inst, ht))){
 					testPhaseError++;
@@ -493,6 +516,16 @@ public class CVFDT extends VFDTWindow {
 		@Override
 		public long getNodeTime() {
 			return nodeTime;
+		}
+
+		@Override
+		public boolean isTopAlternate() {
+			return isTopAlternate;
+		}
+
+		@Override
+		public void setTopAlternate(boolean isTopAlt) {
+			isTopAlternate = isTopAlt;
 		}
 	}
 
@@ -543,117 +576,119 @@ public class CVFDT extends VFDTWindow {
 		numInstances++;
 	}
 
-    @Override
+	@Override
 	protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
-            int parentIndex) {
-        if (!node.observedClassDistributionIsPure()) {
-            SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
-            AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
-            Arrays.sort(bestSplitSuggestions);
-            boolean shouldSplit = false;
-            if (bestSplitSuggestions.length < 2) {
-                shouldSplit = bestSplitSuggestions.length > 0;
-            } else {
-                double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
-                        this.splitConfidenceOption.getValue(), node.getWeightSeen());
+			int parentIndex) {
+		if (!node.observedClassDistributionIsPure()) {
+			SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
+			AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
+			Arrays.sort(bestSplitSuggestions);
+			boolean shouldSplit = false;
+			if (bestSplitSuggestions.length < 2) {
+				shouldSplit = bestSplitSuggestions.length > 0;
+			} else {
+				double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
+						this.splitConfidenceOption.getValue(), node.getWeightSeen());
 
-                AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
-                AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
+				AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+				AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
 
-                // Take out these lines to simulate the original bug in VFDT
-                if(bestSuggestion.merit < 1e-10){
-                	shouldSplit = false;
-                }
+				// Take out these lines to simulate the original bug in VFDT
+				if(bestSuggestion.merit < 1e-10){
+					shouldSplit = false;
+				}
 
-                else if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
-                        || (hoeffdingBound < this.tieThresholdOption.getValue())) {
-                    shouldSplit = true;
-                }
+				else if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
+						|| (hoeffdingBound < this.tieThresholdOption.getValue())) {
+					shouldSplit = true;
+				}
 
-                if ((this.removePoorAttsOption != null)
-                        && this.removePoorAttsOption.isSet()) {
-                    Set<Integer> poorAtts = new HashSet<Integer>();
-                    // scan 1 - add any poor to set
-                    for (int i = 0; i < bestSplitSuggestions.length; i++) {
-                        if (bestSplitSuggestions[i].splitTest != null) {
-                            int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
-                            if (splitAtts.length == 1) {
-                                if (bestSuggestion.merit
-                                        - bestSplitSuggestions[i].merit > hoeffdingBound) {
-                                    poorAtts.add(new Integer(splitAtts[0]));
-                                }
-                            }
-                        }
-                    }
-                    // scan 2 - remove good ones from set
-                    for (int i = 0; i < bestSplitSuggestions.length; i++) {
-                        if (bestSplitSuggestions[i].splitTest != null) {
-                            int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
-                            if (splitAtts.length == 1) {
-                                if (bestSuggestion.merit
-                                        - bestSplitSuggestions[i].merit < hoeffdingBound) {
-                                    poorAtts.remove(new Integer(splitAtts[0]));
-                                }
-                            }
-                        }
-                    }
-                    for (int poorAtt : poorAtts) {
-                        node.disableAttribute(poorAtt);
-                    }
-                }
-            }
+				if ((this.removePoorAttsOption != null)
+						&& this.removePoorAttsOption.isSet()) {
+					Set<Integer> poorAtts = new HashSet<Integer>();
+					// scan 1 - add any poor to set
+					for (int i = 0; i < bestSplitSuggestions.length; i++) {
+						if (bestSplitSuggestions[i].splitTest != null) {
+							int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
+							if (splitAtts.length == 1) {
+								if (bestSuggestion.merit
+										- bestSplitSuggestions[i].merit > hoeffdingBound) {
+									poorAtts.add(new Integer(splitAtts[0]));
+								}
+							}
+						}
+					}
+					// scan 2 - remove good ones from set
+					for (int i = 0; i < bestSplitSuggestions.length; i++) {
+						if (bestSplitSuggestions[i].splitTest != null) {
+							int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
+							if (splitAtts.length == 1) {
+								if (bestSuggestion.merit
+										- bestSplitSuggestions[i].merit < hoeffdingBound) {
+									poorAtts.remove(new Integer(splitAtts[0]));
+								}
+							}
+						}
+					}
+					for (int poorAtt : poorAtts) {
+						node.disableAttribute(poorAtt);
+					}
+				}
+			}
 
-            if (shouldSplit) {
-                AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
-                if (splitDecision.splitTest == null) {
-                    // preprune - null wins
-                    //deactivateLearningNode(node, ((AdaNode)node).getParent(), parentIndex);
-                } else {
-                    CVFDTSplitNode newSplit = (CVFDTSplitNode)newSplitNode(splitDecision.splitTest,
-                            node.getObservedClassDistribution(),splitDecision.numSplits(), ((AdaNode)(node)).isAlternate());
+			if (shouldSplit) {
+				AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+				if (splitDecision.splitTest == null) {
+					// preprune - null wins
+					//deactivateLearningNode(node, ((AdaNode)node).getParent(), parentIndex);
+				} else {
+					CVFDTSplitNode newSplit = (CVFDTSplitNode)newSplitNode(splitDecision.splitTest,
+							node.getObservedClassDistribution(),splitDecision.numSplits(), ((AdaNode)(node)).isAlternate());
 
-                    ((AdaNode)newSplit).setUniqueID(((AdaNode)node).getUniqueID());
-                    //Ensure that the split node's ID is the same as it's ID as a leaf
+					((AdaNode)newSplit).setUniqueID(((AdaNode)node).getUniqueID());
+					//Ensure that the split node's ID is the same as it's ID as a leaf
 
-                    // Copy statistics from the learning node being replaced
-                    newSplit.createdFromInitializedLearningNode = node.isInitialized;
-                    newSplit.observedClassDistribution = node.observedClassDistribution; // copy the class distribution
-                    newSplit.attributeObservers = node.attributeObservers; // copy the attribute observers
-                    newSplit.setMainlineNode(((AdaNode)node).getMainlineNode()); //  Copy the mainline attachment, if any
-                    newSplit.nodeTime = ((CVFDTAdaNode)node).getNodeTime();
+					// Copy statistics from the learning node being replaced
+					newSplit.createdFromInitializedLearningNode = node.isInitialized;
+					newSplit.observedClassDistribution = node.observedClassDistribution; // copy the class distribution
+					newSplit.attributeObservers = node.attributeObservers; // copy the attribute observers
+					newSplit.setMainlineNode(((AdaNode)node).getMainlineNode()); //  Copy the mainline attachment, if any
+					newSplit.nodeTime = ((CVFDTAdaNode)node).getNodeTime();
 
-                    for (int i = 0; i < splitDecision.numSplits(); i++) {
-                        Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i),
-                        		((AdaNode)newSplit).isAlternate(), false, ((AdaNode)node).getMainlineNode());
-                        ((AdaNode)newChild).setParent(newSplit);
-                        newSplit.setChild(i, newChild);
-                    }
-                    this.activeLeafNodeCount--;
-                    this.decisionNodeCount++;
-                    this.activeLeafNodeCount += splitDecision.numSplits();
+					for (int i = 0; i < splitDecision.numSplits(); i++) {
+						Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i),
+								((AdaNode)newSplit).isAlternate(), false, ((AdaNode)node).getMainlineNode());
+						((AdaNode)newChild).setParent(newSplit);
+						((CVFDTAdaNode)newChild).setMainlineNode(newSplit.getMainlineNode());// All children are given a mainline node for test phase determination.
 
-                    if (((AdaNode)node).isRoot()) {
-                    	((AdaNode)newSplit).setRoot(true);
-                    	((AdaNode)newSplit).setParent(null);
-                        this.treeRoot = newSplit;
-                    }
+						newSplit.setChild(i, newChild);
+					}
+					this.activeLeafNodeCount--;
+					this.decisionNodeCount++;
+					this.activeLeafNodeCount += splitDecision.numSplits();
 
-                    else if(((AdaNode)node).getMainlineNode() != null) { // its alternate and is attached directly to a mainline node, must have a mainline split parent
-                    	((AdaNode)newSplit).setParent(((AdaNode)node).getMainlineNode().getParent());
-                    }
+					if (((AdaNode)node).isRoot()) {
+						((AdaNode)newSplit).setRoot(true);
+						((AdaNode)newSplit).setParent(null);
+						this.treeRoot = newSplit;
+					}
 
-                    else { //if the node is neither root nor an alternate attached directly to mainline, it must have a non-null split parent
-                    	((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
-                    	((AdaNode)node).getParent().setChild(parentIndex, newSplit);
-                    }
+					else if(((AdaNode)node).getMainlineNode() != null) { // its alternate and is attached directly to a mainline node, must have a mainline split parent
+						((AdaNode)newSplit).setParent(((AdaNode)node).getMainlineNode().getParent());
+					}
+
+					else { //if the node is neither root nor an alternate attached directly to mainline, it must have a non-null split parent
+						((AdaNode)newSplit).setParent(((AdaNode)node).getParent());
+						((AdaNode)node).getParent().setChild(parentIndex, newSplit);
+					}
 
 
-                }
-                // manage memory
-                enforceTrackerLimit();
-            }
-        }
-    }
+				}
+				// manage memory
+				enforceTrackerLimit();
+			}
+		}
+	}
 
 
 

@@ -119,7 +119,7 @@ public class CVFDT extends VFDTWindow {
 			// alternate nodes shouldn't get to the point of actually learning
 			// launch test phase
 			if(nodeTrainingTime % testPhaseFrequency.getValue() == 0 && !this.alternates.isEmpty() && !this.isAlternate()){
-				//System.err.println(subtreeTestingTime + " In alternate test phase");
+				System.err.println(subtreeTestingTime + " In alternate test phase " + this.alternates.size());
 				inAlternateTestPhase = true;
 			} // this check will remain the same for the length of the test phase unless the only remaining alternate is pruned
 
@@ -203,9 +203,9 @@ public class CVFDT extends VFDTWindow {
 								lowestError = alternateError.get(alt);
 								bestAlternate = alt;
 
-								//								int currentAltErrorDiff = alt.getTestPhaseError() - this.getTestPhaseError();
-								//								if(alt.getLowestErrorDiff() )
-								//								alt.setLowestErrorDiff(currentAltErrorDiff < alt.getLowestErrorDiff() ? currentAltErrorDiff : alt.getLowestErrorDiff());
+								//	int currentAltErrorDiff = alt.getTestPhaseError() - this.getTestPhaseError();
+								//	if(alt.getLowestErrorDiff() )
+								//	alt.setLowestErrorDiff(currentAltErrorDiff < alt.getLowestErrorDiff() ? currentAltErrorDiff : alt.getLowestErrorDiff());
 
 							}
 						}
@@ -413,7 +413,7 @@ public class CVFDT extends VFDTWindow {
 						//System.err.println(getNumInstances() + " Building alt subtree ");
 						CVFDTAdaNode newAlternate = (CVFDTAdaNode)newLearningNode(true, false, this);
 						newAlternate.setTopAlternate(true);
-						this.alternates.put(bestSuggestion, newAlternate);
+						this.alternates.put(bestSuggestion, newAlternate); //THIS IS CREATING UNBOUNDED ALTERNATES... containsKey isn't working as imagined
 
 						// we've just created an alternate, but only if the key is not already contained
 					}

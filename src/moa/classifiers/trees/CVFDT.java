@@ -114,7 +114,7 @@ public class CVFDT extends VFDTWindow {
 		@Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
-/*
+
 			// only mainline split nodes are capable of launching a test phase
 			// alternate nodes shouldn't get to the point of actually learning
 			// launch test phase
@@ -133,7 +133,7 @@ public class CVFDT extends VFDTWindow {
 			else{
 				nodeTrainingTime++;
 			}
-
+/*
 			if(inAlternateTestPhase){
 
 				//increment error
@@ -250,6 +250,9 @@ public class CVFDT extends VFDTWindow {
 
 			//			// if you're not in a test phase, continue as usual
 			else {*/
+
+				//System.out.println(this.observedClassDistribution);
+
 				inAlternateTestPhase = false;
 
 				testPhaseError = 0;
@@ -267,8 +270,6 @@ public class CVFDT extends VFDTWindow {
 					}
 					obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
 				}
-
-
 
 				// DRY... for now this code is repeated...
 				// Counts have been updated for this node (make certain of this...)
@@ -643,7 +644,7 @@ public class CVFDT extends VFDTWindow {
 						newSplit.attributeObservers = node.attributeObservers; // copy the attribute observers
 						newSplit.setMainlineNode(((AdaNode)node).getMainlineNode()); //  Copy the mainline attachment, if any
 						newSplit.setTopAlternate(((CVFDTAdaNode)node).isTopAlternate());
-						//newSplit.nodeTrainingTime = ((CVFDTAdaNode)node).getNodeTrainingTime();
+						newSplit.nodeTrainingTime = ((CVFDTAdaNode)node).getNodeTrainingTime();
 
 						for (int i = 0; i < splitDecision.numSplits(); i++) {
 							Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i),

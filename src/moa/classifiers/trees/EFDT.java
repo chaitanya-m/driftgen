@@ -5,6 +5,7 @@ import java.util.Arrays;
 import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.CVFDT.CVFDTAdaNode;
 
 public class EFDT extends CVFDT{
 
@@ -68,11 +69,13 @@ public class EFDT extends CVFDT{
 			else if (deltaG > hoeffdingBound
 					|| hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2) {
 				// if it doesn't already have an alternate subtree, build one
-				if(!alternates.containsKey(bestSuggestion)) { // the hashcodes should match... this should work
-					alternates.put(bestSuggestion, (CVFDTAdaNode)newLearningNode(true, false, this));
+				if(!alternates.containsKey(bestSuggestion.splitTest.getAttsTestDependsOn()[0])) { // the hashcodes should match... this should work
+					CVFDTAdaNode newAlternate = (CVFDTAdaNode)newLearningNode(true, false, this);
+					newAlternate.setTopAlternate(true);
+					alternates.put(bestSuggestion.splitTest.getAttsTestDependsOn()[0], newAlternate);
 					System.out.println(getNumInstances() +
 							" secondBestSuggestion.merit-currentSuggestion.merit " + (secondBestSuggestion.merit-currentSuggestion.merit) + " \n " +
-							"bestSuggestion.merit-currentSuggestion.merit " + (bestSuggestion.merit-currentSuggestion.merit) + " \n "
+							" bestSuggestion.merit-currentSuggestion.merit " + (bestSuggestion.merit-currentSuggestion.merit) + " \n "
 							+ " bestSuggestion.merit "	+	bestSuggestion.merit + " \n "
 							+ " currentSuggestion.merit " + currentSuggestion.merit +"\n"
 							+ " secondBestSuggestion.merit " + secondBestSuggestion.merit +"\n");

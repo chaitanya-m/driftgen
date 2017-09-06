@@ -182,6 +182,13 @@ public class CVFDT extends VFDTWindow {
 					if (altLeaf != null) {
 						altClassPrediction = Utils.maxIndex(altLeaf.getClassVotes(inst, ht));
 					} // what happens if leaf is null?
+					else{
+						// This is actually what VFDT does!!! Why?
+			            if (altLeaf == null) {
+			                altLeaf = altFoundNode.parent;
+			            }
+					}
+
 					boolean altPredictedCorrectly = (trueClass == altClassPrediction);
 
 					if (alternateError == null){

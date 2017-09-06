@@ -687,6 +687,36 @@ public class CVFDT extends VFDTWindow {
 			}
 		}
 
+		@Override
+	    protected void deactivateLearningNode(ActiveLearningNode toDeactivate,
+	            SplitNode parent, int parentBranch) {
+	        Node newLeaf = new InactiveLearningNode(toDeactivate.getObservedClassDistribution());
+	        if (((CVFDTAdaNode)toDeactivate).isRoot()) {
+	            this.treeRoot = newLeaf;
+	        } else if (parent == null && ((CVFDTAdaNode)toDeactivate).isAlternate()){
+	        	// Do nothing- don't deactivate alternate top nodes here!!!
+	        }
+	        else{
+	            parent.setChild(parentBranch, newLeaf);
+	        }
+	        this.activeLeafNodeCount--;
+	        this.inactiveLeafNodeCount++;
+	    }
+
+		@Override
+	    protected void activateLearningNode(InactiveLearningNode toActivate,
+	            SplitNode parent, int parentBranch) {
+	        Node newLeaf = newLearningNode(toActivate.getObservedClassDistribution());
+	        if (((CVFDTAdaNode)toActivate).isRoot()) {
+	        	this.treeRoot = newLeaf;
+	        } else {
+	            parent.setChild(parentBranch, newLeaf);
+	        }
+	        this.activeLeafNodeCount++;
+	        this.inactiveLeafNodeCount--;
+	    }
+
+
 
 
 		@Override

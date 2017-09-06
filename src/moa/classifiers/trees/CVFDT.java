@@ -128,13 +128,20 @@ public class CVFDT extends VFDTWindow {
 			}
 
 			if(inAlternateTestPhase){
-				//System.out.println(subtreeTestingTime);
+//				System.out.println(subtreeTestingTime);
 
 				subtreeTestingTime++;
 			}
 			else{
 				nodeTrainingTime++;
 				testPhaseError = 0;
+				if(alternateError != null){
+
+					alternateError = null;
+//					for (CVFDTAdaNode alt : alternateError.keySet()){
+//						alternateError.put(alt, 0);
+//					}
+				}
 			}
 
 			if(inAlternateTestPhase){
@@ -174,30 +181,28 @@ public class CVFDT extends VFDTWindow {
 					if (!altPredictedCorrectly && alt.isAlternate() && ! this.isAlternate()){
 						int altCurrentError = alternateError.get(alt);
 						alternateError.put(alt, (altCurrentError+1));
-						System.out.println(getNumInstances() + " " + testPhaseError+ " " + altCurrentError + this.observedClassDistribution + ((Node)alt).observedClassDistribution);
+						System.out.println(getNumInstances() + " " + testPhaseError+ " " + altCurrentError + " "+ this.observedClassDistribution +
+								" "+ ((Node)alt).observedClassDistribution);
 					}
 
 				}
 
 				// if you're at the end of the phase and not an alternate but have alternates, check if a replacement is required and replace
-				/*if (subtreeTestingTime == testPhaseLength.getValue() - 1){
-
-					if(!this.alternates.isEmpty()){
-						//System.out.println("=======================================");
-					}
+				if (subtreeTestingTime == testPhaseLength.getValue() - 1){
 
 					if(!this.alternates.isEmpty()){
 
+//						System.out.println("Node " + this.getUniqueID() + " has alternates" );
+//						System.out.println("Picking a replacement");
+//						pick the option with lowest test phase error... and replace...
 
-						//System.err.println("Picking a replacement");
-						//pick the option with lowest test phase error... and replace...
 						int lowestError = this.testPhaseError;
 
 						CVFDTAdaNode bestAlternate = null;
 
 						for (CVFDTAdaNode alt: alternates.values()){
 							//System.err.println(getNumInstances() + " " + this.testPhaseError + " " + alternateError.get(alt) + " " +
-						//this.observedClassDistribution + " " + ((Node)alt).observedClassDistribution);
+							//this.observedClassDistribution + " " + ((Node)alt).observedClassDistribution);
 
 							if(alternateError.get(alt) < lowestError){
 
@@ -242,14 +247,7 @@ public class CVFDT extends VFDTWindow {
 						}
 
 					}
-
-					// reset error
-					this.testPhaseError = 0;
-					for (CVFDTAdaNode alt : alternateError.keySet()){
-						alternateError.put(alt, 0);
-					}
-
-				}*/
+				}
 			}
 
 			//			// if you're not in a test phase, continue as usual
@@ -310,8 +308,6 @@ public class CVFDT extends VFDTWindow {
 					}
 				}
 			}
-
-
 
 			// DRY... code duplicated from ActiveLearningNode in VFDT.java
 			public AttributeSplitSuggestion[] getBestSplitSuggestions(
@@ -417,19 +413,21 @@ public class CVFDT extends VFDTWindow {
 
 					// if it doesn't already have an alternate subtree, build one
 					if(!alternates.containsKey(bestSuggestion.splitTest.getAttsTestDependsOn()[0])) {
-						//System.err.println("Building alt subtree");
 
-						//System.err.println(getNumInstances() + " Building alt subtree ");
+//						System.err.println(getNumInstances() + " Building alt subtree now for node " + this.getUniqueID());
+
 						CVFDTAdaNode newAlternate = (CVFDTAdaNode)newLearningNode(true, false, this);
 						newAlternate.setTopAlternate(true);
 						this.alternates.put(bestSuggestion.splitTest.getAttsTestDependsOn()[0], newAlternate);
-						/*System.out.println(getNumInstances() + " " + this.getUniqueID() +
-								" bestSuggestion.merit-secondBestSuggestion.merit " + (bestSuggestion.merit-secondBestSuggestion.merit) + " \n " +
-								" secondBestSuggestion.merit-currentSuggestion.merit " + (secondBestSuggestion.merit-currentSuggestion.merit) + " \n " +
-								" bestSuggestion.merit-currentSuggestion.merit " + (bestSuggestion.merit-currentSuggestion.merit) + " \n "
-								+ " bestSuggestion.merit "	+	bestSuggestion.merit + " \n "
-								+ " currentSuggestion.merit " + currentSuggestion.merit +"\n"
-								+ " secondBestSuggestion.merit " + secondBestSuggestion.merit +"\n");*/
+
+//						System.out.println(getNumInstances() + " " + this.getUniqueID() +
+//								" bestSuggestion.merit-secondBestSuggestion.merit " + (bestSuggestion.merit-secondBestSuggestion.merit) + " \n " +
+//								" secondBestSuggestion.merit-currentSuggestion.merit " + (secondBestSuggestion.merit-currentSuggestion.merit) + " \n " +
+//								" bestSuggestion.merit-currentSuggestion.merit " + (bestSuggestion.merit-currentSuggestion.merit) + " \n "
+//								+ " bestSuggestion.merit "	+	bestSuggestion.merit + " \n "
+//								+ " currentSuggestion.merit " + currentSuggestion.merit +"\n"
+//								+ " secondBestSuggestion.merit " + secondBestSuggestion.merit +"\n");
+
 						// we've just created an alternate, but only if the key is not already contained
 					}
 				}

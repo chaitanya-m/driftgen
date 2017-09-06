@@ -178,11 +178,12 @@ public class CVFDT extends VFDTWindow {
 						alternateError.put(alt, 0);
 					}
 
-					if (!altPredictedCorrectly && alt.isAlternate() && ! this.isAlternate()){
+					if (altPredictedCorrectly && alt.isAlternate() && ! this.isAlternate()){
 						int altCurrentError = alternateError.get(alt);
 						alternateError.put(alt, (altCurrentError+1));
-						System.out.println(getNumInstances() + " " + testPhaseError+ " " + altCurrentError + " "+ this.observedClassDistribution +
-								" "+ ((Node)alt).observedClassDistribution);
+						System.out.println(getNumInstances() + " " + testPhaseError+ " " + altCurrentError + " "+  ClassPrediction + " " +
+								altClassPrediction + " " + this.observedClassDistribution +
+								" "+ ((Node)alt).observedClassDistribution + " [True Class: " + trueClass+ " ] " + ((CVFDTAdaNode)leaf).getUniqueID() + " " + ((CVFDTAdaNode)altLeaf).getUniqueID());
 					}
 
 				}
@@ -401,11 +402,13 @@ public class CVFDT extends VFDTWindow {
 
 				double tieThreshold = CVFDT.this.tieThresholdOption.getValue();
 				double deltaG = bestSuggestion.merit - secondBestSuggestion.merit;
+				//double deltaG = bestSuggestion.merit - currentSuggestion.merit;
 
 				if(currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0])
 				{
 					// do nothing, because the current split is the best split
 					// this is different but equivalent to algorithm listing...
+					// ensures that the current split doesn't get added on as an alternate!
 				}
 
 				else if (deltaG > hoeffdingBound

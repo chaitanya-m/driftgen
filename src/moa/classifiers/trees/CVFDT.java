@@ -150,7 +150,7 @@ public class CVFDT extends VFDTWindow {
 				int trueClass = (int) inst.classValue();
 
 				int ClassPrediction = 0;
-				Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
+				Node leaf = this.filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
 				if (leaf != null) {
 					ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
 				} // what happens if leaf is null?
@@ -164,7 +164,7 @@ public class CVFDT extends VFDTWindow {
 				for (CVFDTAdaNode alt : alternates.values()){
 
 					int altClassPrediction = 0;
-					Node altLeaf = filterInstanceToLeaf(inst, alt.getParent(), parentBranch).node;
+					Node altLeaf = ((Node)alt).filterInstanceToLeaf(inst, alt.getParent(), parentBranch).node;
 					if (altLeaf != null) {
 						altClassPrediction = Utils.maxIndex(altLeaf.getClassVotes(inst, ht));
 					} // what happens if leaf is null?
@@ -178,12 +178,18 @@ public class CVFDT extends VFDTWindow {
 						alternateError.put(alt, 0);
 					}
 
-					if (altPredictedCorrectly && alt.isAlternate() && ! this.isAlternate()){
+					if (!altPredictedCorrectly && alt.isAlternate() && !this.isAlternate()){
 						int altCurrentError = alternateError.get(alt);
 						alternateError.put(alt, (altCurrentError+1));
-						System.out.println(getNumInstances() + " " + testPhaseError+ " " + altCurrentError + " "+  ClassPrediction + " " +
-								altClassPrediction + " " + this.observedClassDistribution +
-								" "+ ((Node)alt).observedClassDistribution + " [True Class: " + trueClass+ " ] " + ((CVFDTAdaNode)leaf).getUniqueID() + " " + ((CVFDTAdaNode)altLeaf).getUniqueID());
+						System.out.println(getNumInstances() +
+								" " + testPhaseError+ " " + altCurrentError +
+								" " + ClassPrediction + " " + altClassPrediction +
+								" " + leaf.observedClassDistribution + " "+ altLeaf.observedClassDistribution +
+								" [True Class: " + trueClass+ " ] " + ((CVFDTAdaNode)leaf).getUniqueID() + " " + ((CVFDTAdaNode)altLeaf).getUniqueID()
+								+ " " + ((CVFDTAdaNode)leaf).isAlternate() + " " + ((CVFDTAdaNode)altLeaf).isAlternate()
+								+ " " + this.getUniqueID() + " " + alt.getUniqueID()
+								//+ " " + this.getChild(instanceChildIndex(inst)).observedClassDistribution + " " + ((SplitNode)(alt)).getChild(instanceChildIndex(inst)).observedClassDistribution
+								);
 					}
 
 				}

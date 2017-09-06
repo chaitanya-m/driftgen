@@ -23,7 +23,10 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.VFDT.ActiveLearningNode;
+import moa.classifiers.trees.VFDT.InactiveLearningNode;
 import moa.classifiers.trees.VFDT.Node;
+import moa.classifiers.trees.VFDT.SplitNode;
 import moa.classifiers.trees.VFDTWindow.AdaNode;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
@@ -150,10 +153,20 @@ public class CVFDT extends VFDTWindow {
 				int trueClass = (int) inst.classValue();
 
 				int ClassPrediction = 0;
-				Node leaf = this.filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
+				FoundNode foundNode = this.filterInstanceToLeaf(inst, this.getParent(), parentBranch);
+				Node leaf = foundNode.node;
+
 				if (leaf != null) {
 					ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
 				} // what happens if leaf is null?
+				else{
+					// This is actually what VFDT does!!! Why?
+		            if (leaf == null) {
+		                leaf = foundNode.parent;
+		            }
+				}
+
+
 				boolean predictedCorrectly = (trueClass == ClassPrediction);
 
 				if(!predictedCorrectly){
@@ -164,7 +177,8 @@ public class CVFDT extends VFDTWindow {
 				for (CVFDTAdaNode alt : alternates.values()){
 
 					int altClassPrediction = 0;
-					Node altLeaf = ((Node)alt).filterInstanceToLeaf(inst, alt.getParent(), parentBranch).node;
+					FoundNode altFoundNode = ((Node)alt).filterInstanceToLeaf(inst, alt.getParent(), parentBranch);
+					Node altLeaf = altFoundNode.node;
 					if (altLeaf != null) {
 						altClassPrediction = Utils.maxIndex(altLeaf.getClassVotes(inst, ht));
 					} // what happens if leaf is null?
@@ -181,15 +195,15 @@ public class CVFDT extends VFDTWindow {
 					if (!altPredictedCorrectly && alt.isAlternate() && !this.isAlternate()){
 						int altCurrentError = alternateError.get(alt);
 						alternateError.put(alt, (altCurrentError+1));
-						System.out.println(getNumInstances() +
-								" " + testPhaseError+ " " + altCurrentError +
-								" " + ClassPrediction + " " + altClassPrediction +
-								" " + leaf.observedClassDistribution + " "+ altLeaf.observedClassDistribution +
-								" [True Class: " + trueClass+ " ] " + ((CVFDTAdaNode)leaf).getUniqueID() + " " + ((CVFDTAdaNode)altLeaf).getUniqueID()
-								+ " " + ((CVFDTAdaNode)leaf).isAlternate() + " " + ((CVFDTAdaNode)altLeaf).isAlternate()
-								+ " " + this.getUniqueID() + " " + alt.getUniqueID()
-								//+ " " + this.getChild(instanceChildIndex(inst)).observedClassDistribution + " " + ((SplitNode)(alt)).getChild(instanceChildIndex(inst)).observedClassDistribution
-								);
+//						System.out.println(getNumInstances() +
+//								" " + testPhaseError+ " " + altCurrentError +
+//								" " + ClassPrediction + " " + altClassPrediction +
+//								" " + leaf.observedClassDistribution + " " + altLeaf.observedClassDistribution +
+//								" [True Class: " + trueClass+ " ] " + ((CVFDTAdaNode)leaf).getUniqueID() + " " + ((CVFDTAdaNode)altLeaf).getUniqueID()
+//								+ " " + ((CVFDTAdaNode)leaf).isAlternate() + " " + ((CVFDTAdaNode)altLeaf).isAlternate()
+//								+ " " + this.getUniqueID() + " " + alt.getUniqueID()
+//								//+ " " + this.getChild(instanceChildIndex(inst)).observedClassDistribution + " " + ((SplitNode)(alt)).getChild(instanceChildIndex(inst)).observedClassDistribution
+//								);
 					}
 
 				}
@@ -649,7 +663,7 @@ public class CVFDT extends VFDTWindow {
 						newSplit.createdFromInitializedLearningNode = node.isInitialized;
 						newSplit.observedClassDistribution = node.observedClassDistribution; // copy the class distribution
 						newSplit.attributeObservers = node.attributeObservers; // copy the attribute observers
-						newSplit.setMainlineNode(((AdaNode)node).getMainlineNode()); //  Copy the mainline attachment, if any
+						newSplit.setMainlineNode(((AdaNode)node).getMainlineNode()); // Copy the mainline attachment, if any
 						newSplit.setTopAlternate(((CVFDTAdaNode)node).isTopAlternate());
 						newSplit.nodeTrainingTime = ((CVFDTAdaNode)node).getNodeTrainingTime();
 

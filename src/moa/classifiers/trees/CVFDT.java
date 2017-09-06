@@ -529,15 +529,6 @@ public class CVFDT extends VFDTWindow {
 				isTopAlternate = isTopAlt;
 			}
 
-			//		@Override
-			//		public int getLowestErrorDiff() {
-			//			return lowestErrorDiff;
-			//		}
-			//
-			//		@Override
-			//		public void setLowestErrorDiff(int errorDiff) {
-			//			this.lowestErrorDiff = errorDiff;
-			//		}
 		}
 
 		public class CVFDTLearningNode extends AdaLearningNode implements AdaNode, CVFDTAdaNode {

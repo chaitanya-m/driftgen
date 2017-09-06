@@ -23,11 +23,6 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
-import moa.classifiers.trees.VFDT.ActiveLearningNode;
-import moa.classifiers.trees.VFDT.InactiveLearningNode;
-import moa.classifiers.trees.VFDT.Node;
-import moa.classifiers.trees.VFDT.SplitNode;
-import moa.classifiers.trees.VFDTWindow.AdaNode;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
 
@@ -57,11 +52,36 @@ public class CVFDT extends VFDTWindow {
 
 		public void setTopAlternate(boolean isTopAlt);
 
-		//public int getLowestErrorDiff(); // only top level alternates should get this... REFACTOR!!!
+	}
 
-		//public void setLowestErrorDiff(int errorDiff); // only top level alternates should get this... REFACTOR!!!
+/*Too much cruft to use delegation...
+ *
+ * 	public interface CVFDTAltRootAdaNode extends CVFDTAdaNode{
+
+		public int getLowestErrorDiff(); // only top level alternates should get this...
+
+		public void setLowestErrorDiff(int errorDiff); // only top level alternates should get this...
 
 	}
+
+	public class CVFDTSplitAltRootAdaNode implements CVFDTAltRootAdaNode{
+
+		CVFDTAdaNode altRootAdaNode;
+
+		@Override
+		public int getLowestErrorDiff() {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public void setLowestErrorDiff(int errorDiff) {
+			// TODO Auto-generated method stub
+
+		}
+
+	}
+*/
 
 	public class CVFDTSplitNode extends AdaSplitNode implements AdaNode, CVFDTAdaNode {
 
@@ -89,6 +109,9 @@ public class CVFDT extends VFDTWindow {
 
 		// maintain a mapping from alternate trees to error
 		protected Map<CVFDTAdaNode, Integer> alternateError;
+
+		// maintain a mapping from alternate trees to lowest ever error diff
+		protected Map<CVFDTAdaNode, Integer> lowestAlternateErrorDiff;
 
 		// static nested classes don't have a reference to the containing object while nonstatic nested classes do
 		// so changing over to a nonstatic nested class
@@ -139,7 +162,6 @@ public class CVFDT extends VFDTWindow {
 				nodeTrainingTime++;
 				testPhaseError = 0;
 				if(alternateError != null){
-
 					alternateError = null;
 //					for (CVFDTAdaNode alt : alternateError.keySet()){
 //						alternateError.put(alt, 0);
@@ -183,7 +205,7 @@ public class CVFDT extends VFDTWindow {
 						altClassPrediction = Utils.maxIndex(altLeaf.getClassVotes(inst, ht));
 					} // what happens if leaf is null?
 					else{
-						// This is actually what VFDT does!!! Why?
+						// This is actually what VFDT does! Why?
 			            if (altLeaf == null) {
 			                altLeaf = altFoundNode.parent;
 			            }
@@ -201,7 +223,7 @@ public class CVFDT extends VFDTWindow {
 
 					if (!altPredictedCorrectly && alt.isAlternate() && !this.isAlternate()){
 						int altCurrentError = alternateError.get(alt);
-						alternateError.put(alt, (altCurrentError+1));
+						alternateError.put(alt, (altCurrentError+1)); // don't do this every time! accumulate the error for efficiency... or is this already cheap enough?
 //						System.out.println(getNumInstances() +
 //								" " + testPhaseError+ " " + altCurrentError +
 //								" " + ClassPrediction + " " + altClassPrediction +
@@ -224,7 +246,7 @@ public class CVFDT extends VFDTWindow {
 //						System.out.println("Picking a replacement");
 //						pick the option with lowest test phase error... and replace...
 
-						int lowestError = this.testPhaseError;
+						int lowestAlternateErrorThisTestPhase = this.testPhaseError;
 
 						CVFDTAdaNode bestAlternate = null;
 
@@ -232,9 +254,9 @@ public class CVFDT extends VFDTWindow {
 							//System.err.println(getNumInstances() + " " + this.testPhaseError + " " + alternateError.get(alt) + " " +
 							//this.observedClassDistribution + " " + ((Node)alt).observedClassDistribution);
 
-							if(alternateError.get(alt) < lowestError){
+							if(alternateError.get(alt) < lowestAlternateErrorThisTestPhase){
 
-								lowestError = alternateError.get(alt);
+								lowestAlternateErrorThisTestPhase = alternateError.get(alt);
 								bestAlternate = alt;
 
 								//	int currentAltErrorDiff = alt.getTestPhaseError() - this.getTestPhaseError();
@@ -493,15 +515,11 @@ public class CVFDT extends VFDTWindow {
 
 			private static final long serialVersionUID = -7477758640913802578L;
 
-			private boolean inAlternateTestPhase = false;
-
 			private int testPhaseError = 0;
 
 			private int nodeTrainingTime = 0;
 
 			private boolean isTopAlternate = false;
-
-			private int lowestErrorDiff;
 
 			@Override
 			public int getTestPhaseError() {

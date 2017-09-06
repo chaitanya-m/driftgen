@@ -111,7 +111,7 @@ public class CVFDT extends VFDTWindow {
 		protected Map<CVFDTAdaNode, Integer> alternateError;
 
 		// maintain a mapping from alternate trees to lowest ever error diff
-		protected Map<CVFDTAdaNode, Integer> lowestAlternateErrorDiff;
+		protected Map<CVFDTAdaNode, Double> lowestAltAccuracyDiff = new HashMap<CVFDTAdaNode, Double>();
 
 		// static nested classes don't have a reference to the containing object while nonstatic nested classes do
 		// so changing over to a nonstatic nested class
@@ -250,7 +250,40 @@ public class CVFDT extends VFDTWindow {
 
 						CVFDTAdaNode bestAlternate = null;
 
+
+						// the paper tells us to prune alternates that have an accuracy diff no greater than 1% of the lowest diff ever recorded
+
+						Iterator<Map.Entry<Integer,CVFDT.CVFDTAdaNode>> iter =  alternates.entrySet().iterator();
+						while(iter.hasNext()){
+							Map.Entry<Integer,CVFDT.CVFDTAdaNode> mapEntry = iter.next();
+							CVFDTAdaNode altTopNode = alternates.get(mapEntry.getKey());
+
+							double currentAltAccuracyDiff = // don't use getTestPhaseError for anything other than mainline nodes! Refactor when possible.
+									(double)((testPhaseLength.getValue() - this.getTestPhaseError())
+											-(testPhaseLength.getValue() - alternateError.get(altTopNode)))
+									/(double)(testPhaseLength.getValue());
+
+							if(!lowestAltAccuracyDiff.containsKey(altTopNode)){
+								lowestAltAccuracyDiff.put(altTopNode, currentAltAccuracyDiff);
+							}
+							else{
+								lowestAltAccuracyDiff.put(altTopNode,
+										currentAltAccuracyDiff < lowestAltAccuracyDiff.get(altTopNode) ? currentAltAccuracyDiff : lowestAltAccuracyDiff.get(altTopNode));
+							}
+
+							if(currentAltAccuracyDiff > (0.01 + lowestAltAccuracyDiff.get(altTopNode))){
+								alternateError.put(altTopNode, null); // defuses this alternates' error
+								lowestAltAccuracyDiff.put(altTopNode, null); // defuses this alternates' accuracy diff
+								iter.remove(); // Remove the key-value pair from alternates! (Isn't it okay to just remove the value instead?)
+
+							}
+
+						}
+						//Don't iterate directly over alternateError or lowestAltAccuracyDiff...
+
+						// pick the best alternate
 						for (CVFDTAdaNode alt: alternates.values()){
+
 							//System.err.println(getNumInstances() + " " + this.testPhaseError + " " + alternateError.get(alt) + " " +
 							//this.observedClassDistribution + " " + ((Node)alt).observedClassDistribution);
 
@@ -258,10 +291,6 @@ public class CVFDT extends VFDTWindow {
 
 								lowestAlternateErrorThisTestPhase = alternateError.get(alt);
 								bestAlternate = alt;
-
-								//	int currentAltErrorDiff = alt.getTestPhaseError() - this.getTestPhaseError();
-								//	if(alt.getLowestErrorDiff() )
-								//	alt.setLowestErrorDiff(currentAltErrorDiff < alt.getLowestErrorDiff() ? currentAltErrorDiff : alt.getLowestErrorDiff());
 
 							}
 						}

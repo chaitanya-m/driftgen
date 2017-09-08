@@ -240,8 +240,7 @@ public class HATADWIN extends HoeffdingTree {
         @Override
         public void learnFromInstance(Instance inst, HATADWIN ht, SplitNode parent, int parentBranch) {
 
-            System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
-
+//            System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
             int trueClass = (int) inst.classValue();
             //New option vore
@@ -571,7 +570,7 @@ public class HATADWIN extends HoeffdingTree {
             //Update statistics
             learnFromInstance(weightedInst, ht);	//inst
 
-            //Check for Split condition
+            //Check for split condition
             double weightSeen = this.getWeightSeen();
             if (weightSeen
                     - this.getWeightSeenAtLastSplitEvaluation() >= ht.gracePeriodOption.getValue()) {
@@ -821,6 +820,7 @@ public class HATADWIN extends HoeffdingTree {
 
     					if(!((NewNode)leafNode).isAlternate()){
 
+    						// count only votes from non-alternates... alternates shouldn't be voting
     						result.addValues(dist);
 
     					}

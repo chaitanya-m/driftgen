@@ -613,6 +613,8 @@ public class VFDTWindow extends VFDT {
 
             reachedLeafIDs.add(new Long(this.getUniqueID()));
 
+            //System.out.println(this.observedClassDistribution);
+
         }
 
         @Override

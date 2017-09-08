@@ -43,7 +43,7 @@ public class VFDTLeafWindowADWIN extends VFDTLeafWindow {
             this.errorChange = this.adwin.setInput(blCorrect == true ? 0.0 : 1.0);
 
             if (this.errorChange == true && oldError < this.getErrorEstimation()){
-            	System.out.println(numInstances + " Old " + oldError + " New " + this.getErrorEstimation());
+            	//System.out.println(numInstances + " Old " + oldError + " New " + this.getErrorEstimation());
             }
 
             if (this.errorChange == true && oldError > this.getErrorEstimation()) {
@@ -56,15 +56,15 @@ public class VFDTLeafWindowADWIN extends VFDTLeafWindow {
             	// we want to reduce the instance window to the same size as the ADWIN window, unless the ADWIN window is bigger
             	//shrunkWindow = EvictingQueue.create(windowSize.getMaxValue());
 
-            	System.out.println(window.size() + " " + window.remainingCapacity() + " " + this.adwin.getWidth());
+            	//System.out.println(window.size() + " " + window.remainingCapacity() + " " + this.adwin.getWidth());
 
             	if (window.size() > this.adwin.getWidth()){
 
-            		System.out.println("Shrinking...");
+            		//System.out.println("Shrinking...");
             		//System.err.println(window.remainingCapacity());
             		// shrink instance window
             		int numRemovalsLeft = window.size() - this.adwin.getWidth();
-            		System.out.println(numRemovalsLeft);
+            		//System.out.println(numRemovalsLeft);
             		while(numRemovalsLeft > 0){
             			Instance headInst = window.remove(); // find a more efficient way??
             			numRemovalsLeft--;
@@ -118,7 +118,7 @@ public class VFDTLeafWindowADWIN extends VFDTLeafWindow {
 
     @Override
 	protected LearningNode newLearningNode() {
-    	System.out.println("ADWIN Node created");
+    	//System.out.println("ADWIN Node created");
         return new AdaLearningNodeADWIN(new double[0]);
     }
 

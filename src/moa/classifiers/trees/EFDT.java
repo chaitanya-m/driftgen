@@ -73,17 +73,17 @@ public class EFDT extends CVFDT{
 					CVFDTAdaNode newAlternate = (CVFDTAdaNode)newLearningNode(true, false, this);
 					newAlternate.setTopAlternate(true);
 					alternates.put(bestSuggestion.splitTest.getAttsTestDependsOn()[0], newAlternate);
-					System.out.println(getNumInstances() +
-							" secondBestSuggestion.merit-currentSuggestion.merit " + (secondBestSuggestion.merit-currentSuggestion.merit) + " \n " +
-							" bestSuggestion.merit-currentSuggestion.merit " + (bestSuggestion.merit-currentSuggestion.merit) + " \n "
-							+ " bestSuggestion.merit "	+	bestSuggestion.merit + " \n "
-							+ " currentSuggestion.merit " + currentSuggestion.merit +"\n"
-							+ " secondBestSuggestion.merit " + secondBestSuggestion.merit +"\n");
+//					System.out.println(getNumInstances() +
+//							" secondBestSuggestion.merit-currentSuggestion.merit " + (secondBestSuggestion.merit-currentSuggestion.merit) + " \n " +
+//							" bestSuggestion.merit-currentSuggestion.merit " + (bestSuggestion.merit-currentSuggestion.merit) + " \n "
+//							+ " bestSuggestion.merit "	+	bestSuggestion.merit + " \n "
+//							+ " currentSuggestion.merit " + currentSuggestion.merit +"\n"
+//							+ " secondBestSuggestion.merit " + secondBestSuggestion.merit +"\n");
 
-					System.out.println(currentSplit + " is current split attribute. " +
-							currentSuggestion.splitTest.getAttsTestDependsOn()[0] + " is current split attribute. " +
-					bestSuggestion.splitTest.getAttsTestDependsOn()[0] + " is the best suggestion."
-					+ secondBestSuggestion.splitTest.getAttsTestDependsOn()[0] + " is the second best suggestion."+"\n\n");
+//					System.out.println(currentSplit + " is current split attribute. " +
+//							currentSuggestion.splitTest.getAttsTestDependsOn()[0] + " is current split attribute. " +
+//					bestSuggestion.splitTest.getAttsTestDependsOn()[0] + " is the best suggestion."
+//					+ secondBestSuggestion.splitTest.getAttsTestDependsOn()[0] + " is the second best suggestion."+"\n\n");
 					// we've just created an alternate, but only if the key is not already contained
 
 				}

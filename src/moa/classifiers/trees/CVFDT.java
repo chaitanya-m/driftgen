@@ -23,6 +23,9 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.VFDT.Node;
+import moa.classifiers.trees.VFDTWindow.AdaNode;
+import moa.classifiers.trees.VFDTWindow.AdaSplitNode;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
 
@@ -136,6 +139,45 @@ public class CVFDT extends VFDTWindow {
 			super(splitTest, classObservations, size, isAlternate);
 			alternates = new HashMap<Integer, CVFDTAdaNode>();
 		}
+
+		@Override
+        public void forgetInstance(Instance inst, VFDTWindow ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
+
+            // DRY... for now this code is repeated...
+            // Updates statistics in split nodes also
+        	assert (this.createdFromInitializedLearningNode = true);
+        		//inst.setWeight(-1.0);
+
+            this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
+
+            for (int i = 0; i < inst.numAttributes() - 1; i++) {
+                int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
+                AttributeClassObserver obs = this.attributeObservers.get(i);
+                if (obs == null) {
+                    obs = inst.attribute(instAttIndex).isNominal() ? ht.newNominalClassObserver() : ht.newNumericClassObserver();
+                    this.attributeObservers.set(i, obs);
+                }
+                obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
+            }
+            // DRY... for now this code is repeated...
+
+
+			if (!this.alternates.isEmpty() && !this.isAlternate()) {
+
+				for (CVFDTAdaNode alt:alternates.values()){
+
+					alt.forgetInstance(inst, ht, parent, parentBranch, maxNodeID);
+				}
+			}
+
+            int childBranch = this.instanceChildIndex(inst);
+            Node child = this.getChild(childBranch);
+            if (child != null && ((CVFDTAdaNode)child).getUniqueID() <= maxNodeID) {
+                ((CVFDTAdaNode) child).forgetInstance(inst, ht, this, childBranch, maxNodeID);
+            }
+
+        }
+
 
 		@Override
 		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
@@ -605,12 +647,12 @@ public class CVFDT extends VFDTWindow {
 			if(window.remainingCapacity() == 0){
 				forgetInst = window.peek().getFirst();
 				forgetInst.setWeight(-1.0);
-				((AdaNode) this.treeRoot).forgetInstance(forgetInst, this, null, -1, window.peek().getSecond());
+				((CVFDTAdaNode) this.treeRoot).forgetInstance(forgetInst, this, null, -1, window.peek().getSecond());
 			}
 
 			// Create an object to store the IDs visited while learning this instance. Pass a reference so you add all the IDs...
 			AutoExpandVector<Long> reachedNodeIDs = new AutoExpandVector<>();
-			((AdaNode) this.treeRoot).learnFromInstance(inst, this, null, -1, reachedNodeIDs);
+			((CVFDTAdaNode) this.treeRoot).learnFromInstance(inst, this, null, -1, reachedNodeIDs);
 
 			// Store the max ID reached along with the instance in the window
 

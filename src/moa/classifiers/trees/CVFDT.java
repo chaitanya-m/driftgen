@@ -165,8 +165,9 @@ public class CVFDT extends VFDTWindow {
 			if (!this.alternates.isEmpty() && !this.isAlternate()) {
 
 				for (CVFDTAdaNode alt:alternates.values()){
-
-					alt.forgetInstance(inst, ht, parent, parentBranch, maxNodeID);
+					if(alt.getUniqueID() <= maxNodeID){
+						alt.forgetInstance(inst, ht, parent, parentBranch, maxNodeID);
+					}
 				}
 			}
 

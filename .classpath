@@ -12,5 +12,6 @@
 	<classpathentry kind="lib" path="src/moajars/sizeofag-1.0.0.jar"/>
 	<classpathentry kind="lib" path="src/moajars/trove4j-3.0.3.jar"/>
 	<classpathentry kind="lib" path="src/moajars/weka-dev-3.7.12.jar"/>
+	<classpathentry kind="lib" path="src/moajars/guava-22.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

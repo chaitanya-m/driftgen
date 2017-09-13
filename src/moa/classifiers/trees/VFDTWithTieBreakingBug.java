@@ -96,7 +96,7 @@ import com.yahoo.labs.samoa.instances.Instance;
  * @author Richard Kirkby (rkirkby@cs.waikato.ac.nz)
  * @version $Revision: 7 $
  */
-public class VFDT extends AbstractClassifier {
+public class VFDTWithTieBreakingBug extends AbstractClassifier {
 
     private static final long serialVersionUID = 1L;
 
@@ -218,7 +218,7 @@ public class VFDT extends AbstractClassifier {
             return this.observedClassDistribution.getArrayCopy();
         }
 
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, VFDTWithTieBreakingBug ht) {
             return this.observedClassDistribution.getArrayCopy();
         }
 
@@ -226,7 +226,7 @@ public class VFDT extends AbstractClassifier {
             return this.observedClassDistribution.numNonZeroEntries() < 2;
         }
 
-        public void describeSubtree(VFDT ht, StringBuilder out,
+        public void describeSubtree(VFDTWithTieBreakingBug ht, StringBuilder out,
                 int indent) {
             StringUtils.appendIndented(out, indent, "Leaf ");
             out.append(ht.getClassNameString());
@@ -334,7 +334,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void describeSubtree(VFDT ht, StringBuilder out,
+        public void describeSubtree(VFDTWithTieBreakingBug ht, StringBuilder out,
                 int indent) {
             for (int branch = 0; branch < numChildren(); branch++) {
                 Node child = getChild(branch);
@@ -372,7 +372,7 @@ public class VFDT extends AbstractClassifier {
             super(initialClassObservations);
         }
 
-        public abstract void learnFromInstance(Instance inst, VFDT ht);
+        public abstract void learnFromInstance(Instance inst, VFDTWithTieBreakingBug ht);
     }
 
     public static class InactiveLearningNode extends LearningNode {
@@ -384,7 +384,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {
+        public void learnFromInstance(Instance inst, VFDTWithTieBreakingBug ht) {
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
         }
@@ -413,7 +413,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {
+        public void learnFromInstance(Instance inst, VFDTWithTieBreakingBug ht) {
             if (this.isInitialized == false) {
                 this.attributeObservers = new AutoExpandVector<AttributeClassObserver>(inst.numAttributes());
                 this.isInitialized = true;
@@ -444,7 +444,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         public AttributeSplitSuggestion[] getBestSplitSuggestions(
-                SplitCriterion criterion, VFDT ht) {
+                SplitCriterion criterion, VFDTWithTieBreakingBug ht) {
             List<AttributeSplitSuggestion> bestSuggestions = new LinkedList<AttributeSplitSuggestion>();
             double[] preSplitDist = this.observedClassDistribution.getArrayCopy();
             if (!ht.noPrePruneOption.isSet()) {
@@ -931,7 +931,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, VFDTWithTieBreakingBug ht) {
             if (getWeightSeen() >= ht.nbThresholdOption.getValue()) {
                 return NaiveBayes.doNaiveBayesPrediction(inst,
                         this.observedClassDistribution,
@@ -959,7 +959,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {
+        public void learnFromInstance(Instance inst, VFDTWithTieBreakingBug ht) {
             int trueClass = (int) inst.classValue();
             if (this.observedClassDistribution.maxIndex() == trueClass) {
                 this.mcCorrectWeight += inst.weight();
@@ -972,7 +972,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, VFDTWithTieBreakingBug ht) {
             if (this.mcCorrectWeight > this.nbCorrectWeight) {
                 return this.observedClassDistribution.getArrayCopy();
             }

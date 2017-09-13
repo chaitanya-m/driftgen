@@ -679,12 +679,12 @@ public class VFDT extends AbstractClassifier {
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
 
-                //comment this if statement to get VFDT bug
-                if(bestSuggestion.merit < 1e-10){
-                	shouldSplit = false;
-                }
-
-                else
+//                //comment this if statement to get VFDT bug
+//                if(bestSuggestion.merit < 1e-10){
+//                	shouldSplit = false;
+//                }
+//
+//                else
                 	if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
                     shouldSplit = true;

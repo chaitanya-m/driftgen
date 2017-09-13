@@ -194,7 +194,7 @@ public class AbruptDriftGenerator extends DriftGenerator{
 					* nCombinationsValuesForPX);
 			if (nLinesToChange == 0.0) {
 				System.out
-				.println("Not enough drift to be noticeable in p(y|x) - unchanged");
+				.println("ExactMagnitude:[0.0]");
 				pygxad = pygxbd;
 
 			} else {
@@ -220,8 +220,8 @@ public class AbruptDriftGenerator extends DriftGenerator{
 						}
 					}
 				}
-				System.out.println("exact magnitude for p(y|x)="
-						+ computeMagnitudePYGX(pygxbd, pygxad) + "\tasked="
+				System.out.println("p(y|x) ExactMagnitude:["
+						+ computeMagnitudePYGX(pygxbd, pygxad) + "]\tasked="
 						+ driftMagnitudeConditional.getValue());
 			}
 		} else {

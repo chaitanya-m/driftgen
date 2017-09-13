@@ -24,12 +24,12 @@ import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
 import moa.classifiers.trees.VFDT.Node;
-import moa.classifiers.trees.VFDTWindow.AdaNode;
-import moa.classifiers.trees.VFDTWindow.AdaSplitNode;
+import moa.classifiers.trees.VFDTSlidingWindow.AdaNode;
+import moa.classifiers.trees.VFDTSlidingWindow.AdaSplitNode;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
 
-public class CVFDT extends VFDTWindow {
+public class CVFDT extends VFDTSlidingWindow {
 
 	// lets begin by adding counters and split tests to every splitnode
 	// then we can add a list of alternates to grow the results of the split tests
@@ -141,7 +141,7 @@ public class CVFDT extends VFDTWindow {
 		}
 
 		@Override
-        public void forgetInstance(Instance inst, VFDTWindow ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
+        public void forgetInstance(Instance inst, VFDTSlidingWindow ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
 
             // DRY... for now this code is repeated...
             // Updates statistics in split nodes also
@@ -181,7 +181,7 @@ public class CVFDT extends VFDTWindow {
 
 
 		@Override
-		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
+		public void learnFromInstance(Instance inst, VFDTSlidingWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
 
 			// only mainline split nodes are capable of launching a test phase
@@ -599,7 +599,7 @@ public class CVFDT extends VFDTWindow {
 			}
 
 			@Override
-			public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
+			public void learnFromInstance(Instance inst, VFDTSlidingWindow ht, SplitNode parent, int parentBranch,
 					AutoExpandVector<Long> reachedLeafIDs) {
 
 				super.learnFromInstance(inst, ht, parent, parentBranch, reachedLeafIDs);

@@ -90,7 +90,7 @@ import com.google.common.collect.EvictingQueue;
  */
 
 
-public class VFDTWindow extends VFDT {
+public class VFDTSlidingWindow extends VFDT {
 
     private static final long serialVersionUID = 1L;
 
@@ -128,7 +128,7 @@ public class VFDTWindow extends VFDT {
         //public boolean getErrorChange();
         public int numberLeaves();
 
-		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch,
+		public void learnFromInstance(Instance inst, VFDTSlidingWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs);
 
 		public void setAlternateStatusForSubtreeNodes(boolean isAlternate);
@@ -162,7 +162,7 @@ public class VFDTWindow extends VFDT {
 
         public void setUniqueID(long uniqueID);
 
-		public void forgetInstance(Instance inst, VFDTWindow ht, AdaSplitNode adaSplitNode, int childBranch, long maxNodeID);
+		public void forgetInstance(Instance inst, VFDTSlidingWindow ht, AdaSplitNode adaSplitNode, int childBranch, long maxNodeID);
 
 		public double getSimpleErrorEstimate();
     }
@@ -297,7 +297,7 @@ public class VFDTWindow extends VFDT {
         // LearningNodes can split, but SplitNodes can't
         // Parent nodes are allways SplitNodes
         @Override
-		public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
+		public void learnFromInstance(Instance inst, VFDTSlidingWindow ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
         	//System.out.println("VFDTWindow LearnFromInstance");
 
         	// Note: this is kind of inefficient... you have to filter down every time to find out if you've made an error??
@@ -363,7 +363,7 @@ public class VFDTWindow extends VFDT {
 
         }
 		@Override
-        public void forgetInstance(Instance inst, VFDTWindow ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
+        public void forgetInstance(Instance inst, VFDTSlidingWindow ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
 
             //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
@@ -384,7 +384,6 @@ public class VFDTWindow extends VFDT {
                 obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
             }
             // DRY... for now this code is repeated...
-
 
             int childBranch = this.instanceChildIndex(inst);
             Node child = this.getChild(childBranch);
@@ -582,7 +581,7 @@ public class VFDTWindow extends VFDT {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDTWindow ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
+        public void learnFromInstance(Instance inst, VFDTSlidingWindow ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
 
             Instance weightedInst = inst.copy();
 
@@ -620,7 +619,7 @@ public class VFDTWindow extends VFDT {
         @Override
         public double[] getClassVotes(Instance inst, VFDT ht) {
             double[] dist;
-            int predictionOption = ((VFDTWindow) ht).leafpredictionOption.getChosenIndex();
+            int predictionOption = ((VFDTSlidingWindow) ht).leafpredictionOption.getChosenIndex();
             if (predictionOption == 0) { //MC
                 dist = this.observedClassDistribution.getArrayCopy();
             } else if (predictionOption == 1) { //NB
@@ -688,7 +687,7 @@ public class VFDTWindow extends VFDT {
 		}
 
 		@Override
-		public void forgetInstance(Instance inst, VFDTWindow ht, AdaSplitNode adaSplitNode, int childBranch,
+		public void forgetInstance(Instance inst, VFDTSlidingWindow ht, AdaSplitNode adaSplitNode, int childBranch,
 				long maxNodeID) {
 			//if(numInstances < ht.windowSize.getValue() + 10000){
 

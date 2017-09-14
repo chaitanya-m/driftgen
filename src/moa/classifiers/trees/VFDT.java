@@ -569,7 +569,7 @@ public class VFDT extends AbstractClassifier {
 
 		//System.out.println(numInstances);
 
-    	/*if(numInstances > 50510 && numInstances < 50513 && numInstances % 1 == 0){
+    	if(numInstances > 200510 && numInstances < 200513 && numInstances % 1 == 0){
     		StringBuilder out = new StringBuilder();
     		this.treeRoot.describeSubtree(this, out, 8);
     		System.out.println("===== " + numInstances + " =======");
@@ -579,7 +579,7 @@ public class VFDT extends AbstractClassifier {
     	}
     	if(numInstances > 300000){
     		writer.close();
-    	}*/
+    	}
 
     }
 
@@ -680,11 +680,11 @@ public class VFDT extends AbstractClassifier {
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
 
                 //comment this if statement to get VFDT bug
-                if(bestSuggestion.merit < 1e-10){
-                	shouldSplit = false;
-                }
-
-                else
+//                if(bestSuggestion.merit < 1e-10){
+//                	shouldSplit = false;
+//                }
+//
+//                else
                 	if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
                     shouldSplit = true;
@@ -733,6 +733,14 @@ public class VFDT extends AbstractClassifier {
                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(), splitDecision.numSplits());
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
+
+                        double[] j = splitDecision.resultingClassDistributionFromSplit(i);
+                        for(int k = 0; k < j.length; k++){
+                        	System.out.print(j[k] + " ");
+                        }System.out.println();
+                        // This actually shows that {147,433|366} becomes {0.0|200.0} only in the extreme condition where you've split on the same attribute twice in succession
+                        // causing resultingClassDistributionFromSplit to fail
+
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
                         newSplit.setChild(i, newChild);
                     }
@@ -749,23 +757,23 @@ public class VFDT extends AbstractClassifier {
                     if(parent!=null){
                     	if(parent.splitTest.getAttsTestDependsOn()[0] == splitDecision.splitTest.getAttsTestDependsOn()[0]){
 
-//                    		System.out.println(" :::: " + numInstances + " :::: ");
-//
-//                    		System.out.println(" ::	Parent and child split on same attribute :: ");
-//
-//                    		System.out.println(" ::	There were :: " + bestSplitSuggestions.length + " :: split suggestions :: ");
+                    		System.out.println(" :::: " + numInstances + " :::: ");
+
+                    		System.out.println(" ::	Parent and child split on same attribute :: ");
+
+                    		System.out.println(" ::	There were :: " + bestSplitSuggestions.length + " :: split suggestions :: ");
 
                     		 double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
                                      this.splitConfidenceOption.getValue(), node.getWeightSeen());
                              AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                              AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
-//                             if (bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound) {
-//                            	 System.out.println("The top two attributes differ in infogain... strange... infogain should be zero...");
-//                             }
-//
-//                             if (hoeffdingBound < this.tieThresholdOption.getValue()) {
-//                            	 System.out.println("The top two attributes don't differ in infogain... A tiebreaker is causing this node to re-split!");
-//                             }
+                             if (bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound) {
+                            	 System.out.println("The top two attributes differ in infogain... strange... infogain should be zero...");
+                             }
+
+                             if (hoeffdingBound < this.tieThresholdOption.getValue()) {
+                            	 System.out.println("The top two attributes don't differ in infogain... A tiebreaker is causing this node to re-split!");
+                             }
                     	}
                     }
                 }

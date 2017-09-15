@@ -503,6 +503,35 @@ Parent has no alternate
   if [att 2:x2] = {val 2:v2}: =====true====
       Leaf [class:class] = <class 3> weights: {0|0|56}
 
+================================================================
+================================================================
+
+VFDT
+
+The most recent investigation was prompted by creating a window of size 50,000 in VFDTWindow and noticing that the leaves had a weight of 50,200.
+
+This was caused by the first split happening 200 instances in. When the window started deleting instances, they hadn't reached the new leaves yet.
+
+So on the part of VFDTSlidingWindow, everything is fine, just as expected.
+
+CVFDT's sliding window seems to have to do exactly that. The algorithm listing is slightly ambiguous, but their text confirms that we don't care about following examples all the way to the bottom.
+
+This has another element to it; the fact that splitting leads to full leaves first just to compute their null attribute splits, followed by emptying them. If emptied, the CVFDT design makes perfect sense. You don't have to worry about things greater than maxNodeIDReached because new leaves are empty.
+
+VFDT algorithm listing clearly empties new leaves as soon as their null split merit is computed.
+
+The implementation doesn't do this.
+
+It splits consecutively on the same attribute- which it isn't meant to do- and when this actually happens the function that generates the child distributions fails. That failure led to extremely good performance.
+
+Having fixed that by not allowing splitting if infogain is zero (which would always be the case for a previously used attribute, because it's value has already been determined) we find VFDT performance is much worse (expected)
+
+However, this expectation is not correct- because VFDT's original design asks for empty leaves
+What remains to be done: We need to give VFDT empty leaves again. We need to assert that on classification problems with nominal attributes, there will be no unbounded tree growth.
+
+And for the sake of numeric attributes, we must encode the rule that you cannot split consecutively on the same attribute.
+
+
 
 
 

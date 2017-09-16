@@ -166,6 +166,9 @@ public class VFDTDecay extends AbstractClassifier {
     public FlagOption noPrePruneOption = new FlagOption("noPrePrune", 'p',
             "Disable pre-pruning.");
 
+    public FlagOption exponentialDecayOption = new FlagOption("exponentialDecay", 'E',
+            "Decay by exp(decayOption)");
+
     public static class FoundNode {
 
         public Node node;
@@ -413,10 +416,18 @@ public class VFDTDecay extends AbstractClassifier {
             }
 
             //decay
-            this.observedClassDistribution.scaleValues(ht.decayOption.getValue());
+            if(ht.exponentialDecayOption.isSet()){
+            	this.observedClassDistribution.scaleValues(Math.exp(ht.decayOption.getValue()));
+            }else{
+            	this.observedClassDistribution.scaleValues(ht.decayOption.getValue());
+            }
+
 
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
+
+
+
             for (int i = 0; i < inst.numAttributes() - 1; i++) {
                 int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
                 AttributeClassObserver obs = this.attributeObservers.get(i);

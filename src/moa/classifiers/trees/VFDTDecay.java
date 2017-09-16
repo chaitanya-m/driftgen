@@ -35,6 +35,7 @@ import moa.classifiers.bayes.NaiveBayes;
 import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.attributeclassobservers.DiscreteAttributeClassObserver;
+import moa.classifiers.core.attributeclassobservers.NominalAttributeClassObserver;
 import moa.classifiers.core.attributeclassobservers.NullAttributeClassObserver;
 import moa.classifiers.core.attributeclassobservers.NumericAttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
@@ -425,6 +426,24 @@ public class VFDTDecay extends AbstractClassifier {
 
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
+
+
+            // for every attribute observer, for every class, get it's attvaldists and and scale them (effectively scaling counts n_ijk)
+            	for(AttributeClassObserver obs: this.attributeObservers){
+                    for (int i = 0; i < ( (NominalAttributeClassObserver)obs).attValDistPerClass.size(); i++) {
+                        DoubleVector attValDist = ((NominalAttributeClassObserver)obs).attValDistPerClass.get(i);
+                        if (attValDist != null) {
+                            if(ht.exponentialDecayOption.isSet()){
+                            	attValDist.scaleValues(Math.exp(ht.decayOption.getValue()));
+                            }
+                            else{
+                            	attValDist.scaleValues(ht.decayOption.getValue());
+                            }
+                        }
+                    }
+            	}
+
+
 
 
 

@@ -104,8 +104,6 @@ public class VFDT extends AbstractClassifier {
 
     protected int numInstances = 0;
 
-	private PrintWriter writer = null;
-
     @Override
     public String getPurposeString() {
         return "Hoeffding Tree or VFDT.";
@@ -514,16 +512,6 @@ public class VFDT extends AbstractClassifier {
         if (this.leafpredictionOption.getChosenIndex()>0) {
             this.removePoorAttsOption = null;
         }
-
-    	if (numInstances == 0){
-    		try {
-				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),false));
-				writer = new PrintWriter(new FileOutputStream(new File("moa_output.txt"),true));
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-    	}
-
     }
 
     @Override
@@ -713,19 +701,6 @@ public class VFDT extends AbstractClassifier {
                 }
             }
             if (shouldSplit) {
-            	//System.err.println("SPLITTING - VVVVVVVV");
-
-            	//=======================
-            	StringBuilder out = new StringBuilder();
-            		//this.treeRoot.describeSubtree(this, out, 8);
-            		System.out.println("==BEFORE " + numInstances + " node.getWeightSeen()==== " + node.getWeightSeen());
-            		System.out.println("==BEFORE " + numInstances + " observedClassDistribution.sumOfValues()==== " + node.observedClassDistribution.sumOfValues());
-
-            		//System.out.print(out);
-            		writer.println(numInstances);
-            		writer.print(out);
-
-               	//========================
 
             		int childrenWeightSum = 0;
 
@@ -754,27 +729,6 @@ public class VFDT extends AbstractClassifier {
                     }
 
                 }
-            	//=======================
-            		out = new StringBuilder();
-            		this.treeRoot.describeSubtree(this, out, 8);
-            		System.out.println("==AFTER=== node.getWeightSeen()=" + node.getWeightSeen());
-            		System.out.println("==AFTER=== childrenWeightSum=" + childrenWeightSum);
-
-            		if(childrenWeightSum > 200){
-            			System.out.println("========================= "+ childrenWeightSum + " ===============");
-            		}
-
-//            		System.out.print(out);
-//            		writer.println(numInstances);
-//            		writer.print(out);
-
-               	//========================
-
-               	if(numInstances > 300000){
-            		writer.close();
-            	}
-
-
 
                 // manage memory
                 enforceTrackerLimit();

@@ -39,11 +39,17 @@ public class VFDTLeafWindowADWIN extends VFDTLeafWindow {
                 this.adwin = new ADWIN();
             }
 
+            //if adwin history exceeds window size, drop buckets until equal or smaller
+            while(adwin.getWidth() > window.size()){
+            	adwin.deleteElement();
+            }
+
+
             double oldError = this.getErrorEstimation();
             this.errorChange = this.adwin.setInput(blCorrect == true ? 0.0 : 1.0);
 
             if (this.errorChange == true && oldError < this.getErrorEstimation()){
-            	//System.out.println(numInstances + " Old " + oldError + " New " + this.getErrorEstimation());
+            	System.out.println(numInstances + " Old " + oldError + " New " + this.getErrorEstimation());
             }
 
             if (this.errorChange == true && oldError > this.getErrorEstimation()) {

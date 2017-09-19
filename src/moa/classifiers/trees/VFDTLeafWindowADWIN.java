@@ -48,9 +48,9 @@ public class VFDTLeafWindowADWIN extends VFDTLeafWindow {
             double oldError = this.getErrorEstimation();
             this.errorChange = this.adwin.setInput(blCorrect == true ? 0.0 : 1.0);
 
-            if (this.errorChange == true && oldError < this.getErrorEstimation()){
-            	System.out.println(numInstances + " Old " + oldError + " New " + this.getErrorEstimation());
-            }
+//            if (this.errorChange == true && oldError < this.getErrorEstimation()){
+//            	System.out.println(numInstances + " Old " + oldError + " New " + this.getErrorEstimation());
+//            }
 
             if (this.errorChange == true && oldError > this.getErrorEstimation()) {
                 this.errorChange = false;

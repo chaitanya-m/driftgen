@@ -161,10 +161,9 @@ public class CVFDT extends VFDTSlidingWindow {
             }
             // DRY... for now this code is repeated...
 
-
 			if (!this.alternates.isEmpty() && !this.isAlternate()) {
 
-				for (CVFDTAdaNode alt:alternates.values()){
+				for (CVFDTAdaNode alt : alternates.values()){
 					if(alt.getUniqueID() <= maxNodeID){
 						alt.forgetInstance(inst, ht, parent, parentBranch, maxNodeID);
 					}
@@ -176,6 +175,13 @@ public class CVFDT extends VFDTSlidingWindow {
             if (child != null && ((CVFDTAdaNode)child).getUniqueID() <= maxNodeID) {
                 ((CVFDTAdaNode) child).forgetInstance(inst, ht, this, childBranch, maxNodeID);
             }
+            else if(child != null && ((AdaNode)child).getUniqueID() > maxNodeID){
+            	child.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
+            }
+           	// because the child would have had had examples "escape" into it from the parent at the time of the split
+        	// but it isn't a problem for it's child because the examples are seen only one node down
+            // and we want to only do this for the observed class distribution but not for the attribute observers, because those are created fresh for each node
+
 
         }
 

@@ -418,7 +418,7 @@ public class VFDTDecay extends AbstractClassifier {
 
             //decay
             if(ht.exponentialDecayOption.isSet()){
-            	this.observedClassDistribution.scaleValues(Math.exp(ht.decayOption.getValue()));
+            	this.observedClassDistribution.scaleValues(Math.exp(-ht.decayOption.getValue()));
             }else{
             	this.observedClassDistribution.scaleValues(ht.decayOption.getValue());
             }
@@ -434,7 +434,7 @@ public class VFDTDecay extends AbstractClassifier {
                         DoubleVector attValDist = ((NominalAttributeClassObserver)obs).attValDistPerClass.get(i);
                         if (attValDist != null) {
                             if(ht.exponentialDecayOption.isSet()){
-                            	attValDist.scaleValues(Math.exp(ht.decayOption.getValue()));
+                            	attValDist.scaleValues(Math.exp(-ht.decayOption.getValue()));
                             }
                             else{
                             	attValDist.scaleValues(ht.decayOption.getValue());

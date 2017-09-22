@@ -97,6 +97,9 @@ public class VFDTDecay extends AbstractClassifier {
 
     private static final long serialVersionUID = 1L;
 
+    protected int numInstances = 0;
+
+
     @Override
     public String getPurposeString() {
         return "Hoeffding Tree or VFDT.";
@@ -169,6 +172,12 @@ public class VFDTDecay extends AbstractClassifier {
 
     public FlagOption exponentialDecayOption = new FlagOption("exponentialDecay", 'E',
             "Decay by exp(decayOption)");
+
+    public FlagOption voterAmnesia = new FlagOption("voterAmnesia", 'V',
+            "Whether class distributions forget");
+
+    public FlagOption archiveAmnesia = new FlagOption("archiveAmnesia", 'A',
+            "Whether counts n_{ijk} forget");
 
     public static class FoundNode {
 
@@ -416,17 +425,19 @@ public class VFDTDecay extends AbstractClassifier {
                 this.isInitialized = true;
             }
 
-            //decay
-            if(ht.exponentialDecayOption.isSet()){
-            	this.observedClassDistribution.scaleValues(Math.exp(-ht.decayOption.getValue()));
-            }else{
-            	this.observedClassDistribution.scaleValues(ht.decayOption.getValue());
+            if(ht.voterAmnesia.isSet()){
+            	//decay
+            	if(ht.exponentialDecayOption.isSet()){
+            		this.observedClassDistribution.scaleValues(Math.exp(-ht.decayOption.getValue()));
+            	}else{
+            		this.observedClassDistribution.scaleValues(ht.decayOption.getValue());
+            	}
             }
-
 
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
 
+            if(ht.archiveAmnesia.isSet()){
 
             // for every attribute observer, for every class, get it's attvaldists and and scale them (effectively scaling counts n_ijk)
             	for(AttributeClassObserver obs: this.attributeObservers){
@@ -442,10 +453,7 @@ public class VFDTDecay extends AbstractClassifier {
                         }
                     }
             	}
-
-
-
-
+            }
 
             for (int i = 0; i < inst.numAttributes() - 1; i++) {
                 int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
@@ -576,6 +584,9 @@ public class VFDTDecay extends AbstractClassifier {
                 % this.memoryEstimatePeriodOption.getValue() == 0) {
             estimateModelByteSizes();
         }
+
+        numInstances++;
+
     }
 
     @Override

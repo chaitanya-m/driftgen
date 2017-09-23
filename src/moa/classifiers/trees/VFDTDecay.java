@@ -19,6 +19,7 @@
  */
 package moa.classifiers.trees;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -39,6 +40,8 @@ import moa.classifiers.core.attributeclassobservers.NominalAttributeClassObserve
 import moa.classifiers.core.attributeclassobservers.NullAttributeClassObserver;
 import moa.classifiers.core.attributeclassobservers.NumericAttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
+import moa.classifiers.core.conditionaltests.NominalAttributeBinaryTest;
+import moa.classifiers.core.conditionaltests.NominalAttributeMultiwayTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
 import moa.core.AutoExpandVector;
 import moa.core.DoubleVector;
@@ -201,6 +204,8 @@ public class VFDTDecay extends AbstractClassifier {
         protected DoubleVector observedClassDistribution;
 
         protected int nodeTime = 0;
+
+        protected List<Integer> usedNominalAttributes = new ArrayList<Integer>();
 
         public Node(double[] classObservations) {
             this.observedClassDistribution = new DoubleVector(classObservations);
@@ -695,6 +700,17 @@ public class VFDTDecay extends AbstractClassifier {
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
                     shouldSplit = true;
                 }
+
+                if(shouldSplit){
+                	for(Integer i : node.usedNominalAttributes){
+                		if(bestSuggestion.splitTest.getAttsTestDependsOn()[0] == i){
+                			shouldSplit = false;
+                			System.out.println(node.usedNominalAttributes);
+                			break;
+                		}
+                	}
+                }
+
                 // }
                 if ((this.removePoorAttsOption != null)
                         && this.removePoorAttsOption.isSet()) {
@@ -738,6 +754,14 @@ public class VFDTDecay extends AbstractClassifier {
                             node.getObservedClassDistribution(),splitDecision.numSplits() );
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
+
+                        if(splitDecision.splitTest.getClass() == NominalAttributeBinaryTest.class
+                        		||splitDecision.splitTest.getClass() == NominalAttributeMultiwayTest.class){
+                        	newChild.usedNominalAttributes = new ArrayList<Integer>(node.usedNominalAttributes);
+                        	newChild.usedNominalAttributes.add(splitDecision.splitTest.getAttsTestDependsOn()[0]);
+                        	// no  nominal attribute should be split on more than once in the path
+                        }
+
                         newSplit.setChild(i, newChild);
                     }
                     this.activeLeafNodeCount--;

@@ -19,6 +19,7 @@
  */
 package moa.classifiers.trees;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -55,7 +56,7 @@ import com.yahoo.labs.samoa.instances.Instance;
  * @author Albert Bifet (abifet at cs dot waikato dot ac dot nz)
  * @version $Revision: 7 $
  */
-public class HATADWIN extends HoeffdingTree {
+public class HATADWIN extends VFDT {
 
     private static final long serialVersionUID = 1L;
 
@@ -592,7 +593,7 @@ public class HATADWIN extends HoeffdingTree {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, HoeffdingTree ht) {
+        public double[] getClassVotes(Instance inst, VFDT ht) {
             double[] dist;
             int predictionOption = ((HATADWIN) ht).leafpredictionOption.getChosenIndex();
             if (predictionOption == 0) { //MC
@@ -733,6 +734,16 @@ public class HATADWIN extends HoeffdingTree {
                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
                     shouldSplit = true;
                 }
+
+                if(shouldSplit){
+                	for(Integer i : node.usedNominalAttributes){
+                		if(bestSuggestion.splitTest.getAttsTestDependsOn()[0] == i){
+                			shouldSplit = false;
+                			break;
+                		}
+                	}
+                }
+
                 // }
                 if ((this.removePoorAttsOption != null)
                         && this.removePoorAttsOption.isSet()) {
@@ -777,6 +788,10 @@ public class HATADWIN extends HoeffdingTree {
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i), ((NewNode)newSplit).isAlternate());
                         ((NewNode)newChild).setParent((AdaSplitNode)newSplit);
+
+                    	newChild.usedNominalAttributes = new ArrayList<Integer>(node.usedNominalAttributes); //deep copy
+                    	newChild.usedNominalAttributes.add(splitDecision.splitTest.getAttsTestDependsOn()[0]);
+
                         newSplit.setChild(i, newChild);
                     }
                     this.activeLeafNodeCount--;

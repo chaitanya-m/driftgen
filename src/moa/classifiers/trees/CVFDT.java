@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -578,11 +579,6 @@ public class CVFDT extends VFDTGlobalWindow {
 				isTopAlternate = isTopAlt;
 			}
 
-			@Override
-			public int getNodeTime() {
-				return nodeTime;
-			}
-
 		}
 
 		public class CVFDTLearningNode extends AdaLearningNode implements AdaNode, CVFDTAdaNode {
@@ -638,10 +634,7 @@ public class CVFDT extends VFDTGlobalWindow {
 				isTopAlternate = isTopAlt;
 			}
 
-			@Override
-			public int getNodeTime() {
-				return nodeTime;
-			}
+
 		}
 
 
@@ -718,6 +711,15 @@ public class CVFDT extends VFDTGlobalWindow {
 						shouldSplit = true;
 					}
 
+	                if(shouldSplit){
+	                	for(Integer i : node.usedNominalAttributes){
+	                		if(bestSuggestion.splitTest.getAttsTestDependsOn()[0] == i){
+	                			shouldSplit = false;
+	                			break;
+	                		}
+	                	}
+	                }
+
 					if ((this.removePoorAttsOption != null)
 							&& this.removePoorAttsOption.isSet()) {
 						Set<Integer> poorAtts = new HashSet<Integer>();
@@ -776,6 +778,9 @@ public class CVFDT extends VFDTGlobalWindow {
 									((AdaNode)newSplit).isAlternate(), false, ((AdaNode)node).getMainlineNode());
 							((AdaNode)newChild).setParent(newSplit);
 							((CVFDTAdaNode)newChild).setMainlineNode(newSplit.getMainlineNode());// All children are given a mainline node for test phase determination.
+
+                        	newChild.usedNominalAttributes = new ArrayList<Integer>(node.usedNominalAttributes); //deep copy
+                        	newChild.usedNominalAttributes.add(splitDecision.splitTest.getAttsTestDependsOn()[0]);
 
 							newSplit.setChild(i, newChild);
 						}

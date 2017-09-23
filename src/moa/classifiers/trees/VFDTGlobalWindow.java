@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -875,6 +876,15 @@ public class VFDTGlobalWindow extends VFDT {
                     shouldSplit = true;
                 }
 
+                if(shouldSplit){
+                	for(Integer i : node.usedNominalAttributes){
+                		if(bestSuggestion.splitTest.getAttsTestDependsOn()[0] == i){
+                			shouldSplit = false;
+                			break;
+                		}
+                	}
+                }
+
                 if ((this.removePoorAttsOption != null)
                         && this.removePoorAttsOption.isSet()) {
                     Set<Integer> poorAtts = new HashSet<Integer>();
@@ -929,6 +939,10 @@ public class VFDTGlobalWindow extends VFDT {
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i),
                         		((AdaNode)newSplit).isAlternate(), false, ((AdaNode)node).getMainlineNode());
                         ((AdaNode)newChild).setParent(newSplit);
+
+                    	newChild.usedNominalAttributes = new ArrayList<Integer>(node.usedNominalAttributes); //deep copy
+                    	newChild.usedNominalAttributes.add(splitDecision.splitTest.getAttsTestDependsOn()[0]);
+
                         newSplit.setChild(i, newChild);
                     }
                     this.activeLeafNodeCount--;

@@ -191,6 +191,8 @@ public class VFDT extends AbstractClassifier {
 
         protected DoubleVector observedClassDistribution;
 
+        protected int nodeTime;
+
         public Node(double[] classObservations) {
             this.observedClassDistribution = new DoubleVector(classObservations);
         }
@@ -412,6 +414,8 @@ public class VFDT extends AbstractClassifier {
 
         @Override
         public void learnFromInstance(Instance inst, VFDT ht) {
+        	nodeTime++;
+
             if (this.isInitialized == false) {
                 this.attributeObservers = new AutoExpandVector<AttributeClassObserver>(inst.numAttributes());
                 this.isInitialized = true;

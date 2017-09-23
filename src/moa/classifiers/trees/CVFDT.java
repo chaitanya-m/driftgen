@@ -55,6 +55,8 @@ public class CVFDT extends VFDTSlidingWindow {
 
 		public void setTopAlternate(boolean isTopAlt);
 
+		public int getNodeTime();
+
 	}
 
 /*Too much cruft to use delegation...
@@ -189,6 +191,8 @@ public class CVFDT extends VFDTSlidingWindow {
 		@Override
 		public void learnFromInstance(Instance inst, VFDTSlidingWindow ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
+
+			nodeTime++;
 
 			// only mainline split nodes are capable of launching a test phase
 			// alternate nodes shouldn't get to the point of actually learning
@@ -578,6 +582,11 @@ public class CVFDT extends VFDTSlidingWindow {
 				isTopAlternate = isTopAlt;
 			}
 
+			@Override
+			public int getNodeTime() {
+				return nodeTime;
+			}
+
 		}
 
 		public class CVFDTLearningNode extends AdaLearningNode implements AdaNode, CVFDTAdaNode {
@@ -631,6 +640,11 @@ public class CVFDT extends VFDTSlidingWindow {
 			@Override
 			public void setTopAlternate(boolean isTopAlt) {
 				isTopAlternate = isTopAlt;
+			}
+
+			@Override
+			public int getNodeTime() {
+				return nodeTime;
 			}
 		}
 

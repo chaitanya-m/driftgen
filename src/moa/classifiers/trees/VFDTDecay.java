@@ -200,6 +200,8 @@ public class VFDTDecay extends AbstractClassifier {
 
         protected DoubleVector observedClassDistribution;
 
+        protected int nodeTime = 0;
+
         public Node(double[] classObservations) {
             this.observedClassDistribution = new DoubleVector(classObservations);
         }
@@ -420,6 +422,8 @@ public class VFDTDecay extends AbstractClassifier {
 
         @Override
         public void learnFromInstance(Instance inst, VFDTDecay ht) {
+        	nodeTime++;
+
             if (this.isInitialized == false) {
                 this.attributeObservers = new AutoExpandVector<AttributeClassObserver>(inst.numAttributes());
                 this.isInitialized = true;

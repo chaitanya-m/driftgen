@@ -304,6 +304,8 @@ public class VFDTGlobalWindow extends VFDT {
         	// you'll be going down the same path several times
         	// Not so bad for small trees though
 
+        	nodeTime++;
+
             int trueClass = (int) inst.classValue();
             //Compute ClassPrediction using filterInstanceToLeaf
             //int ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, null, -1).node.getClassVotes(inst, ht));

@@ -705,7 +705,6 @@ public class VFDTDecay extends AbstractClassifier {
                 	for(Integer i : node.usedNominalAttributes){
                 		if(bestSuggestion.splitTest.getAttsTestDependsOn()[0] == i){
                 			shouldSplit = false;
-                			System.out.println(node.usedNominalAttributes);
                 			break;
                 		}
                 	}

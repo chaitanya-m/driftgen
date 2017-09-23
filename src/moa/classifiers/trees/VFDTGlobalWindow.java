@@ -613,8 +613,7 @@ public class VFDTGlobalWindow extends VFDT {
 
             //Check for Split condition
             double weightSeen = this.getWeightSeen();
-            if (weightSeen
-                    - this.getWeightSeenAtLastSplitEvaluation() >= ht.gracePeriodOption.getValue()) {
+            if (nodeTime % ht.gracePeriodOption.getValue() == 0) {
                 ht.attemptToSplit(this, this.getParent(), parentBranch);
 
                 this.setWeightSeenAtLastSplitEvaluation(weightSeen);

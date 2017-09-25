@@ -104,6 +104,8 @@ public class VFDTWithTieBreakingBug extends AbstractClassifier {
 
     protected int numInstances = 0;
 
+    protected int splitCount = 0;
+
 	private PrintWriter writer = null;
 
     @Override
@@ -614,7 +616,10 @@ public class VFDTWithTieBreakingBug extends AbstractClassifier {
                     new Measurement("inactive leaf byte size estimate",
                     this.inactiveLeafByteSizeEstimate),
                     new Measurement("byte size estimate overhead",
-                    this.byteSizeEstimateOverheadFraction)};
+                    this.byteSizeEstimateOverheadFraction),
+                    new Measurement("splits",
+                            this.splitCount)
+                    };
     }
 
     public int measureTreeDepth() {
@@ -724,6 +729,7 @@ public class VFDTWithTieBreakingBug extends AbstractClassifier {
             }
             if (shouldSplit) {
             	//System.err.println("SPLITTING - VVVVVVVV");
+            	splitCount++;
 
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {

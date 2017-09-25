@@ -20,8 +20,6 @@ import moa.classifiers.trees.VFDT.FoundNode;
 import moa.classifiers.trees.VFDT.LearningNode;
 import moa.classifiers.trees.VFDT.Node;
 import moa.classifiers.trees.VFDT.SplitNode;
-import moa.classifiers.trees.VFDTSlidingWindow.AdaLearningNode;
-import moa.classifiers.trees.VFDTSlidingWindow.AdaNode;
 import moa.core.AutoExpandVector;
 import moa.core.Measurement;
 import moa.core.Utils;

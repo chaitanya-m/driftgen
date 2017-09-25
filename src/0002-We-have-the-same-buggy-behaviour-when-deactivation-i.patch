@@ -1,0 +1,88 @@
+From 526d7ddd48fcd6cf4fb11069cd225cb7b550ced2 Mon Sep 17 00:00:00 2001
+From: Chaitanya Manapragada <cman39@student.monash.edu.au>
+Date: Sat, 22 Jul 2017 20:01:14 +1000
+Subject: [PATCH 2/2] We have the same buggy behaviour when deactivation is
+ turned on.
+
+burnIn=200000
+exact magnitude for p(y|x)=0.75	asked=0.800001
+
+===== 200511 =======
+        if [att 2:x2] = {val 1:v1}:
+          if [att 1:x1] = {val 1:v1}:
+            if [att 2:x2] = {val 1:v1}:
+              Leaf [class:class] = <class 1:class1> weights: {147,433|366}
+          if [att 1:x1] = {val 2:v2}:
+            Leaf [class:class] = <class 2:class2> weights: {0|20,679}
+        if [att 2:x2] = {val 2:v2}:
+          if [att 1:x1] = {val 1:v1}:
+            if [att 2:x2] = {val 1:v1}:
+              Leaf [class:class] = <class 1:class1> weights: {0|0}
+            if [att 2:x2] = {val 2:v2}:
+              Leaf [class:class] = <class 2:class2> weights: {81|27,521}
+          if [att 1:x1] = {val 2:v2}:
+            Leaf [class:class] = <class 1:class1> weights: {3,858|11}
+===== 200512 =======
+        if [att 2:x2] = {val 1:v1}:
+          if [att 1:x1] = {val 1:v1}:
+            if [att 2:x2] = {val 1:v1}:
+              if [att 2:x2] = {val 1:v1}:
+                Leaf [class:class] = <class 2:class2> weights: {0|200}
+          if [att 1:x1] = {val 2:v2}:
+            Leaf [class:class] = <class 2:class2> weights: {0|20,679}
+        if [att 2:x2] = {val 2:v2}:
+          if [att 1:x1] = {val 1:v1}:
+            if [att 2:x2] = {val 1:v1}:
+              Leaf [class:class] = <class 1:class1> weights: {0|0}
+            if [att 2:x2] = {val 2:v2}:
+              Leaf [class:class] = <class 2:class2> weights: {81|27,521}
+          if [att 1:x1] = {val 2:v2}:
+            Leaf [class:class] = <class 1:class1> weights: {3,858|11}
+---
+ src/moa/classifiers/trees/VFDT.java | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/src/moa/classifiers/trees/VFDT.java b/src/moa/classifiers/trees/VFDT.java
+index 9362b5c..f7592fb 100644
+--- a/src/moa/classifiers/trees/VFDT.java
++++ b/src/moa/classifiers/trees/VFDT.java
+@@ -720,7 +720,7 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
+                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+                 if (splitDecision.splitTest == null) {
+                     // preprune - null wins
+-                    //deactivateLearningNode(node, parent, parentIndex);
++                    deactivateLearningNode(node, parent, parentIndex);
+                 } else {
+                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
+                             node.getObservedClassDistribution(),splitDecision.numSplits() );
+@@ -773,10 +773,10 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
+             int cutoff = learningNodes.length - maxActive;
+             for (int i = 0; i < cutoff; i++) {
+                 if (learningNodes[i].node instanceof ActiveLearningNode) {
+-//                    deactivateLearningNode(
+-//                            (ActiveLearningNode) learningNodes[i].node,
+-//                            learningNodes[i].parent,
+-//                            learningNodes[i].parentBranch);
++                    deactivateLearningNode(
++                            (ActiveLearningNode) learningNodes[i].node,
++                            learningNodes[i].parent,
++                            learningNodes[i].parentBranch);
+                 }
+             }
+             for (int i = cutoff; i < learningNodes.length; i++) {
+@@ -824,9 +824,9 @@ public FlagOption binarySplitsOption = new FlagOption("binarySplits", 'b',
+         FoundNode[] learningNodes = findLearningNodes();
+         for (int i = 0; i < learningNodes.length; i++) {
+             if (learningNodes[i].node instanceof ActiveLearningNode) {
+-//                deactivateLearningNode(
+-//                        (ActiveLearningNode) learningNodes[i].node,
+-//                        learningNodes[i].parent, learningNodes[i].parentBranch);
++                deactivateLearningNode(
++                        (ActiveLearningNode) learningNodes[i].node,
++                        learningNodes[i].parent, learningNodes[i].parentBranch);
+             }
+         }
+     }
+-- 
+2.7.4
+

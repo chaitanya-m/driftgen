@@ -49,6 +49,7 @@ import moa.classifiers.trees.HoeffdingTree.Node;
 import moa.classifiers.trees.HoeffdingTree.SplitNode;
 import moa.core.AutoExpandVector;
 import moa.core.DoubleVector;
+import moa.core.Measurement;
 import moa.core.MiscUtils;
 import moa.core.Utils;
 import com.yahoo.labs.samoa.instances.Instance;
@@ -919,6 +920,7 @@ public class VFDTGlobalWindow extends VFDT {
             }
 
             if (shouldSplit) {
+            	splitCount++;
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins

@@ -748,6 +748,7 @@ public class VFDTDecay extends AbstractClassifier {
                 }
             }
             if (shouldSplit) {
+            	splitCount++;
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
                     // preprune - null wins

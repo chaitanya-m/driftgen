@@ -102,6 +102,7 @@ public class VFDTDecay extends AbstractClassifier {
 
     protected int numInstances = 0;
 
+    protected int splitCount = 0;
 
     @Override
     public String getPurposeString() {
@@ -628,7 +629,10 @@ public class VFDTDecay extends AbstractClassifier {
                     new Measurement("inactive leaf byte size estimate",
                     this.inactiveLeafByteSizeEstimate),
                     new Measurement("byte size estimate overhead",
-                    this.byteSizeEstimateOverheadFraction)};
+                    this.byteSizeEstimateOverheadFraction),
+                    new Measurement("splits",
+                    this.splitCount)};
+
     }
 
     public int measureTreeDepth() {

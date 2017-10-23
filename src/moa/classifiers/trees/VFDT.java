@@ -196,6 +196,8 @@ public class VFDT extends AbstractClassifier {
 
         protected DoubleVector observedClassDistribution;
 
+        protected DoubleVector classDistributionAtTimeOfCreation;
+
         protected int nodeTime;
 
         protected List<Integer> usedNominalAttributes = new ArrayList<Integer>();
@@ -227,6 +229,10 @@ public class VFDT extends AbstractClassifier {
 
         public double[] getClassVotes(Instance inst, VFDT ht) {
             return this.observedClassDistribution.getArrayCopy();
+        }
+
+        public double[] getClassDistributionAtTimeOfCreation() {
+        	return this.classDistributionAtTimeOfCreation.getArrayCopy();
         }
 
         public boolean observedClassDistributionIsPure() {
@@ -664,7 +670,7 @@ public class VFDT extends AbstractClassifier {
             }
 
             else {
-                double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
+            	double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getClassDistributionAtTimeOfCreation()),
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
@@ -676,7 +682,8 @@ public class VFDT extends AbstractClassifier {
 
                 else
                 	if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
-                        || (hoeffdingBound < this.tieThresholdOption.getValue())) {
+                        || (hoeffdingBound < this.tieThresholdOption.getValue()))
+                    	{
                     shouldSplit = true;
                 }
 

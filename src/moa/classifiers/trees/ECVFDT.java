@@ -7,10 +7,10 @@ import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
 import moa.classifiers.trees.CVFDT.CVFDTAdaNode;
 
-public class EFDT extends CVFDT{
+public class ECVFDT extends CVFDT{
 
 
-	public class EFDTSplitNode extends CVFDTSplitNode{
+	public class ECVFDTSplitNode extends CVFDTSplitNode{
 
 
 
@@ -29,12 +29,12 @@ public class EFDT extends CVFDT{
 			// Now let's find the best split X_n other than X_a that doesn't already have an attached alternate subtree
 			// Would that be an improvement over CVFDT? Does CVFDT always compute the X_n, even if it won't be used because it has an attached alternate?
 
-			SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(EFDT.this.splitCriterionOption);
+			SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(ECVFDT.this.splitCriterionOption);
 			double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(this.getObservedClassDistribution()),
-					EFDT.this.splitConfidenceOption.getValue(), this.observedClassDistribution.sumOfValues());
+					ECVFDT.this.splitConfidenceOption.getValue(), this.observedClassDistribution.sumOfValues());
 			// should really be called allPossibleSplits
 
-			AttributeSplitSuggestion[] allPossibleSplits = this.getBestSplitSuggestions(splitCriterion, EFDT.this);
+			AttributeSplitSuggestion[] allPossibleSplits = this.getBestSplitSuggestions(splitCriterion, ECVFDT.this);
 			Arrays.sort(allPossibleSplits);
 			// should really be called allPossibleSplits
 
@@ -54,7 +54,7 @@ public class EFDT extends CVFDT{
 
 			assert(currentSuggestion != null);
 
-			double tieThreshold = EFDT.this.tieThresholdOption.getValue();
+			double tieThreshold = ECVFDT.this.tieThresholdOption.getValue();
 			double deltaG = bestSuggestion.merit - currentSuggestion.merit;
 			//double deltaG = bestSuggestion.merit - secondBestSuggestion.merit;
 
@@ -93,20 +93,20 @@ public class EFDT extends CVFDT{
 
 
 
-		public EFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size,
+		public ECVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size,
 				boolean isAlternate) {
 			super(splitTest, classObservations, size, isAlternate);
 		}
 
-		public EFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, boolean isAlternate) {
+		public ECVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, boolean isAlternate) {
 			super(splitTest, classObservations, isAlternate);
 		}
 
-		public EFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size) {
+		public ECVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size) {
 			super(splitTest, classObservations, size);
 		}
 
-		public EFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations) {
+		public ECVFDTSplitNode(InstanceConditionalTest splitTest, double[] classObservations) {
 			super(splitTest, classObservations);
 		}
 
@@ -115,25 +115,25 @@ public class EFDT extends CVFDT{
 	@Override
 	protected AdaSplitNode newSplitNode(InstanceConditionalTest splitTest,
 			double[] classObservations, int size, boolean isAlternate) {
-		return new EFDTSplitNode(splitTest, classObservations, size, isAlternate);
+		return new ECVFDTSplitNode(splitTest, classObservations, size, isAlternate);
 	}
 
 	@Override
 	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
 			double[] classObservations, boolean isAlternate) {
-		return new EFDTSplitNode(splitTest, classObservations, isAlternate);
+		return new ECVFDTSplitNode(splitTest, classObservations, isAlternate);
 	}
 
 	@Override
 	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
 			double[] classObservations, int size) {
-		return new EFDTSplitNode(splitTest, classObservations, size);
+		return new ECVFDTSplitNode(splitTest, classObservations, size);
 	}
 
 	@Override
 	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
 			double[] classObservations) {
-		return new EFDTSplitNode(splitTest, classObservations);
+		return new ECVFDTSplitNode(splitTest, classObservations);
 	}
 
 }

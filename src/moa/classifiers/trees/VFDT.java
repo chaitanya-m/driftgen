@@ -204,6 +204,8 @@ public class VFDT extends AbstractClassifier {
 
         public Node(double[] classObservations) {
             this.observedClassDistribution = new DoubleVector(classObservations);
+            this.classDistributionAtTimeOfCreation = new DoubleVector(classObservations);
+
         }
 
         public int calcByteSize() {
@@ -746,7 +748,6 @@ public class VFDT extends AbstractClassifier {
                         double[] j = splitDecision.resultingClassDistributionFromSplit(i);
 
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
-                        newChild.classDistributionAtTimeOfCreation = new DoubleVector(newChild.observedClassDistribution); //deep copy
 
                         if(splitDecision.splitTest.getClass() == NominalAttributeBinaryTest.class
                         		||splitDecision.splitTest.getClass() == NominalAttributeMultiwayTest.class){

@@ -33,13 +33,13 @@ public class EFDT extends VFDT{
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
 
-                //comment this if statement to get VFDT bug
+                //comment this if statement and remove check that a nominal isn't being reused to get VFDT bug
                 if(bestSuggestion.merit < 1e-10){
                 	shouldSplit = false;
                 }
 
                 else
-                	if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
+                	if ((bestSuggestion.merit  > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue()))
                     	{
                     shouldSplit = true;

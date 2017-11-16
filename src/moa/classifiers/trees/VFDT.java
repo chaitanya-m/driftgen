@@ -575,8 +575,6 @@ public class VFDT extends AbstractClassifier {
 
 		//System.out.println(numInstances);
 
-
-
     }
 
     @Override
@@ -733,8 +731,12 @@ public class VFDT extends AbstractClassifier {
             }
             if (shouldSplit) {
             	splitCount++;
+            	System.out.println("=======================");
+            	StringBuilder out = new StringBuilder();
+            	getModelDescription(out, 2);
+            	System.out.println(out);
+            	System.out.println("=======================");
 
-            		int childrenWeightSum = 0;
 
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
@@ -767,7 +769,10 @@ public class VFDT extends AbstractClassifier {
                     }
 
                 }
-
+            	System.out.println("SPLIT AT:" + numInstances);
+            	out = new StringBuilder();
+            	getModelDescription(out, 2);
+            	System.out.println(out);
                 // manage memory
                 enforceTrackerLimit();
             }

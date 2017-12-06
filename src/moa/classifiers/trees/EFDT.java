@@ -156,6 +156,8 @@ public class EFDT extends VFDT{
 		protected void reEvaluateBestSplit(EFDTSplitNode node, EFDTSplitNode parent,
 	            int parentIndex) {
 
+			// node is a reference to this anyway... why have it at all?
+
 			int currentSplit = -1; // for no split
 
 			//lets first find out X_a, the current split
@@ -168,10 +170,10 @@ public class EFDT extends VFDT{
 			// Would that be an improvement over CVFDT? Does CVFDT always compute the X_n, even if it won't be used because it has an attached alternate?
 			SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(EFDT.this.splitCriterionOption);
 
-			double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(this.getObservedClassDistribution()),
-					EFDT.this.splitConfidenceOption.getValue(), this.observedClassDistribution.sumOfValues());
+			double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getClassDistributionAtTimeOfCreation()),
+					EFDT.this.splitConfidenceOption.getValue(), node.observedClassDistribution.sumOfValues());
 
-			AttributeSplitSuggestion[] bestSplitSuggestions = this.getBestSplitSuggestions(splitCriterion, EFDT.this);
+			AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, EFDT.this);
 			Arrays.sort(bestSplitSuggestions);
 
 			AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
@@ -342,11 +344,11 @@ public class EFDT extends VFDT{
             }
             if (shouldSplit) {
             	splitCount++;
-            	System.out.println("=======================");
-            	StringBuilder out = new StringBuilder();
-            	getModelDescription(out, 2);
-            	System.out.println(out);
-            	System.out.println("=======================");
+//            	System.out.println("=======================");
+//            	StringBuilder out = new StringBuilder();
+//            	getModelDescription(out, 2);
+//            	System.out.println(out);
+//            	System.out.println("=======================");
 
 
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
@@ -382,10 +384,10 @@ public class EFDT extends VFDT{
                     }
 
                 }
-            	System.out.println("SPLIT AT:" + numInstances);
-            	out = new StringBuilder();
-            	getModelDescription(out, 2);
-            	System.out.println(out);
+//            	System.out.println("SPLIT AT:" + numInstances);
+//            	out = new StringBuilder();
+//            	getModelDescription(out, 2);
+//            	System.out.println(out);
                 // manage memory
                 enforceTrackerLimit();
             }

@@ -15,6 +15,7 @@ import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.conditionaltests.NominalAttributeBinaryTest;
 import moa.classifiers.core.conditionaltests.NominalAttributeMultiwayTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.rules.core.conditionaltests.NominalAttributeBinaryRulePredicate;
 import moa.classifiers.trees.VFDT.ActiveLearningNode;
 import moa.classifiers.trees.VFDT.LearningNode;
 import moa.classifiers.trees.VFDT.SplitNode;
@@ -192,13 +193,22 @@ public class EFDT extends VFDT{
 			double tieThreshold = EFDT.this.tieThresholdOption.getValue();
 			double deltaG = bestSuggestion.merit - currentSuggestion.merit;
 
-			// if the new best is null, or if it is the same as current, don't do anything... we'd rather have the existing tree structure
+			// if the new best is null, or if it is the same as current and a nominal, don't do anything... we'd rather have the existing tree structure
 
-			if(currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0]
+			if(
+					(
+							currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0] &&
+							(
+									bestSuggestion.splitTest.getClass() == NominalAttributeBinaryTest.class ||
+									bestSuggestion.splitTest.getClass() == NominalAttributeMultiwayTest.class ||
+									bestSuggestion.splitTest.getClass() == NominalAttributeBinaryRulePredicate.class
+							)
+					)
+
 					|| bestSuggestion.splitTest == null
 					)
 			{
-				// do nothing, because the current split is the best split
+				// do nothing, because the current nominal split is the best split
 				// this is different but equivalent to algorithm listing...
 				// ensures that the current split doesn't get added on as an alternate!
 			}

@@ -14,10 +14,14 @@ import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.conditionaltests.NominalAttributeBinaryTest;
 import moa.classifiers.core.conditionaltests.NominalAttributeMultiwayTest;
+import moa.classifiers.core.conditionaltests.NumericAttributeBinaryTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
 import moa.classifiers.rules.core.conditionaltests.NominalAttributeBinaryRulePredicate;
+import moa.classifiers.rules.core.conditionaltests.NumericAttributeBinaryRulePredicate;
 import moa.classifiers.trees.VFDT.ActiveLearningNode;
+import moa.classifiers.trees.VFDT.FoundNode;
 import moa.classifiers.trees.VFDT.LearningNode;
+import moa.classifiers.trees.VFDT.Node;
 import moa.classifiers.trees.VFDT.SplitNode;
 import moa.core.AutoExpandVector;
 
@@ -213,8 +217,41 @@ public class EFDT extends VFDT{
 				// ensures that the current split doesn't get added on as an alternate!
 			}
 
+			//if the current is numeric and the same as current, only split if the majority class has changed down one of the paths
+			else if( currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0] &&
+						bestSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class
+								&& argmax(bestSuggestion.resultingClassDistributions[0]) == argmax(node.getChild(0).getObservedClassDistribution())
+								&&	argmax(bestSuggestion.resultingClassDistributions[1]) == argmax(node.getChild(1).getObservedClassDistribution())
+
+						// || bestSuggestion.splitTest.getClass() == NumericAttributeBinaryRulePredicate.class // handle this later
+
+					){
+				if (deltaG > hoeffdingBound){
+					System.err.println(numInstances + " Classes are unequal and we also have a split decision to be made");
+
+				}
+				else{
+				}
+						// Do nothing
+						/*System.err.println(Arrays.toString(bestSuggestion.resultingClassDistributions[0])
+								+ " $$$$$ " +
+								Arrays.toString(node.getChild(0).getObservedClassDistribution()));
+
+						System.err.println(argmax(bestSuggestion.resultingClassDistributions[0])
+								+ " $$$$$ " +
+								argmax(node.getChild(0).getObservedClassDistribution()));
+*/
+			}
+
+
+
 			else if (deltaG > hoeffdingBound
 					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
+
+
+
+				System.err.println(numInstances);
+
 
             	AttributeSplitSuggestion splitDecision = bestSuggestion;
 
@@ -475,6 +512,15 @@ public class EFDT extends VFDT{
             this.activeLeafNodeCount = 1;
         }
 
+        FoundNode foundNode = this.treeRoot.filterInstanceToLeaf(inst, null, -1);
+        Node leafNode = foundNode.node;
+
+        if (leafNode == null) {
+            leafNode = newLearningNode();
+            foundNode.parent.setChild(foundNode.parentBranch, leafNode);
+            this.activeLeafNodeCount++;
+        }
+
         ((EFDTNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
 
         numInstances++;
@@ -503,6 +549,18 @@ public class EFDT extends VFDT{
         return new EFDTSplitNode(splitTest, classObservations);
     }
 
+	private int argmax(double[] array){
 
+		double max = array[0];
+		int maxarg = 0;
 
+		for (int i = 1; i < array.length; i++){
+
+			if(array[i] > max){
+				max = array[i];
+				maxarg = i;
+			}
+		}
+		return maxarg;
+	}
 }

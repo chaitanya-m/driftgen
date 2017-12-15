@@ -220,27 +220,30 @@ public class EFDT extends VFDT{
 			//if the current is numeric and the same as current, only split if the majority class has changed down one of the paths
 			else if( currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0] &&
 						bestSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class
-								&& argmax(bestSuggestion.resultingClassDistributions[0]) == argmax(node.getChild(0).getObservedClassDistribution())
-								&&	argmax(bestSuggestion.resultingClassDistributions[1]) == argmax(node.getChild(1).getObservedClassDistribution())
-
+								&&
+								(argmax(bestSuggestion.resultingClassDistributions[0]) != argmax(node.getChild(0).getObservedClassDistribution())
+								||	argmax(bestSuggestion.resultingClassDistributions[1]) != argmax(node.getChild(1).getObservedClassDistribution()))
+								&&
+								deltaG < hoeffdingBound
 						// || bestSuggestion.splitTest.getClass() == NumericAttributeBinaryRulePredicate.class // handle this later
 
 					){
-				if (deltaG > hoeffdingBound){
-					System.err.println(numInstances + " Classes are unequal and we also have a split decision to be made");
+				//if (deltaG < hoeffdingBound){
+					System.err.println(numInstances + " Classes are unequal but no split decision to be made because deltaG is too small at " + deltaG
+							+ " while hoeffdingBound is " + hoeffdingBound
+							);
 
-				}
-				else{
-				}
-						// Do nothing
-						/*System.err.println(Arrays.toString(bestSuggestion.resultingClassDistributions[0])
-								+ " $$$$$ " +
-								Arrays.toString(node.getChild(0).getObservedClassDistribution()));
+				//}
+				//else{
+				//}
+//						System.err.println(Arrays.toString(bestSuggestion.resultingClassDistributions[0])
+//								+ " $$$$$ " +
+//								Arrays.toString(node.getChild(0).getObservedClassDistribution()));
+//
+//						System.err.println(argmax(bestSuggestion.resultingClassDistributions[0])
+//								+ " $$$$$ " +
+//								argmax(node.getChild(0).getObservedClassDistribution()));
 
-						System.err.println(argmax(bestSuggestion.resultingClassDistributions[0])
-								+ " $$$$$ " +
-								argmax(node.getChild(0).getObservedClassDistribution()));
-*/
 			}
 
 

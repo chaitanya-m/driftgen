@@ -184,7 +184,8 @@ public class EFDT extends VFDT{
 			AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
 			AttributeSplitSuggestion currentSuggestion = null;
 
-			// Find attribute suggestion corresponding to current split
+			// Find attribute suggestion corresponding to current split. this is specific to the nominal case...
+			// the numeric case will find you the same attribute, which is slightly useless
 			for(int i = 0; i < bestSplitSuggestions.length; i++) {
 
 				if(bestSplitSuggestions[i].splitTest != null
@@ -196,6 +197,28 @@ public class EFDT extends VFDT{
 
 			double tieThreshold = EFDT.this.tieThresholdOption.getValue();
 			double deltaG = bestSuggestion.merit - currentSuggestion.merit;
+
+			if(bestSuggestion == currentSuggestion && bestSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class){
+				//in this case the previous deltaG computation is useless- always zero
+				// we need to compute actual current merit(infogain, G) and recompute deltaG
+				// we need new and old split points
+				double[][] childDists = new double[node.numChildren()][];
+				for(int i = 0; i < node.numChildren(); i++){
+					childDists[i] = node.getChild(i).getObservedClassDistribution();
+				}
+
+
+				deltaG = bestSuggestion.merit - splitCriterion.getMeritOfSplit(node.getObservedClassDistribution(), childDists);
+
+
+			}
+
+
+
+
+
+
+
 
 			// if the new best is null, or if it is the same as current and a nominal, don't do anything... we'd rather have the existing tree structure
 
@@ -228,17 +251,24 @@ public class EFDT extends VFDT{
 						// || bestSuggestion.splitTest.getClass() == NumericAttributeBinaryRulePredicate.class // handle this later
 
 					){
-				//if (deltaG < hoeffdingBound){
-					System.err.println(numInstances + " Classes are unequal but no split decision to be made because deltaG is too small at " + deltaG
-							+ " while hoeffdingBound is " + hoeffdingBound
-							);
-
-				//}
+//				if (deltaG > hoeffdingBound){
+//					System.err.println(numInstances + " Classes are unequal but no split decision to be made because deltaG is too small at " + deltaG
+//							+ " while hoeffdingBound is " + hoeffdingBound
+//							);
+//
+//				}
 				//else{
 				//}
+
+//					if(argmax(bestSuggestion.resultingClassDistributions[0]) != argmax(node.getChild(0).getObservedClassDistribution()) ){
 //						System.err.println(Arrays.toString(bestSuggestion.resultingClassDistributions[0])
 //								+ " $$$$$ " +
-//								Arrays.toString(node.getChild(0).getObservedClassDistribution()));
+//								Arrays.toString(node.getChild(0).getObservedClassDistribution())
+//						+ " $$$$$ " +
+//						Arrays.toString(node.getChild(0).getClassDistributionAtTimeOfCreation()))
+//
+//						;
+//					}
 //
 //						System.err.println(argmax(bestSuggestion.resultingClassDistributions[0])
 //								+ " $$$$$ " +
@@ -248,12 +278,23 @@ public class EFDT extends VFDT{
 
 
 
+
 			else if (deltaG > hoeffdingBound
 					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
 
 
+				if (currentSuggestion == bestSuggestion && currentSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class &&
+						(argmax(bestSuggestion.resultingClassDistributions[0]) != argmax(node.getChild(0).getObservedClassDistribution())
+						||	argmax(bestSuggestion.resultingClassDistributions[1]) != argmax(node.getChild(1).getObservedClassDistribution()) )
+						){
+					System.err.println(numInstances);
 
-				System.err.println(numInstances);
+				}
+
+
+
+
+
 
 
             	AttributeSplitSuggestion splitDecision = bestSuggestion;

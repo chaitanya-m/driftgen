@@ -49,6 +49,8 @@ public class EFDT extends VFDT{
 		 *
 		 */
 
+    	public int epsilonSlow = 2; // for numeric attributes that are being re-split on, epsilon needs to slow down
+
     	private boolean isRoot;
 
 		private EFDTSplitNode parent = null;
@@ -141,13 +143,10 @@ public class EFDT extends VFDT{
 				obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
 			}
 
-			////
-
 			// check if a better split is available. if so, chop the tree at this point, copying likelihood. predictors for children are from parent likelihood.
 			if(ht.numInstances % ht.gracePeriodOption.getValue() == 0){
 				this.reEvaluateBestSplit(this, parent, parentBranch);
 			}
-
 
 	        int childBranch = this.instanceChildIndex(inst);
 	        Node child = this.getChild(childBranch);
@@ -199,7 +198,7 @@ public class EFDT extends VFDT{
 			double deltaG = bestSuggestion.merit - currentSuggestion.merit;
 
 			if(bestSuggestion == currentSuggestion && bestSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class){
-				//in this case the previous deltaG computation is useless- always zero
+				// in this case the previous deltaG computation is useless- always zero
 				// we need to compute actual current merit(infogain, G) and recompute deltaG
 				// we need new and old split points
 				double[][] childDists = new double[node.numChildren()][];
@@ -207,18 +206,9 @@ public class EFDT extends VFDT{
 					childDists[i] = node.getChild(i).getObservedClassDistribution();
 				}
 
-
 				deltaG = bestSuggestion.merit - splitCriterion.getMeritOfSplit(node.getObservedClassDistribution(), childDists);
 
-
 			}
-
-
-
-
-
-
-
 
 			// if the new best is null, or if it is the same as current and a nominal, don't do anything... we'd rather have the existing tree structure
 
@@ -246,7 +236,7 @@ public class EFDT extends VFDT{
 								&&
 								(argmax(bestSuggestion.resultingClassDistributions[0]) == argmax(node.getChild(0).getObservedClassDistribution())
 								||	argmax(bestSuggestion.resultingClassDistributions[1]) == argmax(node.getChild(1).getObservedClassDistribution()))
-								//||deltaG < 999999999//(1000000000 * hoeffdingBound)
+								&& deltaG < epsilonSlow*hoeffdingBound
 						// || bestSuggestion.splitTest.getClass() == NumericAttributeBinaryRulePredicate.class // handle this later
 
 					){
@@ -286,15 +276,10 @@ public class EFDT extends VFDT{
 						(argmax(bestSuggestion.resultingClassDistributions[0]) != argmax(node.getChild(0).getObservedClassDistribution())
 						||	argmax(bestSuggestion.resultingClassDistributions[1]) != argmax(node.getChild(1).getObservedClassDistribution()) )
 						){
-					System.err.println(numInstances);
+					// If majority class in resulting distributions has changed for a new split of the same attribute...
+					//System.err.println(numInstances);
 
 				}
-
-
-
-
-
-
 
             	AttributeSplitSuggestion splitDecision = bestSuggestion;
 
@@ -320,6 +305,11 @@ public class EFDT extends VFDT{
                         }
                         ((EFDTSplitNode)newSplit).setChild(i, newChild);
                     }
+
+                    if (currentSuggestion == bestSuggestion && currentSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class){
+                    	((EFDTSplitNode)newSplit).epsilonSlow = epsilonSlow * 2;
+                    }
+
                     EFDT.this.activeLeafNodeCount--;
                     EFDT.this.decisionNodeCount++;
                     EFDT.this.activeLeafNodeCount += splitDecision.numSplits();

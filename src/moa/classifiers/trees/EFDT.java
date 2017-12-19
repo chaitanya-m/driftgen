@@ -49,8 +49,6 @@ public class EFDT extends VFDT{
 		 *
 		 */
 
-    	public int epsilonSlow = 2; // for numeric attributes that are being re-split on, epsilon needs to slow down
-
     	private boolean isRoot;
 
 		private EFDTSplitNode parent = null;
@@ -236,83 +234,62 @@ public class EFDT extends VFDT{
 								&&
 								(argmax(bestSuggestion.resultingClassDistributions[0]) == argmax(node.getChild(0).getObservedClassDistribution())
 								||	argmax(bestSuggestion.resultingClassDistributions[1]) == argmax(node.getChild(1).getObservedClassDistribution()))
-								&& deltaG < epsilonSlow*hoeffdingBound
+								&& deltaG < hoeffdingBound
 						// || bestSuggestion.splitTest.getClass() == NumericAttributeBinaryRulePredicate.class // handle this later
 
 					){
-//				if (deltaG > hoeffdingBound){
-//					System.err.println(numInstances + " Classes are unequal but no split decision to be made because deltaG is too small at " + deltaG
-//							+ " while hoeffdingBound is " + hoeffdingBound
-//							);
-//
-//				}
-				//else{
-				//}
-
-//					if(argmax(bestSuggestion.resultingClassDistributions[0]) != argmax(node.getChild(0).getObservedClassDistribution()) ){
-//						System.err.println(Arrays.toString(bestSuggestion.resultingClassDistributions[0])
-//								+ " $$$$$ " +
-//								Arrays.toString(node.getChild(0).getObservedClassDistribution())
-//						+ " $$$$$ " +
-//						Arrays.toString(node.getChild(0).getClassDistributionAtTimeOfCreation()))
-//
-//						;
-//					}
-//
-//						System.err.println(argmax(bestSuggestion.resultingClassDistributions[0])
-//								+ " $$$$$ " +
-//								argmax(node.getChild(0).getObservedClassDistribution()));
 
 			}
-
-
-
 
 			else if (deltaG > hoeffdingBound
 					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
 
 
-				if (currentSuggestion == bestSuggestion && currentSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class &&
-						(argmax(bestSuggestion.resultingClassDistributions[0]) != argmax(node.getChild(0).getObservedClassDistribution())
-						||	argmax(bestSuggestion.resultingClassDistributions[1]) != argmax(node.getChild(1).getObservedClassDistribution()) )
-						){
-					// If majority class in resulting distributions has changed for a new split of the same attribute...
-					//System.err.println(numInstances);
-
-				}
-
             	AttributeSplitSuggestion splitDecision = bestSuggestion;
 
-				// otherwise, torch the subtree and split on the new best attribute.
-
-                	this.killSubtree(EFDT.this);
 
                     Node newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(), splitDecision.numSplits());
                     ((EFDTSplitNode)newSplit).attributeObservers = node.attributeObservers; // copy the attribute observers
 
-                    for (int i = 0; i < splitDecision.numSplits(); i++) {
 
-                        double[] j = splitDecision.resultingClassDistributionFromSplit(i);
+    				if (currentSuggestion == bestSuggestion && currentSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class &&
+    						(argmax(bestSuggestion.resultingClassDistributions[0]) == argmax(node.getChild(0).getObservedClassDistribution())
+    						||	argmax(bestSuggestion.resultingClassDistributions[1]) == argmax(node.getChild(1).getObservedClassDistribution()) )
+    						){
 
-                        Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
+    					// change split but don't destroy the subtrees
+    					for (int i = 0; i < splitDecision.numSplits(); i++) {
+    						((EFDTSplitNode)newSplit).setChild(i, this.getChild(i));
+    					}
 
-                        if(splitDecision.splitTest.getClass() == NominalAttributeBinaryTest.class
-                        		||splitDecision.splitTest.getClass() == NominalAttributeMultiwayTest.class){
-                        	newChild.usedNominalAttributes = new ArrayList<Integer>(node.usedNominalAttributes); //deep copy
-                        	newChild.usedNominalAttributes.add(splitDecision.splitTest.getAttsTestDependsOn()[0]);
-                        	// no  nominal attribute should be split on more than once in the path
+    				} else{
+
+    					// otherwise, torch the subtree and split on the new best attribute.
+
+                    	this.killSubtree(EFDT.this);
+
+                        for (int i = 0; i < splitDecision.numSplits(); i++) {
+
+                            double[] j = splitDecision.resultingClassDistributionFromSplit(i);
+
+                            Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
+
+                            if(splitDecision.splitTest.getClass() == NominalAttributeBinaryTest.class
+                            		||splitDecision.splitTest.getClass() == NominalAttributeMultiwayTest.class){
+                            	newChild.usedNominalAttributes = new ArrayList<Integer>(node.usedNominalAttributes); //deep copy
+                            	newChild.usedNominalAttributes.add(splitDecision.splitTest.getAttsTestDependsOn()[0]);
+                            	// no  nominal attribute should be split on more than once in the path
+                            }
+                            ((EFDTSplitNode)newSplit).setChild(i, newChild);
                         }
-                        ((EFDTSplitNode)newSplit).setChild(i, newChild);
-                    }
 
-                    if (currentSuggestion == bestSuggestion && currentSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class){
-                    	((EFDTSplitNode)newSplit).epsilonSlow = epsilonSlow * 2;
-                    }
+                        EFDT.this.activeLeafNodeCount--;
+                        EFDT.this.decisionNodeCount++;
+                        EFDT.this.activeLeafNodeCount += splitDecision.numSplits();
 
-                    EFDT.this.activeLeafNodeCount--;
-                    EFDT.this.decisionNodeCount++;
-                    EFDT.this.activeLeafNodeCount += splitDecision.numSplits();
+    				}
+
 
                     if (parent == null) {
                 		((EFDTNode)newSplit).setRoot(true);

@@ -228,19 +228,6 @@ public class EFDT extends VFDT{
 				// ensures that the current split doesn't get added on as an alternate!
 			}
 
-			//if the current is numeric and the same as current, only split if the majority class has changed down one of the paths
-			else if( currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0] &&
-						bestSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class
-								&&
-								(argmax(bestSuggestion.resultingClassDistributions[0]) == argmax(node.getChild(0).getObservedClassDistribution())
-								||	argmax(bestSuggestion.resultingClassDistributions[1]) == argmax(node.getChild(1).getObservedClassDistribution()))
-								&& deltaG < hoeffdingBound
-						// || bestSuggestion.splitTest.getClass() == NumericAttributeBinaryRulePredicate.class // handle this later
-
-					){
-
-			}
-
 			else if (deltaG > hoeffdingBound
 					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
 

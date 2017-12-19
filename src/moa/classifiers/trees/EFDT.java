@@ -244,10 +244,9 @@ public class EFDT extends VFDT{
 			else if( currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0] &&
 						bestSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class
 								&&
-								(argmax(bestSuggestion.resultingClassDistributions[0]) != argmax(node.getChild(0).getObservedClassDistribution())
-								||	argmax(bestSuggestion.resultingClassDistributions[1]) != argmax(node.getChild(1).getObservedClassDistribution()))
-								&&
-								deltaG < hoeffdingBound
+								(argmax(bestSuggestion.resultingClassDistributions[0]) == argmax(node.getChild(0).getObservedClassDistribution())
+								||	argmax(bestSuggestion.resultingClassDistributions[1]) == argmax(node.getChild(1).getObservedClassDistribution()))
+								//||deltaG < 999999999//(1000000000 * hoeffdingBound)
 						// || bestSuggestion.splitTest.getClass() == NumericAttributeBinaryRulePredicate.class // handle this later
 
 					){

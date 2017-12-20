@@ -595,11 +595,13 @@ public class VFDT extends AbstractClassifier {
 
     @Override
     protected Measurement[] getModelMeasurementsImpl() {
+		FoundNode[] learningNodes = findLearningNodes();
+
         return new Measurement[]{
+
                     new Measurement("tree size (nodes)", this.decisionNodeCount
                     + this.activeLeafNodeCount + this.inactiveLeafNodeCount),
-                    new Measurement("tree size (leaves)", this.activeLeafNodeCount
-                    + this.inactiveLeafNodeCount),
+                    new Measurement("tree size (leaves)", learningNodes.length),
                     new Measurement("active learning leaves",
                     this.activeLeafNodeCount),
                     new Measurement("tree depth", measureTreeDepth()),

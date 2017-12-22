@@ -158,91 +158,113 @@ public class EFDT extends VFDT{
 		protected void reEvaluateBestSplit(EFDTSplitNode node, EFDTSplitNode parent,
 	            int parentIndex) {
 
+			node.addToSplitAttempts(1);
+
+			// EFDT must transfer over gain averages when replacing a node: leaf to split, split to leaf, or split to split
+			// It must replace split nodes with leaves if null wins
+
+
 			// node is a reference to this anyway... why have it at all?
 
-			int currentSplit = -1; // for no split
+			int currentSplit = -1;
+			// and if we always choose to maintain tree structure
 
 			//lets first find out X_a, the current split
+
 			if(this.splitTest != null){
 				currentSplit = this.splitTest.getAttsTestDependsOn()[0];
 				// given the current implementations in MOA, we're only ever expecting one int to be returned
+			} else{ // there is no split, split is null
+				currentSplit = -1;
 			}
 
-			// Now let's find the best split X_n other than X_a that doesn't already have an attached alternate subtree
-			// Would that be an improvement over CVFDT? Does CVFDT always compute the X_n, even if it won't be used because it has an attached alternate?
+			//compute Hoeffding bound
 			SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(EFDT.this.splitCriterionOption);
-
 			double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getClassDistributionAtTimeOfCreation()),
 					EFDT.this.splitConfidenceOption.getValue(), node.observedClassDistribution.sumOfValues());
 
+			// get best split suggestions
 			AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, EFDT.this);
 			Arrays.sort(bestSplitSuggestions);
 
+			// get the best suggestion
 			AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
-			AttributeSplitSuggestion currentSuggestion = null;
 
-			// Find attribute suggestion corresponding to current split. this is specific to the nominal case...
-			// the numeric case will find you the same attribute, which is slightly useless
-			for(int i = 0; i < bestSplitSuggestions.length; i++) {
 
-				if(bestSplitSuggestions[i].splitTest != null
-						&& bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0] == currentSplit){
-					 currentSuggestion = bestSplitSuggestions[i];
-					 break;
-				}
+
+            for (int i = 0; i < bestSplitSuggestions.length; i++){
+
+            	if (bestSplitSuggestions[i].splitTest != null){
+            		if (!node.getInfogainSum().containsKey((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0])))
+            		{
+            			node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), 0.0);
+            		}
+                   	double currentSum = node.getInfogainSum().get((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]));
+                   	node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), currentSum + bestSplitSuggestions[i].merit);
+            	}
+
+            	else { // handle the null attribute
+            		double currentSum = node.getInfogainSum().get(-1); // null split
+            		node.getInfogainSum().put(-1, currentSum + bestSplitSuggestions[i].merit);
+            	}
+
+            }
+
+			// get the average merit for best and current splits
+
+            double bestSuggestionAverageMerit = 0.0;
+            double currentAverageMerit = 0.0;
+
+			if(bestSuggestion.splitTest == null) { // best is null
+				bestSuggestionAverageMerit = node.getInfogainSum().get(-1)/node.getNumSplitAttempts();
+			} else {
+
+				bestSuggestionAverageMerit = node.getInfogainSum().get(bestSuggestion.splitTest.getAttsTestDependsOn()[0])/node.getNumSplitAttempts();
+			}
+
+			if(node.splitTest == null) { // current is null
+				currentAverageMerit = node.getInfogainSum().get(-1)/node.getNumSplitAttempts();
+			} else {
+				currentAverageMerit = node.getInfogainSum().get(node.splitTest.getAttsTestDependsOn()[0])/node.getNumSplitAttempts();
 			}
 
 			double tieThreshold = EFDT.this.tieThresholdOption.getValue();
-			double deltaG = bestSuggestion.merit - currentSuggestion.merit;
 
-			if(bestSuggestion == currentSuggestion && bestSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class){
-				// in this case the previous deltaG computation is useless- always zero
-				// we need to compute actual current merit(infogain, G) and recompute deltaG
-				// we need new and old split points
-				double[][] childDists = new double[node.numChildren()][];
-				for(int i = 0; i < node.numChildren(); i++){
-					childDists[i] = node.getChild(i).getObservedClassDistribution();
-				}
+			// compute the average deltaG
+			double deltaG = bestSuggestionAverageMerit - currentAverageMerit;
 
-				deltaG = bestSuggestion.merit - splitCriterion.getMeritOfSplit(node.getObservedClassDistribution(), childDists);
 
-			}
-
-			// if the new best is null, or if it is the same as current and a nominal, don't do anything... we'd rather have the existing tree structure
-
-			if(
-					(
-							currentSplit == bestSuggestion.splitTest.getAttsTestDependsOn()[0] &&
-							(
-									bestSuggestion.splitTest.getClass() == NominalAttributeBinaryTest.class ||
-									bestSuggestion.splitTest.getClass() == NominalAttributeMultiwayTest.class ||
-									bestSuggestion.splitTest.getClass() == NominalAttributeBinaryRulePredicate.class
-							)
-					)
-
-					|| bestSuggestion.splitTest == null
-					)
-			{
-				// do nothing, because the current nominal split is the best split
-				// this is different but equivalent to algorithm listing...
-				// ensures that the current split doesn't get added on as an alternate!
-			}
-
-			else if (deltaG > hoeffdingBound
+			if (deltaG > hoeffdingBound
 					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
-
 
             	AttributeSplitSuggestion splitDecision = bestSuggestion;
 
+            	// if null split wins
+            	if(splitDecision.splitTest == null){
+
+                	node.killSubtree(EFDT.this);
+                	EFDTLearningNode replacement = (EFDTLearningNode)newLearningNode();
+                	replacement.setInfogainSum(node.getInfogainSum()); // transfer infogain history, split to replacement leaf
+                	if(node.getParent() != null){
+                		node.getParent().setChild(parentIndex, replacement);
+                	} else {
+                		assert(node.getParent().isRoot());
+                		node.setRoot(true);
+                	}
+            	}
+
+            	else {
 
                     Node newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(), splitDecision.numSplits());
+
                     ((EFDTSplitNode)newSplit).attributeObservers = node.attributeObservers; // copy the attribute observers
+                    newSplit.setInfogainSum(node.getInfogainSum());  // transfer infogain history, split to replacement split
 
-
-    				if (currentSuggestion == bestSuggestion && currentSuggestion.splitTest.getClass() == NumericAttributeBinaryTest.class &&
-    						(argmax(bestSuggestion.resultingClassDistributions[0]) == argmax(node.getChild(0).getObservedClassDistribution())
-    						||	argmax(bestSuggestion.resultingClassDistributions[1]) == argmax(node.getChild(1).getObservedClassDistribution()) )
+    				if (node.splitTest == splitDecision.splitTest
+    						&& node.splitTest.getClass() == NumericAttributeBinaryTest.class &&
+    						(argmax(splitDecision.resultingClassDistributions[0]) == argmax(node.getChild(0).getObservedClassDistribution())
+    						||	argmax(splitDecision.resultingClassDistributions[1]) == argmax(node.getChild(1).getObservedClassDistribution()) )
     						){
 
     					// change split but don't destroy the subtrees
@@ -250,7 +272,7 @@ public class EFDT extends VFDT{
     						((EFDTSplitNode)newSplit).setChild(i, this.getChild(i));
     					}
 
-    				} else{
+    				} else {
 
     					// otherwise, torch the subtree and split on the new best attribute.
 
@@ -297,8 +319,11 @@ public class EFDT extends VFDT{
 //							+ " secondBestSuggestion.merit " + secondBestSuggestion.merit +"\n");
 
 					// we've just created an alternate, but only if the key is not already contained
-				}
+
+
 			}
+		}
+	}
 
 		@Override
 		public void setParent(EFDTSplitNode parent) {
@@ -323,6 +348,29 @@ public class EFDT extends VFDT{
             AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
             Arrays.sort(bestSplitSuggestions);
             boolean shouldSplit = false;
+
+            for (int i = 0; i < bestSplitSuggestions.length; i++){
+
+            	node.addToSplitAttempts(1); // even if we don't actually attempt to split, we've computed infogains
+
+
+            	if (bestSplitSuggestions[i].splitTest != null){
+            		if (!node.getInfogainSum().containsKey((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0])))
+            		{
+            			node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), 0.0);
+            		}
+                   	double currentSum = node.getInfogainSum().get((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]));
+                   	node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), currentSum + bestSplitSuggestions[i].merit);
+            	}
+
+            	else { // handle the null attribute
+            		double currentSum = node.getInfogainSum().get(-1); // null split
+            		node.getInfogainSum().put(-1, currentSum + bestSplitSuggestions[i].merit);
+            	}
+
+            }
+
+
             if (bestSplitSuggestions.length < 2) {
                 shouldSplit = bestSplitSuggestions.length > 0;
             }
@@ -332,13 +380,21 @@ public class EFDT extends VFDT{
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
 
+                double bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
+
+                if(bestSuggestion.splitTest == null){ // if you have a null split
+                	bestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
+                } else{
+                	bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
+                }
+
                 //comment this if statement and remove check that a nominal isn't being reused to get VFDT bug
                 if(bestSuggestion.merit < 1e-10){
-                	shouldSplit = false;
+                	shouldSplit = false; // we don't use average here
                 }
 
                 else
-                	if ((bestSuggestion.merit  > hoeffdingBound)
+                	if ((bestSuggestionAverageMerit  > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue()))
                     	{
                     shouldSplit = true;
@@ -403,6 +459,7 @@ public class EFDT extends VFDT{
                     Node newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(), splitDecision.numSplits());
                     ((EFDTSplitNode)newSplit).attributeObservers = node.attributeObservers; // copy the attribute observers
+                    ((EFDTSplitNode)newSplit).setInfogainSum(node.getInfogainSum());  // transfer infogain history, leaf to split
 
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
 

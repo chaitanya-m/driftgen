@@ -344,14 +344,17 @@ public class EFDT extends VFDT{
             int parentIndex) {
 
         if (!node.observedClassDistributionIsPure()) {
+        	node.addToSplitAttempts(1); // even if we don't actually attempt to split, we've computed infogains
+
+
             SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
             AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
             Arrays.sort(bestSplitSuggestions);
             boolean shouldSplit = false;
 
             for (int i = 0; i < bestSplitSuggestions.length; i++){
+            	//node.addToSplitAttempts(1); // even if we don't actually attempt to split, we've computed infogains
 
-            	node.addToSplitAttempts(1); // even if we don't actually attempt to split, we've computed infogains
 
 
             	if (bestSplitSuggestions[i].splitTest != null){
@@ -381,6 +384,7 @@ public class EFDT extends VFDT{
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
 
                 double bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
+                double currentAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
 
                 if(bestSuggestion.splitTest == null){ // if you have a null split
                 	bestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
@@ -393,10 +397,12 @@ public class EFDT extends VFDT{
                 	shouldSplit = false; // we don't use average here
                 }
 
-                else
-                	if ((bestSuggestionAverageMerit  > hoeffdingBound)
+                else if ((bestSuggestionAverageMerit/*-currentAverageMerit*/  > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue()))
                     	{
+                	if(bestSuggestionAverageMerit/*-currentAverageMerit*/  < hoeffdingBound){
+                		System.out.println(bestSuggestionAverageMerit/*-currentAverageMerit*/ + "  " + hoeffdingBound);
+                	}
                     shouldSplit = true;
                 }
 

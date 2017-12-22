@@ -26,6 +26,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -192,6 +193,10 @@ public class VFDT extends AbstractClassifier {
 
     public static class Node extends AbstractMOAObject {
 
+    	private HashMap<Integer, Double> infogainSum;
+
+    	private int numSplitAttempts = 0;
+
         private static final long serialVersionUID = 1L;
 
         protected DoubleVector observedClassDistribution;
@@ -205,7 +210,25 @@ public class VFDT extends AbstractClassifier {
         public Node(double[] classObservations) {
             this.observedClassDistribution = new DoubleVector(classObservations);
             this.classDistributionAtTimeOfCreation = new DoubleVector(classObservations);
+            this.infogainSum = new HashMap<Integer, Double>();
+            this.infogainSum.put(-1, 0.0); // Initialize for null split
 
+        }
+
+        public int getNumSplitAttempts(){
+        	return numSplitAttempts;
+        }
+
+        public void addToSplitAttempts(int i){
+        	numSplitAttempts += i;
+        }
+
+        public HashMap<Integer, Double> getInfogainSum() {
+        	return infogainSum;
+        }
+
+        public void setInfogainSum(HashMap<Integer, Double> igs) {
+        	infogainSum = igs;
         }
 
         public int calcByteSize() {
@@ -663,27 +686,71 @@ public class VFDT extends AbstractClassifier {
     protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
             int parentIndex) {
         if (!node.observedClassDistributionIsPure()) {
+
+
             SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
             AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
+
             Arrays.sort(bestSplitSuggestions);
             boolean shouldSplit = false;
+
+            for (int i = 0; i < bestSplitSuggestions.length; i++){
+
+            	node.addToSplitAttempts(1); // even if we don't actually attempt to split, we've computed infogains
+
+
+            	if (bestSplitSuggestions[i].splitTest != null){
+            		if (!node.getInfogainSum().containsKey((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0])))
+            		{
+            			node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), 0.0);
+            		}
+                   	double currentSum = node.getInfogainSum().get((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]));
+                   	node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), currentSum + bestSplitSuggestions[i].merit);
+            	}
+
+            	else { // handle the null attribute
+            		double currentSum = node.getInfogainSum().get(-1); // null split
+            		node.getInfogainSum().put(-1, currentSum + bestSplitSuggestions[i].merit);
+            	}
+
+            }
+
             if (bestSplitSuggestions.length < 2) {
                 shouldSplit = bestSplitSuggestions.length > 0;
             }
 
             else {
+
+
             	double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getClassDistributionAtTimeOfCreation()),
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
+
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
 
+
+                double bestSuggestionAverageMerit = 0.0;
+                double secondBestSuggestionAverageMerit = 0.0;
+
+                if(bestSuggestion.splitTest == null){ // if you have a null split
+                	bestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
+                } else{
+                	bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
+                }
+
+                if(secondBestSuggestion.splitTest == null){ // if you have a null split
+                	secondBestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
+                } else{
+                	secondBestSuggestionAverageMerit = node.getInfogainSum().get((secondBestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
+                }
+
                 //comment this if statement to get VFDT bug
-                if(bestSuggestion.merit < 1e-10){
+                if(bestSuggestion.merit < 1e-10){ // we don't use average here
                 	shouldSplit = false;
                 }
 
                 else
-                	if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
+                	if ((bestSuggestionAverageMerit - secondBestSuggestionAverageMerit > hoeffdingBound)
                         || (hoeffdingBound < this.tieThresholdOption.getValue()))
                     	{
                     shouldSplit = true;

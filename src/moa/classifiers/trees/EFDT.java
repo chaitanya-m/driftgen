@@ -234,7 +234,7 @@ public class EFDT extends VFDT{
 			double deltaG = bestSuggestionAverageMerit - currentAverageMerit;
 
 
-			if (deltaG > hoeffdingBound
+			if (deltaG > hoeffdingBound /** Math.pow((node.observedClassDistribution.sumOfValues() / (EFDT.this.treeRoot).observedClassDistribution.sumOfValues()), 10)*/
 					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
 
             	AttributeSplitSuggestion splitDecision = bestSuggestion;
@@ -353,9 +353,6 @@ public class EFDT extends VFDT{
             boolean shouldSplit = false;
 
             for (int i = 0; i < bestSplitSuggestions.length; i++){
-            	//node.addToSplitAttempts(1); // even if we don't actually attempt to split, we've computed infogains
-
-
 
             	if (bestSplitSuggestions[i].splitTest != null){
             		if (!node.getInfogainSum().containsKey((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0])))
@@ -397,10 +394,11 @@ public class EFDT extends VFDT{
                 	shouldSplit = false; // we don't use average here
                 }
 
-                else if ((bestSuggestionAverageMerit/*-currentAverageMerit*/  > hoeffdingBound)
+                else if ((bestSuggestionAverageMerit-currentAverageMerit)  >
+                hoeffdingBound /**  Math.pow((node.observedClassDistribution.sumOfValues() / (EFDT.this.treeRoot).observedClassDistribution.sumOfValues()), 1)*/
                         || (hoeffdingBound < this.tieThresholdOption.getValue()))
                     	{
-                	if(bestSuggestionAverageMerit/*-currentAverageMerit*/  < hoeffdingBound){
+                	if(bestSuggestionAverageMerit-currentAverageMerit  < hoeffdingBound){
                 		System.out.println(bestSuggestionAverageMerit/*-currentAverageMerit*/ + "  " + hoeffdingBound);
                 	}
                     shouldSplit = true;

@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import com.github.javacliparser.IntOption;
 import com.yahoo.labs.samoa.instances.Instance;
 
 import moa.classifiers.core.AttributeSplitSuggestion;
@@ -29,6 +30,13 @@ import moa.core.AutoExpandVector;
 public class EFDT extends VFDT{
 
 
+    public IntOption reEvalPeriodOption = new IntOption(
+            "reevaluationPeriod",
+            'R',
+            "The number of instances an internal node should observe between re-evaluation attempts.",
+            2000, 0, Integer.MAX_VALUE);
+
+
     public interface EFDTNode {
 
 		public boolean isRoot();
@@ -40,8 +48,6 @@ public class EFDT extends VFDT{
 		public EFDTSplitNode getParent();
 
     }
-
-
 
     public class EFDTSplitNode extends SplitNode implements EFDTNode{
 
@@ -142,7 +148,7 @@ public class EFDT extends VFDT{
 			}
 
 			// check if a better split is available. if so, chop the tree at this point, copying likelihood. predictors for children are from parent likelihood.
-			if(ht.numInstances % ht.gracePeriodOption.getValue() == 0){
+			if(ht.numInstances % ht.reEvalPeriodOption.getValue() == 0){
 				this.reEvaluateBestSplit(this, parent, parentBranch);
 			}
 

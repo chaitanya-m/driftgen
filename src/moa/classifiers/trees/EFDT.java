@@ -133,6 +133,7 @@ public class EFDT extends VFDT{
 		@Override
 		public void learnFromInstance(Instance inst, EFDT ht, EFDTSplitNode parent, int parentBranch) {
 
+			nodeTime++;
 			//// Update node statistics and class distribution
 
 			this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight()); // update prior (predictor)

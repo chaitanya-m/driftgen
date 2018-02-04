@@ -17,13 +17,6 @@ import moa.classifiers.core.conditionaltests.NominalAttributeBinaryTest;
 import moa.classifiers.core.conditionaltests.NominalAttributeMultiwayTest;
 import moa.classifiers.core.conditionaltests.NumericAttributeBinaryTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
-import moa.classifiers.rules.core.conditionaltests.NominalAttributeBinaryRulePredicate;
-import moa.classifiers.rules.core.conditionaltests.NumericAttributeBinaryRulePredicate;
-import moa.classifiers.trees.VFDT.ActiveLearningNode;
-import moa.classifiers.trees.VFDT.FoundNode;
-import moa.classifiers.trees.VFDT.LearningNode;
-import moa.classifiers.trees.VFDT.Node;
-import moa.classifiers.trees.VFDT.SplitNode;
 import moa.core.AutoExpandVector;
 
 
@@ -210,7 +203,7 @@ public class EFDT extends VFDT{
                    	node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), currentSum + bestSplitSuggestions[i].merit);
             	}
 
-            	else { // handle the null attribute
+            	else { // handle the null attribute. this is fine to do- it'll always average zero, and we will use this later to potentially burn bad splits.
             		double currentSum = node.getInfogainSum().get(-1); // null split
             		node.getInfogainSum().put(-1, currentSum + bestSplitSuggestions[i].merit);
             	}
@@ -229,7 +222,7 @@ public class EFDT extends VFDT{
 				bestSuggestionAverageMerit = node.getInfogainSum().get(bestSuggestion.splitTest.getAttsTestDependsOn()[0])/node.getNumSplitAttempts();
 			}
 
-			if(node.splitTest == null) { // current is null
+			if(node.splitTest == null) { // current is null- shouldn't happen
 				currentAverageMerit = node.getInfogainSum().get(-1)/node.getNumSplitAttempts();
 			} else {
 				currentAverageMerit = node.getInfogainSum().get(node.splitTest.getAttsTestDependsOn()[0])/node.getNumSplitAttempts();
@@ -240,11 +233,10 @@ public class EFDT extends VFDT{
 			// compute the average deltaG
 			double deltaG = bestSuggestionAverageMerit - currentAverageMerit;
 
-
 			if (deltaG > hoeffdingBound /** Math.pow((node.observedClassDistribution.sumOfValues() / (EFDT.this.treeRoot).observedClassDistribution.sumOfValues()), 10)*/
 					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
 
-            	AttributeSplitSuggestion splitDecision = bestSuggestion;
+				AttributeSplitSuggestion splitDecision = bestSuggestion;
 
             	// if null split wins
             	if(splitDecision.splitTest == null){
@@ -377,7 +369,6 @@ public class EFDT extends VFDT{
 
             }
 
-
             if (bestSplitSuggestions.length < 2) {
                 shouldSplit = bestSplitSuggestions.length > 0;
             }
@@ -389,6 +380,8 @@ public class EFDT extends VFDT{
 
                 double bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
                 double currentAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
+
+                // because this is an unsplit leaf. current average merit should be always zero on the null split.
 
                 if(bestSuggestion.splitTest == null){ // if you have a null split
                 	bestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
@@ -406,7 +399,7 @@ public class EFDT extends VFDT{
                         || (hoeffdingBound < this.tieThresholdOption.getValue()))
                     	{
                 	if(bestSuggestionAverageMerit-currentAverageMerit  < hoeffdingBound){
-                		System.out.println(bestSuggestionAverageMerit/*-currentAverageMerit*/ + "  " + hoeffdingBound);
+                		//System.out.println(bestSuggestionAverageMerit/*-currentAverageMerit*/ + "  " + hoeffdingBound);
                 	}
                     shouldSplit = true;
                 }

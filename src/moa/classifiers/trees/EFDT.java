@@ -158,6 +158,10 @@ public class EFDT extends VFDT{
 		protected void reEvaluateBestSplit(EFDTSplitNode node, EFDTSplitNode parent,
 	            int parentIndex) {
 
+
+
+
+
 			node.addToSplitAttempts(1);
 
 			// EFDT must transfer over gain averages when replacing a node: leaf to split, split to leaf, or split to split
@@ -222,7 +226,7 @@ public class EFDT extends VFDT{
 				bestSuggestionAverageMerit = node.getInfogainSum().get(bestSuggestion.splitTest.getAttsTestDependsOn()[0])/node.getNumSplitAttempts();
 			}
 
-			if(node.splitTest == null) { // current is null- shouldn't happen
+			if(node.splitTest == null) { // current is null- shouldn't happen, check for robustness
 				currentAverageMerit = node.getInfogainSum().get(-1)/node.getNumSplitAttempts();
 			} else {
 				currentAverageMerit = node.getInfogainSum().get(node.splitTest.getAttsTestDependsOn()[0])/node.getNumSplitAttempts();
@@ -235,6 +239,16 @@ public class EFDT extends VFDT{
 
 			if (deltaG > hoeffdingBound /** Math.pow((node.observedClassDistribution.sumOfValues() / (EFDT.this.treeRoot).observedClassDistribution.sumOfValues()), 10)*/
 					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
+
+				System.err.println(numInstances);
+
+//	        	System.out.println("=======================");
+//	        	StringBuilder out = new StringBuilder();
+//	        	getModelDescription(out, 2);
+//	        	System.out.println(out);
+//	        	System.out.println("=======================");
+
+
 
 				AttributeSplitSuggestion splitDecision = bestSuggestion;
 
@@ -265,7 +279,6 @@ public class EFDT extends VFDT{
     						(argmax(splitDecision.resultingClassDistributions[0]) == argmax(node.getChild(0).getObservedClassDistribution())
     						||	argmax(splitDecision.resultingClassDistributions[1]) == argmax(node.getChild(1).getObservedClassDistribution()) )
     						){
-
     					// change split but don't destroy the subtrees
     					for (int i = 0; i < splitDecision.numSplits(); i++) {
     						((EFDTSplitNode)newSplit).setChild(i, this.getChild(i));
@@ -318,6 +331,13 @@ public class EFDT extends VFDT{
 //							+ " secondBestSuggestion.merit " + secondBestSuggestion.merit +"\n");
 
 					// we've just created an alternate, but only if the key is not already contained
+
+//                    System.out.println("++++++++++++++++++++++");
+//                	out = new StringBuilder();
+//                	getModelDescription(out, 2);
+//                	System.out.println(out);
+//                	System.out.println("++++++++++++++++++++++");
+
 
 
 			}

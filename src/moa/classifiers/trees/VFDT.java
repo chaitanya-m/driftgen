@@ -57,6 +57,21 @@ import moa.options.ClassOption;
 import com.yahoo.labs.samoa.instances.Instance;
 
 /**
+ *
+ * Bug-fixed version of Richard Kirkby's  HoeffdingTree.Java written by Chaitanya Manapragada.
+ *
+ * Bug1 : average delta G's are computed where specified in the Domingos/Hulten paper algorithm listing. This was a bug in the HoeffdingTree.java implementation- fixed here.
+ *
+ * Bug2: splitting was occurring when the top attribute had no IG, and splitting was occurring on the same attribute. This was also fixed.
+ *
+ * The correct reference is:
+ *  * Domingos, P., & Hulten, G. (2000, August). Mining high-speed data streams. In Proceedings of the sixth ACM SIGKDD international conference on Knowledge discovery and data mining (pp. 71-80). ACM.
+ *
+ *
+ */
+
+
+/**
  * Hoeffding Tree or VFDT.
  *
  * A Hoeffding tree is an incremental, anytime decision tree induction algorithm
@@ -360,6 +375,9 @@ public class VFDT extends AbstractClassifier {
         @Override
         public FoundNode filterInstanceToLeaf(Instance inst, SplitNode parent,
                 int parentBranch) {
+
+        	//System.err.println("OVERRIDING ");
+
             int childIndex = instanceChildIndex(inst);
             if (childIndex >= 0) {
                 Node child = getChild(childIndex);
@@ -800,13 +818,6 @@ public class VFDT extends AbstractClassifier {
             }
             if (shouldSplit) {
             	splitCount++;
-            	/*
-            	System.out.println("=======================");
-            	StringBuilder out = new StringBuilder();
-            	getModelDescription(out, 2);
-            	System.out.println(out);
-            	System.out.println("=======================");
-            	 */
 
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
@@ -839,12 +850,7 @@ public class VFDT extends AbstractClassifier {
                     }
 
                 }
-                /*
-            	System.out.println("SPLIT AT:" + numInstances);
-            	out = new StringBuilder();
-            	getModelDescription(out, 2);
-            	System.out.println(out);
-            	*/
+
                 // manage memory
                 enforceTrackerLimit();
             }

@@ -26,7 +26,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,21 +54,6 @@ import moa.core.StringUtils;
 import moa.core.Utils;
 import moa.options.ClassOption;
 import com.yahoo.labs.samoa.instances.Instance;
-
-/**
- *
- * Bug-fixed version of Richard Kirkby's  HoeffdingTree.Java written by Chaitanya Manapragada.
- *
- * Bug1 : average delta G's are computed where specified in the Domingos/Hulten paper algorithm listing. This was a bug in the HoeffdingTree.java implementation- fixed here.
- *
- * Bug2: splitting was occurring when the top attribute had no IG, and splitting was occurring on the same attribute. This was also fixed.
- *
- * The correct reference is:
- *  * Domingos, P., & Hulten, G. (2000, August). Mining high-speed data streams. In Proceedings of the sixth ACM SIGKDD international conference on Knowledge discovery and data mining (pp. 71-80). ACM.
- *
- *
- */
-
 
 /**
  * Hoeffding Tree or VFDT.
@@ -115,7 +99,7 @@ import com.yahoo.labs.samoa.instances.Instance;
  * @author Richard Kirkby (rkirkby@cs.waikato.ac.nz)
  * @version $Revision: 7 $
  */
-public class VFDT extends AbstractClassifier {
+public class VFDTWithInfogainFixed extends AbstractClassifier {
 
     private static final long serialVersionUID = 1L;
 
@@ -208,10 +192,6 @@ public class VFDT extends AbstractClassifier {
 
     public static class Node extends AbstractMOAObject {
 
-    	private HashMap<Integer, Double> infogainSum;
-
-    	private int numSplitAttempts = 0;
-
         private static final long serialVersionUID = 1L;
 
         protected DoubleVector observedClassDistribution;
@@ -225,25 +205,7 @@ public class VFDT extends AbstractClassifier {
         public Node(double[] classObservations) {
             this.observedClassDistribution = new DoubleVector(classObservations);
             this.classDistributionAtTimeOfCreation = new DoubleVector(classObservations);
-            this.infogainSum = new HashMap<Integer, Double>();
-            this.infogainSum.put(-1, 0.0); // Initialize for null split
 
-        }
-
-        public int getNumSplitAttempts(){
-        	return numSplitAttempts;
-        }
-
-        public void addToSplitAttempts(int i){
-        	numSplitAttempts += i;
-        }
-
-        public HashMap<Integer, Double> getInfogainSum() {
-        	return infogainSum;
-        }
-
-        public void setInfogainSum(HashMap<Integer, Double> igs) {
-        	infogainSum = igs;
         }
 
         public int calcByteSize() {
@@ -267,19 +229,19 @@ public class VFDT extends AbstractClassifier {
             return this.observedClassDistribution.getArrayCopy();
         }
 
-        public double[] getClassVotes(Instance inst, VFDT ht) {
-            return this.observedClassDistribution.getArrayCopy();
+        public double[] getClassDistributionAtTimeOfCreation() {
+            return this.classDistributionAtTimeOfCreation.getArrayCopy();
         }
 
-        public double[] getClassDistributionAtTimeOfCreation() {
-        	return this.classDistributionAtTimeOfCreation.getArrayCopy();
+        public double[] getClassVotes(Instance inst, VFDTWithInfogainFixed ht) {
+            return this.observedClassDistribution.getArrayCopy();
         }
 
         public boolean observedClassDistributionIsPure() {
             return this.observedClassDistribution.numNonZeroEntries() < 2;
         }
 
-        public void describeSubtree(VFDT ht, StringBuilder out,
+        public void describeSubtree(VFDTWithInfogainFixed ht, StringBuilder out,
                 int indent) {
             StringUtils.appendIndented(out, indent, "Leaf ");
             out.append(ht.getClassNameString());
@@ -375,9 +337,6 @@ public class VFDT extends AbstractClassifier {
         @Override
         public FoundNode filterInstanceToLeaf(Instance inst, SplitNode parent,
                 int parentBranch) {
-
-        	//System.err.println("OVERRIDING ");
-
             int childIndex = instanceChildIndex(inst);
             if (childIndex >= 0) {
                 Node child = getChild(childIndex);
@@ -390,7 +349,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void describeSubtree(VFDT ht, StringBuilder out,
+        public void describeSubtree(VFDTWithInfogainFixed ht, StringBuilder out,
                 int indent) {
             for (int branch = 0; branch < numChildren(); branch++) {
                 Node child = getChild(branch);
@@ -428,7 +387,7 @@ public class VFDT extends AbstractClassifier {
             super(initialClassObservations);
         }
 
-        public abstract void learnFromInstance(Instance inst, VFDT ht);
+        public abstract void learnFromInstance(Instance inst, VFDTWithInfogainFixed ht);
     }
 
     public static class InactiveLearningNode extends LearningNode {
@@ -440,7 +399,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {
+        public void learnFromInstance(Instance inst, VFDTWithInfogainFixed ht) {
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
         }
@@ -469,7 +428,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {
+        public void learnFromInstance(Instance inst, VFDTWithInfogainFixed ht) {
         	nodeTime++;
 
             if (this.isInitialized == false) {
@@ -502,7 +461,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         public AttributeSplitSuggestion[] getBestSplitSuggestions(
-                SplitCriterion criterion, VFDT ht) {
+                SplitCriterion criterion, VFDTWithInfogainFixed ht) {
             List<AttributeSplitSuggestion> bestSuggestions = new LinkedList<AttributeSplitSuggestion>();
             double[] preSplitDist = this.observedClassDistribution.getArrayCopy();
             if (!ht.noPrePruneOption.isSet()) {
@@ -616,6 +575,8 @@ public class VFDT extends AbstractClassifier {
 
 		//System.out.println(numInstances);
 
+
+
     }
 
     @Override
@@ -636,13 +597,11 @@ public class VFDT extends AbstractClassifier {
 
     @Override
     protected Measurement[] getModelMeasurementsImpl() {
-		FoundNode[] learningNodes = findLearningNodes();
-
         return new Measurement[]{
-
                     new Measurement("tree size (nodes)", this.decisionNodeCount
                     + this.activeLeafNodeCount + this.inactiveLeafNodeCount),
-                    new Measurement("tree size (leaves)", learningNodes.length),
+                    new Measurement("tree size (leaves)", this.activeLeafNodeCount
+                    + this.inactiveLeafNodeCount),
                     new Measurement("active learning leaves",
                     this.activeLeafNodeCount),
                     new Measurement("tree depth", measureTreeDepth()),
@@ -704,73 +663,31 @@ public class VFDT extends AbstractClassifier {
     protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
             int parentIndex) {
         if (!node.observedClassDistributionIsPure()) {
-
-
             SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
             AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
-
             Arrays.sort(bestSplitSuggestions);
             boolean shouldSplit = false;
-
-            for (int i = 0; i < bestSplitSuggestions.length; i++){
-
-            	node.addToSplitAttempts(1); // even if we don't actually attempt to split, we've computed infogains
-
-
-            	if (bestSplitSuggestions[i].splitTest != null){
-            		if (!node.getInfogainSum().containsKey((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0])))
-            		{
-            			node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), 0.0);
-            		}
-                   	double currentSum = node.getInfogainSum().get((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]));
-                   	node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), currentSum + bestSplitSuggestions[i].merit);
-            	}
-
-            	else { // handle the null attribute
-            		double currentSum = node.getInfogainSum().get(-1); // null split
-            		node.getInfogainSum().put(-1, currentSum + bestSplitSuggestions[i].merit);
-            	}
-
-            }
-
             if (bestSplitSuggestions.length < 2) {
                 shouldSplit = bestSplitSuggestions.length > 0;
             }
 
             else {
-
-
-            	double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getClassDistributionAtTimeOfCreation()),
+                double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getClassDistributionAtTimeOfCreation()),
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
-
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
 
-
-                double bestSuggestionAverageMerit = 0.0;
-                double secondBestSuggestionAverageMerit = 0.0;
-
-                if(bestSuggestion.splitTest == null){ // if you have a null split
-                	bestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
-                } else{
-                	bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
-                }
-
-                if(secondBestSuggestion.splitTest == null){ // if you have a null split
-                	secondBestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
-                } else{
-                	secondBestSuggestionAverageMerit = node.getInfogainSum().get((secondBestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
-                }
-
                 //comment this if statement to get VFDT bug
-                if(bestSuggestion.merit < 1e-10){ // we don't use average here
-                	shouldSplit = false;
+                if(bestSuggestion.merit < 1e-10){
+                	//shouldSplit = false;
                 }
 
                 else
-                	if ((bestSuggestionAverageMerit - secondBestSuggestionAverageMerit > hoeffdingBound)
-                        || (hoeffdingBound < this.tieThresholdOption.getValue()))
-                    	{
+//                	if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
+//                        || (hoeffdingBound < this.tieThresholdOption.getValue())) {
+
+                    	if (bestSuggestion.merit - secondBestSuggestion.merit > 0){
+
                     shouldSplit = true;
                 }
 
@@ -781,6 +698,10 @@ public class VFDT extends AbstractClassifier {
                 			break;
                 		}
                 	}
+                }
+
+                if(this.measureTreeDepth() > 3){
+                	shouldSplit = false;
                 }
 
                 // }
@@ -818,6 +739,12 @@ public class VFDT extends AbstractClassifier {
             }
             if (shouldSplit) {
             	splitCount++;
+//            	System.out.println("=======================");
+//            	StringBuilder out = new StringBuilder();
+//            	getModelDescription(out, 2);
+//            	System.out.println(out);
+//            	System.out.println("=======================");
+
 
                 AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 if (splitDecision.splitTest == null) {
@@ -838,6 +765,9 @@ public class VFDT extends AbstractClassifier {
                         	newChild.usedNominalAttributes.add(splitDecision.splitTest.getAttsTestDependsOn()[0]);
                         	// no  nominal attribute should be split on more than once in the path
                         }
+                        else{
+                        	System.out.println("Splitting on Numeric Attribute at timestep:" + numInstances);
+                        }
                         newSplit.setChild(i, newChild);
                     }
                     this.activeLeafNodeCount--;
@@ -850,7 +780,10 @@ public class VFDT extends AbstractClassifier {
                     }
 
                 }
-
+//            	System.out.println("SPLIT AT:" + numInstances);
+//            	out = new StringBuilder();
+//            	getModelDescription(out, 2);
+//            	System.out.println(out);
                 // manage memory
                 enforceTrackerLimit();
             }
@@ -1013,7 +946,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, VFDTWithInfogainFixed ht) {
             if (getWeightSeen() >= ht.nbThresholdOption.getValue()) {
                 return NaiveBayes.doNaiveBayesPrediction(inst,
                         this.observedClassDistribution,
@@ -1041,7 +974,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {
+        public void learnFromInstance(Instance inst, VFDTWithInfogainFixed ht) {
             int trueClass = (int) inst.classValue();
             if (this.observedClassDistribution.maxIndex() == trueClass) {
                 this.mcCorrectWeight += inst.weight();
@@ -1054,7 +987,7 @@ public class VFDT extends AbstractClassifier {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, VFDTWithInfogainFixed ht) {
             if (this.mcCorrectWeight > this.nbCorrectWeight) {
                 return this.observedClassDistribution.getArrayCopy();
             }

@@ -703,8 +703,13 @@ public class VFDTUnforgetting extends AbstractClassifier {
 
     protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
             int parentIndex) {
-        if (!node.observedClassDistributionIsPure()) {
 
+    	// take all the stored examples and redistribute by split criterion
+        // each node must contain a list of examples present in it
+    	// re-learn all the examples for each child. when doing this ensure that you don't duplicate the example list at the node.
+    	// Also don't get the nodeTime wrong. You need a policy for the nodeTime.
+
+        if (!node.observedClassDistributionIsPure()) {
 
             SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
             AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
@@ -738,7 +743,6 @@ public class VFDTUnforgetting extends AbstractClassifier {
             }
 
             else {
-
 
             	double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getClassDistributionAtTimeOfCreation()),
                         this.splitConfidenceOption.getValue(), node.getWeightSeen());

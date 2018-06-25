@@ -119,6 +119,8 @@ public class VFDTUnforgetting extends AbstractClassifier {
 
     private static final long serialVersionUID = 1L;
 
+    private HashMap<Integer, Instance> instanceRepo;
+
     private int i = 0;
 
     protected int numInstances = 0;
@@ -145,6 +147,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
      * with 1000 tuples", "VFML method with 10 bins", "VFML method with 100
      * bins", "VFML method with 1000 bins", "Exhaustive binary tree"}, 0);
      */
+
     public ClassOption numericEstimatorOption = new ClassOption("numericEstimator",
             'n', "Numeric estimator to use.", NumericAttributeClassObserver.class,
             "GaussianNumericAttributeClassObserver");
@@ -207,6 +210,8 @@ public class VFDTUnforgetting extends AbstractClassifier {
     }
 
     public static class Node extends AbstractMOAObject {
+
+    	private ArrayList<Integer> nodeInstances; // because unforgettingTree
 
     	private HashMap<Integer, Double> infogainSum;
 

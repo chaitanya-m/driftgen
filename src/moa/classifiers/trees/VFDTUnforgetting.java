@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import com.github.javacliparser.FlagOption;
 import com.github.javacliparser.FloatOption;
@@ -54,6 +55,8 @@ import moa.core.SizeOf;
 import moa.core.StringUtils;
 import moa.core.Utils;
 import moa.options.ClassOption;
+import weka.classifiers.functions.supportVector.NormalizedPolyKernel;
+
 import com.yahoo.labs.samoa.instances.Instance;
 
 /**
@@ -119,7 +122,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
 
     private static final long serialVersionUID = 1L;
 
-    private HashMap<Integer, Instance> instanceRepo;
+    private Map<Integer, Instance> instanceRepo = new HashMap<Integer, Instance>();
 
     private int i = 0;
 
@@ -232,7 +235,15 @@ public class VFDTUnforgetting extends AbstractClassifier {
             this.classDistributionAtTimeOfCreation = new DoubleVector(classObservations);
             this.infogainSum = new HashMap<Integer, Double>();
             this.infogainSum.put(-1, 0.0); // Initialize for null split
+            this.nodeInstances = new ArrayList<Integer>();
 
+        }
+
+        /**
+         * Add key of instance in main instance table for instance stored at this node
+         */
+        public void addNodeInstance(Integer nodeKey){
+        	nodeInstances.add(nodeKey);
         }
 
         public int getNumSplitAttempts(){
@@ -586,14 +597,22 @@ public class VFDTUnforgetting extends AbstractClassifier {
             this.treeRoot = newLearningNode();
             this.activeLeafNodeCount = 1;
         }
-        FoundNode foundNode = this.treeRoot.filterInstanceToLeaf(inst, null, -1);
-        Node leafNode = foundNode.node;
+
+        FoundNode foundNode = this.treeRoot.filterInstanceToLeaf(inst, null, -1); // if not a split node, just returns a foundNode version of itself
+        Node leafNode = foundNode.node; // we're at the foundNode now. Should we store the example here?
+
+        // Yes. Let's use numInstances as the key. Of course, this isn't suited for parallelization.
 
         if (leafNode == null) {
             leafNode = newLearningNode();
             foundNode.parent.setChild(foundNode.parentBranch, leafNode);
             this.activeLeafNodeCount++;
         }
+
+        /* Instance storage. Store instances at leaves. */
+        instanceRepo.put(numInstances, inst);
+        leafNode.addNodeInstance(numInstances);
+        /**/
 
         if (leafNode instanceof LearningNode) {
             LearningNode learningNode = (LearningNode) leafNode;
@@ -825,6 +844,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
                     }
                 }
             }
+
             if (shouldSplit) {
             	splitCount++;
 

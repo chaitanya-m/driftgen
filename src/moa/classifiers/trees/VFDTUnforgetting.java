@@ -405,6 +405,19 @@ public class VFDTUnforgetting extends AbstractClassifier {
             return new FoundNode(this, parent, parentBranch);
         }
 
+
+        public void copyInstanceToChild(Integer instanceKey, Instance inst) { // use AbstractMap.SimpleImmutableEntry when possible
+
+            int childIndex = instanceChildIndex(inst);
+            if (childIndex >= 0) {
+                Node child = getChild(childIndex);
+
+                if (child != null) { // should never be null...
+                	child.addNodeInstance(instanceKey);
+                }
+            }
+        }
+
         @Override
         public void describeSubtree(VFDTUnforgetting ht, StringBuilder out,
                 int indent) {

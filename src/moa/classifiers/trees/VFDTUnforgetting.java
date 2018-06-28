@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -246,6 +247,11 @@ public class VFDTUnforgetting extends AbstractClassifier {
         	nodeInstances.add(nodeKey);
         }
 
+        public void copyNodeInstances(Node node){
+        	this.nodeInstances = node.nodeInstances;
+        }
+
+
         public int getNumSplitAttempts(){
         	return numSplitAttempts;
         }
@@ -406,7 +412,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
         }
 
 
-        public void copyInstanceToChild(Integer instanceKey, Instance inst) { // use AbstractMap.SimpleImmutableEntry when possible
+        public void copyInstanceToChildAndLearn(Integer instanceKey, Instance inst, VFDTUnforgetting ht) { // use AbstractMap.SimpleImmutableEntry when possible
 
             int childIndex = instanceChildIndex(inst);
             if (childIndex >= 0) {
@@ -414,6 +420,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
 
                 if (child != null) { // should never be null...
                 	child.addNodeInstance(instanceKey);
+                	((LearningNode)child).learnFromInstance(inst, ht);
                 }
             }
         }
@@ -868,6 +875,8 @@ public class VFDTUnforgetting extends AbstractClassifier {
                 } else {
                     SplitNode newSplit = newSplitNode(splitDecision.splitTest,
                             node.getObservedClassDistribution(), splitDecision.numSplits());
+                    newSplit.copyNodeInstances(node);
+
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
 
                         double[] j = splitDecision.resultingClassDistributionFromSplit(i);
@@ -891,6 +900,11 @@ public class VFDTUnforgetting extends AbstractClassifier {
                         parent.setChild(parentIndex, newSplit);
                     }
 
+                    /* Copy instances to children and learn in order to simulate not forgetting node statistics (no likelihood amnesia)*/
+                    for (Map.Entry<Integer, Instance> entry : instanceRepo.entrySet()) {
+                    	newSplit.copyInstanceToChildAndLearn(entry.getKey(), entry.getValue(), this);
+                    }
+                    /**/
                 }
 
                 // manage memory

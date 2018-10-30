@@ -111,7 +111,7 @@ public class AbruptDriftGenerator extends DriftGenerator{
 	@Override
 	protected void prepareForUseImpl(TaskMonitor monitor,
 			ObjectRepository repository) {
-		System.out.println("burnIn=" + burnInNInstances.getValue());
+		//System.out.println("burnIn=" + burnInNInstances.getValue());
 		generateHeader();
 
 		int nCombinationsValuesForPX = 1;
@@ -158,7 +158,7 @@ public class AbruptDriftGenerator extends DriftGenerator{
 			 * Pick some random throwaway distribution.
 			 * */
 
-			System.out.println("Sampling p(x) for required magnitude...");
+			//System.out.println("Sampling p(x) for required magnitude...");
 			do {
 				if (driftMagnitudePrior.getValue() >= 0.2) {
 					generateRandomPx(pxad, r);
@@ -173,11 +173,11 @@ public class AbruptDriftGenerator extends DriftGenerator{
 			} while (Math.abs(obtainedMagnitude - driftMagnitudePrior.getValue()) > precisionDriftMagnitude
 					.getValue());
 
-			System.out.println("exact magnitude for p(x)="
+			/*System.out.println("exact magnitude for p(x)="
 					+ computeMagnitudePX(
 							PX2DTo1D(nCombinationsValuesForPX, pxbd),
 							PX2DTo1D(nCombinationsValuesForPX, pxad)) + "\tasked="
-					+ driftMagnitudePrior.getValue());
+					+ driftMagnitudePrior.getValue());*/
 		} else {
 			pxad = pxbd;
 		}
@@ -193,9 +193,9 @@ public class AbruptDriftGenerator extends DriftGenerator{
 			int nLinesToChange = (int) Math.round(driftMagnitudeConditional.getValue()
 					* nCombinationsValuesForPX);
 			if (nLinesToChange == 0.0) {
-				System.out
+			/*	System.out
 				.println("ExactMagnitude:[0.0]");
-				pygxad = pygxbd;
+				pygxad = pygxbd;*/
 
 			} else {
 				int[] linesToChange = r.nextPermutation(
@@ -220,9 +220,9 @@ public class AbruptDriftGenerator extends DriftGenerator{
 						}
 					}
 				}
-				System.out.println("p(y|x) ExactMagnitude:["
+				/*System.out.println("p(y|x) ExactMagnitude:["
 						+ computeMagnitudePYGX(pygxbd, pygxad) + "]\tasked="
-						+ driftMagnitudeConditional.getValue());
+						+ driftMagnitudeConditional.getValue());*/
 			}
 		} else {
 			pygxad = pygxbd;

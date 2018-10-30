@@ -1,0 +1,538 @@
+
+It looks like the way tasks work in MOA are to have a primary evaluation task with several measures 
+(e.g. EvaluatePrequential) with several added measures (e.g. BasicClassificationPerformance)..
+
+Now, there's a function called getVotesForInstance which outputs a an array of predictions.
+
+What EvaluateConceptDrift does is... it expects this return value to have been hacked to return a one array string: drift or no drift.
+
+I will need to use both pieces of information.
+
+I used meld to compare EvaluateConceptDrift and EvaluatePrequential; they are not hugely different.
+
+            double[] prediction = learner.getVotesForInstance(testInst);
+
+This is a line that has different meanings in EvaluateConceptDrift and EvaluatePrequential.
+            
+I will need both the prediction accuracy and information about whether a change has been detected.
+
+I need to meld the change detection columns into my existing outputs.
+
+I suppose cumulative detected drifts would be a good enough measure to start with. 
+
+It would also be a reasonable graph.
+
+===
+
+LearningEvaluation is a class that stores all the measurements. Measurements come from the task, the evaluator, and the 
+learning model. (This is why instances are often repeated- they are just concatenated.)
+
+LearningCurve Stores a history of measurements as a List of Double arrays (why doesn't it just store as a List of LearningEvaluations, why convert??)
+
+EvaluateModel corresponds roughly to the GUI learner/evaluator/generator config screen.
+
+At some point, the LearningEvaluations from EvaluatePrequential + BasicClassificationPerformanceEValuator etc must come together
+
+So the way to do this might be to add drift stuff to the evaluator of choice, without getting rid of prediction accuracy by doing so
+
+How can this be done?
+
+===
+
+With HAT-ADWIN, it must be possible to add a model measurement of drift detection.
+
+Can I get this working with Single Classifier drift in the first instance?
+
+===
+
+
+Using meld to compare BasicClassificationPerformanceEvaluator with BasicConceptDriftPerformanceEvaluator, I find that it really looks like the latter
+has a hacked dependency on the exact form of the instance- it seems designed just for ChangeDetector Learner.
+
+This obviously won't do for me. I'll need to rewrite EvaluatePrequential to bring in the change counter.
+
+===
+
+This is how DDM fixes the current error probability and deviation when a new instance is seen in the MOA code.
+
+	    m_p = m_p + (prediction - m_p) / (double) m_n;
+        m_s = Math.sqrt(m_p * (1 - m_p) / (double) m_n);
+
+Looks pretty ad hoc... bit it works well. Is this the correct way to do this?
+
+Confusingly, the 1-0 input is called "prediction" (a two class problem? or the 1-0 error for a multiclass problem also?).
+
+the comments:
+        // prediction must be 1 or 0
+        // It monitors the error rate
+
+
+I think you have to feed DDM (or other change detectors) the right inputs.
+
+Where is DDM usually fed inputs?
+
+What does ChangeDetectorLearner do? It trains on DDM, it gets outputs from DDM. DDM is doing everything. It must be intended for a bit stream!!!
+
+AbruptChangeGenerator only generates either 0.8 or 0.2... round that up and you get a nice bitstream.
+
+It actually looks like there is no rounding going on... with the current default setup, you are feeding 0.8 and 0.2 to your DDM while it should 
+receive 1 and 0. DDM doesn't cast to int.
+
+DDM works fine with double values, so this is what is happening. With the GradualChangeGenerator, after a burn in, the instance value changes from 0.2 
+to 1.0 with a fixed increment.
+
+===
+
+The correspondence is between ChangeDetectorLearner and, say, SingleClassifierDrift; BasicConceptDriftPerformanceEvaluator and 
+BasicClassificationPerformanceEvaluator; EvaluateConceptDrift and EvaluatePrequential.
+
+BasicClassificationPerformanceEvaluator needs to add on a change counter so it tracks both error and changes (since it's not all hardcoded for a given learner... 
+this is the way to do it). This will add a new Measure, which will be tagged on to EvaluatePrequential. We must ensure that the bucket size for error measure 
+matches the bucket for drift counts.
+
+Or... how about making the change in EvaluatePrequential instead: we feed the error stream into an ADWIN or DDM instance. This would allow us to determine whether 
+the bit stream of errors would trigger a change from the detector of choice.
+
+Of course, it would be better to get the information from the actual learners being used. For instance, HAT-ADWIN may signal several changes at several different
+nodes.
+
+This might be a good way to start off with. Let SingleClassifierDrift signal change. Catch it with EvaluatePrequential and add as a measure of changes per 1000 or 10,000 
+or whatever period evaluation is set to. This way we know that it is not a parallel detector that is determining likely changes, but actual changes signaled.
+
+This will be a little more involved for HAT-ADWIN as all ADWIN instances will need to be polled. But that is a different problem; we may be interested in changes 
+as well as the level in the tree at which they are signaled for HAT-ADWIN. It might be more efficient to simply develop a new algorithm that only takes into account 
+those P(Y|X) corresponding to nodes that have the most aberrant error behaviour.
+
+===
+
+If I call getModelMeasurementsImpl() at the right time, will change count be reset?
+
+
+        Measurement[] modelMeasurements = getModelMeasurementsImpl();
+
+This is in AbstractClassifier's     public Measurement[] getModelMeasurements() {
+
+getModelMeasurements() is called by getMeasurementsDescription() which is called by AbstractClassifier's getDescription().
+
+===
+
+Bifet has experimented with weighted instances in his commented code, but not quite how I envision using them.
+
+When a change is detected at a node, I intend to identify the leaves with the biggest error gains and spawn alternate subtrees as close to
+the leaf level as possible even if change has not been detected there. 
+
+The alternate tree has the disadvantage of forgetting real information. So I need multiple alternate trees; one being built from scratch, A0, 
+at the node with the change detection, and several lower level alternate trees closer to the leaves. I want the low level trees to replace their
+respective originals well before A0 has the chance to do any damage.
+
+A very large change may lead to A0 winning the race to better accuracy, but smaller changes should see A0 not having to be used. Instead, leaves will be 
+end up being reset(either to a higher level prior or a uniform prior).
+
+===
+
+Bifet has this magic number 300 in HoeffdingAdaptiveTree
+           if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) {
+
+This is telling us to replace the current tree with the new one if it happens to be a better predictor 300 instances after drift is detected.
+===
+
+I've tried a bunch of things today: I played around with the commented Poisson lambda; when set to a very large value, and the magic number is set to 30,000, 
+spurious drifts are detected at 700,000 (abrupt drift at 300,000) with 5x5x5 and driftmag 0.8 conditional. Strange behavior. I use it differently to Bifet- 
+he weights every example, but I tried weighting only misclassified examples only when change has been  detected.
+
+HAT-ADWIN straight up: drift is detected within the first 100 examples and a number of alternate trees are spawned. Only one replacement takes place... 
+within the first 400 examples after drift. The change detector is obviously pretty quick, but note that the alternate picked is for depth 5. 
+
+For a drift magnitude of 0.8 though... there is likely to be such great upheaval that the new tree is the preferred choice always.
+
+299800
+299900
+300000
+=======New Alternate initialised==== Depth: 5
+=======New Alternate initialised==== Depth: 2
+=======New Alternate initialised==== Depth: 5
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 5
+300100
+=======New Alternate initialised==== Depth: 1
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 1
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 3
+300200
+=======New Alternate initialised==== Depth: 1
+=======New Alternate initialised==== Depth: 2
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 2
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 2
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 2
+300300
+=======New Alternate initialised==== Depth: 3
+=======New Alternate initialised==== Depth: 4
+=======New Alternate initialised==== Depth: 1
+300400
+++++++++Alternate picked for tree of Depth: 5
+300500
+300600
+300700
+300800
+300900
+301000
+
+=============
+
+More experiments. 
+
+EvaluatePrequential -l trees.HoeffdingOptionTree -s (generators.monash.AbruptDriftGenerator -o 0.800001 -c -z 5 -n 5 -v 5 -r 1 -b 300000) -i 1000000 -f 1000
+
+With the code in this commit.
+
+It turns out that restricting subtree replacements to tree depths of < 3 is most effective vis-a-vis 2 or 4 or 5 for this example.
+
+Note that HAT-ADWIN with no tree replacements performs better than HAT-ADWIN that replaces the 5-deep tree. This lends credence to my theory
+that important information is forgotten when a replacement is made at such a high level.
+
+BOLE still does better (also takes forever)... how close can we get to BOLE?
+
+==================
+
+Weighting the instance with Poisson 1 iff misclassified and change detected at this node raised accuracy marginally to 95.79 from 95.76
+
+==================
+
+My original idea meant picking only the leaves with the greatest error when identified by a higher level change detection... using a higher
+level change detection for checking out lower level nodes which may not have registered change. My experiments are somewhat 
+more lax in this regard- I should probably increase the ADWIN-delta to compensate for the fact that higher level change might be ignored.
+
+==================
+ 
+Why does HAT-ADWIN with no subtree replacements outperform VFDT?
+
+Once the reason is found... perhaps try the CVFDT practice of using the current best attribute with HAT-ADWIN's base VFDT.
+
+==================
+
+            if (k > 0) {
+                weightedInst.setWeight(inst.weight() * k);
+            }
+Bifet weights instances at the learning node... I don't think this is mentioned in the paper. It's a Poisson(1) weighting, it has nothing to do with 
+whether the current example was misclassified, and it has an effect of about 1% on accuracy under this setup.
+
+==================
+
+EvaluatePrequential -l trees.SubConceptTree -s (generators.monash.AbruptDriftGenerator -o 0.800001 -c -z 2 -n 4 -v 4 -b 100000) -i 200000 -f 1000
+==================
+burnIn=100000
+exact magnitude for p(y|x)=0.80078125	asked=0.800001
+Can not access instrumentation environment.
+Please check if jar file containing SizeOfAgent class is 
+specified in the java's "-javaagent" command line argument.
+Alternate child of standard parent
+An alternate node has voted. It is of class moa.classifiers.trees.SubConceptTree$AdaLearningNode
+  if [att 1:x1] = {val 1:v1}: =====true====
+      Leaf [class:class] = <class 2:class2> weights: {13|90}
+  if [att 1:x1] = {val 2:v2}: =====true====
+      Leaf [class:class] = <class 1:class1> weights: {3|3}
+  if [att 1:x1] = {val 3:v3}: =====true====
+      Leaf [class:class] = <class 1:class1> weights: {67|14}
+  if [att 1:x1] = {val 4:v4}: =====true====
+      Leaf [class:class] = <class 1:class1> weights: {5|5}
+
+
++++++++++++++++++++++++++++
+
+Parent has no alternate
+
++++++++++++++++++++++++++++
+
+  if [att 2:x2] = {val 1:v1}: 
+      if [att 4:x4] = {val 1:v1}: 
+          if [att 3:x3] = {val 1:v1}: 
+              if [att 1:x1] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {23|2,292}
+              if [att 1:x1] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|95}
+              if [att 1:x1] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|2,199}
+              if [att 1:x1] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {722|0}
+          if [att 3:x3] = {val 2:v2}: 
+              if [att 1:x1] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|298}
+              if [att 1:x1] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|20}
+              if [att 1:x1] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|247}
+              if [att 1:x1] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {80|0}
+          if [att 3:x3] = {val 3:v3}: 
+              if [att 1:x1] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {269|0}
+              if [att 1:x1] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|23}
+              if [att 1:x1] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {3|213}
+              if [att 1:x1] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {1|85}
+          if [att 3:x3] = {val 4:v4}: 
+              if [att 1:x1] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {862|0}
+              if [att 1:x1] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|45}
+              if [att 1:x1] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {866|6}
+              if [att 1:x1] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {3|297}
+      if [att 4:x4] = {val 2:v2}: 
+          if [att 1:x1] = {val 1:v1}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {10,583|137}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {1,312|0}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {1,149|0}
+              if [att 3:x3] = {val 4:v4}: 
+                  if [att 4:x4] = {val 1:v1}: 
+                      Leaf [class:class] = <class 1:class1> weights: {0|0}
+                  if [att 4:x4] = {val 2:v2}: 
+                      Leaf [class:class] = <class 2:class2> weights: {66|4,200}
+          if [att 1:x1] = {val 2:v2}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {6|462}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {65|2}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|55}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {1|235}
+          if [att 1:x1] = {val 3:v3}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  if [att 4:x4] = {val 1:v1}: 
+                      Leaf [class:class] = <class 1:class1> weights: {0|0}
+                  if [att 4:x4] = {val 2:v2}: 
+                      Leaf [class:class] = <class 2:class2> weights: {111|10,175}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {8|1,276}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {1,105|30}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {3,936|42}
+          if [att 1:x1] = {val 4:v4}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {3,578|41}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {3|436}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {341|3}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {14|1,409}
+      if [att 4:x4] = {val 3:v3}: 
+          if [att 1:x1] = {val 1:v1}: 
+              Leaf [class:class] = <class 1:class1> weights: {1,590|21}
+          if [att 1:x1] = {val 2:v2}: 
+              Leaf [class:class] = <class 2:class2> weights: {0|80}
+          if [att 1:x1] = {val 3:v3}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {14|786}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {2|113}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {111|0}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {298|5}
+          if [att 1:x1] = {val 4:v4}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {278|1}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|51}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|31}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {135|0}
+      if [att 4:x4] = {val 4:v4}: 
+          if [att 1:x1] = {val 1:v1}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {60|6,298}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {12|845}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {5|637}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {26|2,410}
+          if [att 1:x1] = {val 2:v2}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {1|320}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {38|0}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {36|0}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {2|124}
+          if [att 1:x1] = {val 3:v3}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {76|5,725}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {734|14}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {613|10}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|2,378}
+          if [att 1:x1] = {val 4:v4}: 
+              if [att 3:x3] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {2,114|20}
+              if [att 3:x3] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|227}
+              if [att 3:x3] = {val 3:v3}: 
+                  Leaf [class:class] = <class 2:class2> weights: {5|220}
+              if [att 3:x3] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {778|7}
+  if [att 2:x2] = {val 2:v2}: 
+      if [att 3:x3] = {val 1:v1}: 
+          Leaf [class:class] = <class 2:class2> weights: {1,208|1,237}
+      if [att 3:x3] = {val 2:v2}: 
+          Leaf [class:class] = <class 1:class1> weights: {277|36}
+      if [att 3:x3] = {val 3:v3}: 
+          Leaf [class:class] = <class 1:class1> weights: {186|71}
+      if [att 3:x3] = {val 4:v4}: 
+          Leaf [class:class] = <class 2:class2> weights: {408|593}
+  if [att 2:x2] = {val 3:v3}: =====true====
+      if [att 1:x1] = {val 1:v1}: =====true====
+          Leaf [class:class] = <class 2:class2> weights: {13|90}
+      if [att 1:x1] = {val 2:v2}: =====true====
+          Leaf [class:class] = <class 1:class1> weights: {3|3}
+      if [att 1:x1] = {val 3:v3}: =====true====
+          Leaf [class:class] = <class 1:class1> weights: {67|14}
+      if [att 1:x1] = {val 4:v4}: =====true====
+          Leaf [class:class] = <class 1:class1> weights: {5|5}
+  if [att 2:x2] = {val 4:v4}: 
+      if [att 3:x3] = {val 1:v1}: 
+          if [att 1:x1] = {val 1:v1}: 
+              Leaf [class:class] = <class 1:class1> weights: {6,108|18}
+          if [att 1:x1] = {val 2:v2}: 
+              if [att 4:x4] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {20|0}
+              if [att 4:x4] = {val 2:v2}: 
+                  Leaf [class:class] = <class 2:class2> weights: {0|110}
+              if [att 4:x4] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {3|0}
+              if [att 4:x4] = {val 4:v4}: 
+                  Leaf [class:class] = <class 1:class1> weights: {74|0}
+          if [att 1:x1] = {val 3:v3}: 
+              Leaf [class:class] = <class 1:class1> weights: {5,909|58}
+          if [att 1:x1] = {val 4:v4}: 
+              Leaf [class:class] = <class 1:class1> weights: {2,000|22}
+      if [att 3:x3] = {val 2:v2}: 
+          if [att 4:x4] = {val 1:v1}: 
+              Leaf [class:class] = <class 1:class1> weights: {89|71}
+          if [att 4:x4] = {val 2:v2}: 
+              Leaf [class:class] = <class 1:class1> weights: {949|4}
+          if [att 4:x4] = {val 3:v3}: 
+              Leaf [class:class] = <class 2:class2> weights: {43|45}
+          if [att 4:x4] = {val 4:v4}: 
+              if [att 1:x1] = {val 1:v1}: 
+                  Leaf [class:class] = <class 2:class2> weights: {4|77}
+              if [att 1:x1] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {4|0}
+              if [att 1:x1] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {75|5}
+              if [att 1:x1] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {1|50}
+      if [att 3:x3] = {val 3:v3}: 
+          Leaf [class:class] = <class 1:class1> weights: {896|678}
+      if [att 3:x3] = {val 4:v4}: 
+          if [att 1:x1] = {val 1:v1}: 
+              Leaf [class:class] = <class 2:class2> weights: {35|2,417}
+          if [att 1:x1] = {val 2:v2}: 
+              Leaf [class:class] = <class 1:class1> weights: {70|67}
+          if [att 1:x1] = {val 3:v3}: 
+              if [att 4:x4] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {253|3}
+              if [att 4:x4] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {1,182|16}
+              if [att 4:x4] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {102|4}
+              if [att 4:x4] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {4|689}
+          if [att 1:x1] = {val 4:v4}: 
+              if [att 4:x4] = {val 1:v1}: 
+                  Leaf [class:class] = <class 1:class1> weights: {77|0}
+              if [att 4:x4] = {val 2:v2}: 
+                  Leaf [class:class] = <class 1:class1> weights: {463|6}
+              if [att 4:x4] = {val 3:v3}: 
+                  Leaf [class:class] = <class 1:class1> weights: {42|0}
+              if [att 4:x4] = {val 4:v4}: 
+                  Leaf [class:class] = <class 2:class2> weights: {3|213}
+===================
+
+So... this has nothing to do with class purity. When is x2:v3 flipping to alternate? Try this on a simpler example.
+
+===================
+
+Here we go.
+
+EvaluatePrequential -l trees.SubConceptTree -s (generators.monash.AbruptDriftGenerator -o 0.800001 -c -z 3 -n 2 -v 2 -b 100000) -i 200000 -f 1000
+
+
+
+burnIn=100000
+exact magnitude for p(y|x)=0.75	asked=0.800001
+Can not access instrumentation environment.
+Please check if jar file containing SizeOfAgent class is 
+specified in the java's "-javaagent" command line argument.
+An alternate node has voted. It is of class moa.classifiers.trees.SubConceptTree$AdaLearningNode
+  if [att 2:x2] = {val 1:v1}: =====true====
+      Leaf [class:class] = <class 1:class1> weights: {140|4|0}
+  if [att 2:x2] = {val 2:v2}: =====true====
+      Leaf [class:class] = <class 3> weights: {0|0|56}
+
+
++++++++++++++++++++++++++++
+
+Parent has no alternate
+
++++++++++++++++++++++++++++
+
+  if [att 2:x2] = {val 1:v1}: =====true====
+      Leaf [class:class] = <class 1:class1> weights: {140|4|0}
+  if [att 2:x2] = {val 2:v2}: =====true====
+      Leaf [class:class] = <class 3> weights: {0|0|56}
+
+================================================================
+================================================================
+
+VFDT
+
+The most recent investigation was prompted by creating a window of size 50,000 in VFDTWindow and noticing that the leaves had a weight of 50,200.
+
+This was caused by the first split happening 200 instances in. When the window started deleting instances, they hadn't reached the new leaves yet.
+
+So on the part of VFDTSlidingWindow, everything is fine, just as expected.
+
+CVFDT's sliding window seems to have to do exactly that. The algorithm listing is slightly ambiguous, but their text confirms that we don't care about following examples all the way to the bottom.
+
+This has another element to it; the fact that splitting leads to full leaves first just to compute their null attribute splits, followed by emptying them. If emptied, the CVFDT design makes perfect sense. You don't have to worry about things greater than maxNodeIDReached because new leaves are empty.
+
+VFDT algorithm listing clearly empties new leaves as soon as their null split merit is computed.
+
+The implementation doesn't do this.
+
+It splits consecutively on the same attribute- which it isn't meant to do- and when this actually happens the function that generates the child distributions fails. That failure led to extremely good performance.
+
+Having fixed that by not allowing splitting if infogain is zero (which would always be the case for a previously used attribute, because it's value has already been determined) we find VFDT performance is much worse (expected)
+
+However, this expectation is not correct- because VFDT's original design asks for empty leaves
+What remains to be done: We need to give VFDT empty leaves again. We need to assert that on classification problems with nominal attributes, there will be no unbounded tree growth.
+
+And for the sake of numeric attributes, we must encode the rule that you cannot split consecutively on the same attribute.
+
+
+
+
+
+

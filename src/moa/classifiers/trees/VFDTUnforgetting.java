@@ -413,7 +413,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
 
 
         public void copyInstanceToChildAndLearn(Integer instanceKey, Instance inst, VFDTUnforgetting ht) { // use AbstractMap.SimpleImmutableEntry when possible
-
+        	//inst.setWeight(0.0);
             int childIndex = instanceChildIndex(inst);
             if (childIndex >= 0) {
                 Node child = getChild(childIndex);
@@ -794,7 +794,6 @@ public class VFDTUnforgetting extends AbstractClassifier {
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
 
-
                 double bestSuggestionAverageMerit = 0.0;
                 double secondBestSuggestionAverageMerit = 0.0;
 
@@ -904,6 +903,14 @@ public class VFDTUnforgetting extends AbstractClassifier {
                     for (Map.Entry<Integer, Instance> entry : instanceRepo.entrySet()) {
                     	newSplit.copyInstanceToChildAndLearn(entry.getKey(), entry.getValue(), this);
                     }
+
+                    /* But this causes each instance to be learned twice- remember, the child has already received an observedClassDistribution */
+                    /* Reset the children's resulting class distributions */
+
+                    for(int i = 0; i < splitDecision.numSplits(); i++){
+                    	newSplit.getChild(i).observedClassDistribution = new DoubleVector(splitDecision.resultingClassDistributionFromSplit(i));
+                    }
+
                     /**/
                 }
 

@@ -793,7 +793,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
             else {
 
             	double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
-                        this.splitConfidenceOption.getValue(), node.getWeightSeen());
+                        this.splitConfidenceOption.getValue(), node.getWeightSeen()); // Use node.nodeTime instead if there is decay in the weights!!
 
                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];

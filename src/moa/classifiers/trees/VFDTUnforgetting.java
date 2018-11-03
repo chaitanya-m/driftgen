@@ -215,7 +215,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
 
     public static class Node extends AbstractMOAObject {
 
-    	private ArrayList<Integer> nodeInstances; // because unforgettingTree
+    	protected ArrayList<Integer> nodeInstances; // because unforgettingTree
 
     	private HashMap<Integer, Double> infogainSum;
 
@@ -237,6 +237,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
             this.infogainSum = new HashMap<Integer, Double>();
             this.infogainSum.put(-1, 0.0); // Initialize for null split
             this.nodeInstances = new ArrayList<Integer>();
+            this.nodeTime = 0;
 
         }
 
@@ -523,6 +524,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
                 }
                 obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
             }
+
         }
 
         public double getWeightSeen() {
@@ -748,6 +750,8 @@ public class VFDTUnforgetting extends AbstractClassifier {
     protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
             int parentIndex) {
 
+    	// System.err.println((node.nodeTime - node.getWeightSeen()));
+
     	// take all the stored examples and redistribute by split criterion
         // each node must contain a list of examples present in it
     	// re-learn all the examples for each child. when doing this ensure that you don't duplicate the example list at the node.
@@ -876,11 +880,16 @@ public class VFDTUnforgetting extends AbstractClassifier {
                             node.getObservedClassDistribution(), splitDecision.numSplits());
                     newSplit.copyNodeInstances(node);
 
+                    //assert(node.getWeightSeen() == node.nodeTime) :
+                    //	node.getWeightSeen() + " node Weight does not equal node Time " + node.nodeTime;
+
+                    double weightSum = 0.0;
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
 
-                        double[] j = splitDecision.resultingClassDistributionFromSplit(i);
+                        //= splitDecision.resultingClassDistributionFromSplit(i);
 
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
+                        weightSum += ((ActiveLearningNode)newChild).getWeightSeen();
 
                         if(splitDecision.splitTest.getClass() == NominalAttributeBinaryTest.class
                         		||splitDecision.splitTest.getClass() == NominalAttributeMultiwayTest.class){
@@ -890,6 +899,11 @@ public class VFDTUnforgetting extends AbstractClassifier {
                         }
                         newSplit.setChild(i, newChild);
                     }
+                    assert(weightSum - node.nodeTime == 0.0) : weightSum + " the sum of child weights does not equal parent weight " + node.nodeTime;
+//					This is because I want to ensure sum of child distribution weights sum up to weight of parent distribution(they do). Add an assert.
+//                    if(weightSum - node.nodeTime != 0.0){
+//                    	System.err.println(weightSum + " ===== " + node.nodeTime);
+//                    }
                     this.activeLeafNodeCount--;
                     this.decisionNodeCount++;
                     this.activeLeafNodeCount += splitDecision.numSplits();
@@ -900,17 +914,23 @@ public class VFDTUnforgetting extends AbstractClassifier {
                     }
 
                     /* Copy instances to children and learn in order to simulate not forgetting node statistics (no likelihood amnesia)*/
-                    for (Map.Entry<Integer, Instance> entry : instanceRepo.entrySet()) {
-                    	newSplit.copyInstanceToChildAndLearn(entry.getKey(), entry.getValue(), this);
+                    for (Integer instKey : node.nodeInstances) {
+                    	newSplit.copyInstanceToChildAndLearn(instKey, instanceRepo.get(instKey), this);
                     }
 
                     /* But this causes each instance to be learned twice- remember, the child has already received an observedClassDistribution */
                     /* Reset the children's resulting class distributions */
 
+                    weightSum = 0.0;
                     for(int i = 0; i < splitDecision.numSplits(); i++){
-                    	newSplit.getChild(i).observedClassDistribution = new DoubleVector(splitDecision.resultingClassDistributionFromSplit(i));
+                    	Node child = newSplit.getChild(i);
+                    	child.observedClassDistribution = new DoubleVector(splitDecision.resultingClassDistributionFromSplit(i));
+                    	weightSum += ((ActiveLearningNode)child).getWeightSeen();
+                    	//System.out.println(Math.abs(((ActiveLearningNode)child).getWeightSeen() - (child.nodeTime)));
+                        assert(Math.abs(((ActiveLearningNode)child).getWeightSeen() - (child.nodeTime)) <= 1e-6) :
+                        	((ActiveLearningNode)child).getWeightSeen() + " node Weight does not equal node Time " + child.nodeTime;
                     }
-
+                    assert(weightSum - node.nodeTime == 0.0) : weightSum + " the sum of child weights does not equal parent weight " + node.nodeTime;
                     /**/
                 }
 

@@ -842,10 +842,10 @@ public class HATADWINEidetic extends VFDTUnforgetting {
                     	child.observedClassDistribution = new DoubleVector(splitDecision.resultingClassDistributionFromSplit(i));
                     	weightSum += ((ActiveLearningNode)child).getWeightSeen();
                     	//System.out.println(Math.abs(((ActiveLearningNode)child).getWeightSeen() - (child.nodeTime)));
-                        assert(Math.abs(((ActiveLearningNode)child).getWeightSeen() - (child.nodeTime)) <= 1e-6) :
-                        	((ActiveLearningNode)child).getWeightSeen() + " node Weight does not equal node Time " + child.nodeTime;
+                        //assert(Math.abs(((ActiveLearningNode)child).getWeightSeen() - (child.nodeTime)) <= 1e-6) :
+                        	//((ActiveLearningNode)child).getWeightSeen() + " node Weight does not equal node Time " + child.nodeTime;
                     }
-                    assert(weightSum - node.getWeightSeen() == 0.0) : weightSum + " the sum of child weights does not equal parent weight " + node.getWeightSeen();
+                    //assert(weightSum - node.getWeightSeen() == 0.0) : weightSum + " the sum of child weights does not equal parent weight " + node.getWeightSeen();
                     /**/
                        
                 }

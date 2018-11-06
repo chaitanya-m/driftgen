@@ -20,6 +20,11 @@
  * Based on HoeffdingAdaptiveTree by Albert Bifet and HoeffdingTree by Richard Kirkby
  *
  */
+/**
+ * This isn't actually eidetic. I'm just trying to pass through some methods of use to CVFDT.
+ */
+
+
 package moa.classifiers.trees;
 
 import java.io.File;
@@ -45,8 +50,6 @@ import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
-import moa.classifiers.trees.HoeffdingTree.Node;
-import moa.classifiers.trees.HoeffdingTree.SplitNode;
 import moa.core.AutoExpandVector;
 import moa.core.DoubleVector;
 import moa.core.Measurement;
@@ -92,11 +95,11 @@ import com.google.common.collect.EvictingQueue;
  */
 
 
-public class VFDTGlobalWindow extends VFDT {
+public class VFDTGlobalWindowEidetic extends VFDTUnforgetting {
 
     private static final long serialVersionUID = 1L;
 
-    protected static long numInstances = 0;
+    protected static Integer numInstances = 0;
 
     private static long nodeIDGenerator = 0; // nodeIDs start from 0 (incremented with post ++ operator)
 
@@ -130,7 +133,7 @@ public class VFDTGlobalWindow extends VFDT {
         //public boolean getErrorChange();
         public int numberLeaves();
 
-		public void learnFromInstance(Instance inst, VFDTGlobalWindow ht, SplitNode parent, int parentBranch,
+		public void learnFromInstance(Instance inst, VFDTGlobalWindowEidetic ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs);
 
 		public void setAlternateStatusForSubtreeNodes(boolean isAlternate);
@@ -164,7 +167,7 @@ public class VFDTGlobalWindow extends VFDT {
 
         public void setUniqueID(long uniqueID);
 
-		public void forgetInstance(Instance inst, VFDTGlobalWindow ht, AdaSplitNode adaSplitNode, int childBranch, long maxNodeID);
+		public void forgetInstance(Instance inst, VFDTGlobalWindowEidetic ht, AdaSplitNode adaSplitNode, int childBranch, long maxNodeID);
 
 		public double getSimpleErrorEstimate();
     }
@@ -299,7 +302,7 @@ public class VFDTGlobalWindow extends VFDT {
         // LearningNodes can split, but SplitNodes can't
         // Parent nodes are allways SplitNodes
         @Override
-		public void learnFromInstance(Instance inst, VFDTGlobalWindow ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
+		public void learnFromInstance(Instance inst, VFDTGlobalWindowEidetic ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
         	//System.out.println("VFDTWindow LearnFromInstance");
 
         	// Note: this is kind of inefficient... you have to filter down every time to find out if you've made an error??
@@ -307,7 +310,7 @@ public class VFDTGlobalWindow extends VFDT {
         	// Not so bad for small trees though
 
         	nodeTime++;
-
+        	
             int trueClass = (int) inst.classValue();
             //Compute ClassPrediction using filterInstanceToLeaf
             //int ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, null, -1).node.getClassVotes(inst, ht));
@@ -367,7 +370,7 @@ public class VFDTGlobalWindow extends VFDT {
 
         }
 		@Override
-        public void forgetInstance(Instance inst, VFDTGlobalWindow ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
+        public void forgetInstance(Instance inst, VFDTGlobalWindowEidetic ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
 
             //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
 
@@ -593,7 +596,7 @@ public class VFDTGlobalWindow extends VFDT {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDTGlobalWindow ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
+        public void learnFromInstance(Instance inst, VFDTGlobalWindowEidetic ht, SplitNode parent, int parentBranch, AutoExpandVector<Long> reachedLeafIDs) {
 
         	nodeTime++;
         	
@@ -630,9 +633,9 @@ public class VFDTGlobalWindow extends VFDT {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, VFDTUnforgetting ht) {
             double[] dist;
-            int predictionOption = ((VFDTGlobalWindow) ht).leafpredictionOption.getChosenIndex();
+            int predictionOption = ((VFDTGlobalWindowEidetic) ht).leafpredictionOption.getChosenIndex();
             if (predictionOption == 0) { //MC
                 dist = this.observedClassDistribution.getArrayCopy();
             } else if (predictionOption == 1) { //NB
@@ -700,7 +703,7 @@ public class VFDTGlobalWindow extends VFDT {
 		}
 
 		@Override
-		public void forgetInstance(Instance inst, VFDTGlobalWindow ht, AdaSplitNode adaSplitNode, int childBranch,
+		public void forgetInstance(Instance inst, VFDTGlobalWindowEidetic ht, AdaSplitNode adaSplitNode, int childBranch,
 				long maxNodeID) {
 			//if(numInstances < ht.windowSize.getValue() + 10000){
 

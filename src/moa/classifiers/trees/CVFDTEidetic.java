@@ -24,13 +24,13 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
-import moa.classifiers.trees.VFDT.Node;
-import moa.classifiers.trees.VFDTGlobalWindow.AdaNode;
-import moa.classifiers.trees.VFDTGlobalWindow.AdaSplitNode;
+import moa.classifiers.trees.VFDTUnforgetting.Node;
+import moa.classifiers.trees.VFDTGlobalWindowEidetic.AdaNode;
+import moa.classifiers.trees.VFDTGlobalWindowEidetic.AdaSplitNode;
 import moa.core.AutoExpandVector;
 import moa.core.Utils;
 
-public class CVFDT extends VFDTGlobalWindow {
+public class CVFDTEidetic extends VFDTGlobalWindowEidetic {
 
 	// lets begin by adding counters and split tests to every splitnode
 	// then we can add a list of alternates to grow the results of the split tests
@@ -48,7 +48,7 @@ public class CVFDT extends VFDTGlobalWindow {
 
 		public int getTestPhaseError();
 
-		public void killSubtree(CVFDT ht);
+		public void killSubtree(CVFDTEidetic ht);
 
 		public int getNodeTrainingTime();
 
@@ -142,7 +142,7 @@ public class CVFDT extends VFDTGlobalWindow {
 		}
 
 		@Override
-        public void forgetInstance(Instance inst, VFDTGlobalWindow ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
+        public void forgetInstance(Instance inst, VFDTGlobalWindowEidetic ht, AdaSplitNode parent, int parentBranch, long maxNodeID) {
 
             // DRY... for now this code is repeated...
             // Updates statistics in split nodes also
@@ -188,10 +188,15 @@ public class CVFDT extends VFDTGlobalWindow {
 
 
 		@Override
-		public void learnFromInstance(Instance inst, VFDTGlobalWindow ht, SplitNode parent, int parentBranch,
+		public void learnFromInstance(Instance inst, VFDTGlobalWindowEidetic ht, SplitNode parent, int parentBranch,
 				AutoExpandVector<Long> reachedLeafIDs){
 
+			
 			nodeTime++;
+            /* Instance storage. Store instances. */
+            ht.instanceRepo.put(numInstances, inst);
+            this.addNodeInstance(numInstances);
+            /**/
 			
 			// only mainline split nodes are capable of launching a test phase
 			// alternate nodes shouldn't get to the point of actually learning
@@ -305,9 +310,9 @@ public class CVFDT extends VFDTGlobalWindow {
 
 						// the paper tells us to prune alternates that have an accuracy diff no greater than 1% of the lowest diff ever recorded
 
-						Iterator<Map.Entry<Integer,CVFDT.CVFDTAdaNode>> iter =  alternates.entrySet().iterator();
+						Iterator<Map.Entry<Integer,CVFDTEidetic.CVFDTAdaNode>> iter =  alternates.entrySet().iterator();
 						while(iter.hasNext()){
-							Map.Entry<Integer,CVFDT.CVFDTAdaNode> mapEntry = iter.next();
+							Map.Entry<Integer,CVFDTEidetic.CVFDTAdaNode> mapEntry = iter.next();
 							CVFDTAdaNode altTopNode = alternates.get(mapEntry.getKey());
 
 							double currentAltAccuracyDiff = // don't use getTestPhaseError for anything other than mainline nodes! Refactor when possible.
@@ -354,7 +359,7 @@ public class CVFDT extends VFDTGlobalWindow {
 
 							ht.activeLeafNodeCount -= this.numberLeaves();
 							ht.activeLeafNodeCount += bestAlternate.numberLeaves();
-							this.killSubtree((CVFDT)ht);
+							this.killSubtree((CVFDTEidetic)ht);
 							bestAlternate.setAlternateStatusForSubtreeNodes(false);
 							bestAlternate.setTopAlternate(false);
 							bestAlternate.setMainlineNode(null);
@@ -442,7 +447,7 @@ public class CVFDT extends VFDTGlobalWindow {
 
 			// DRY... code duplicated from ActiveLearningNode in VFDT.java
 			public AttributeSplitSuggestion[] getBestSplitSuggestions(
-					SplitCriterion criterion, VFDT ht) {
+					SplitCriterion criterion, VFDTUnforgetting ht) {
 				List<AttributeSplitSuggestion> bestSuggestions = new LinkedList<AttributeSplitSuggestion>();
 				double[] preSplitDist = this.observedClassDistribution.getArrayCopy();
 				if (!ht.noPrePruneOption.isSet()) {
@@ -465,7 +470,7 @@ public class CVFDT extends VFDTGlobalWindow {
 			}
 
 			@Override
-			public void killSubtree(CVFDT ht) {
+			public void killSubtree(CVFDTEidetic ht) {
 				for (Node child : this.children) {
 					if (child != null) {
 						//Delete alternate tree if it exists
@@ -508,12 +513,12 @@ public class CVFDT extends VFDTGlobalWindow {
 
 				// Now let's find the best split X_n other than X_a that doesn't already have an attached alternate subtree
 				// Would that be an improvement over CVFDT? Does CVFDT always compute the X_n, even if it won't be used because it has an attached alternate?
-				SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(CVFDT.this.splitCriterionOption);
+				SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(CVFDTEidetic.this.splitCriterionOption);
 
 				double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(this.getObservedClassDistribution()),
-						CVFDT.this.splitConfidenceOption.getValue(), this.observedClassDistribution.sumOfValues());
+						CVFDTEidetic.this.splitConfidenceOption.getValue(), this.observedClassDistribution.sumOfValues());
 
-				AttributeSplitSuggestion[] bestSplitSuggestions = this.getBestSplitSuggestions(splitCriterion, CVFDT.this);
+				AttributeSplitSuggestion[] bestSplitSuggestions = this.getBestSplitSuggestions(splitCriterion, CVFDTEidetic.this);
 				Arrays.sort(bestSplitSuggestions);
 
 				AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
@@ -530,7 +535,7 @@ public class CVFDT extends VFDTGlobalWindow {
 					}
 				}
 
-				double tieThreshold = CVFDT.this.tieThresholdOption.getValue();
+				double tieThreshold = CVFDTEidetic.this.tieThresholdOption.getValue();
 				double deltaG = bestSuggestion.merit - secondBestSuggestion.merit;
 				//double deltaG = bestSuggestion.merit - currentSuggestion.merit;
 
@@ -608,10 +613,15 @@ public class CVFDT extends VFDTGlobalWindow {
 			}
 
 			@Override
-			public void learnFromInstance(Instance inst, VFDTGlobalWindow ht, SplitNode parent, int parentBranch,
+			public void learnFromInstance(Instance inst, VFDTGlobalWindowEidetic ht, SplitNode parent, int parentBranch,
 					AutoExpandVector<Long> reachedLeafIDs) {
 
 				nodeTime++;
+				
+	            /* Instance storage. Store instances at leaves. */
+	            ht.instanceRepo.put(numInstances, inst);
+	            this.addNodeInstance(numInstances);
+	            /**/
 				
 				super.learnFromInstance(inst, ht, parent, parentBranch, reachedLeafIDs);
 
@@ -619,7 +629,7 @@ public class CVFDT extends VFDTGlobalWindow {
 			}
 
 			@Override
-			public void killSubtree(CVFDT ht) {
+			public void killSubtree(CVFDTEidetic ht) {
 
 			}
 

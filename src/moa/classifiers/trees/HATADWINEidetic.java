@@ -32,6 +32,8 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.VFDTUnforgetting.ActiveLearningNode;
+import moa.classifiers.trees.VFDTUnforgetting.Node;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
@@ -56,11 +58,11 @@ import com.yahoo.labs.samoa.instances.Instance;
  * @author Albert Bifet (abifet at cs dot waikato dot ac dot nz)
  * @version $Revision: 7 $
  */
-public class HATADWIN extends VFDT {
+public class HATADWINEidetic extends VFDTUnforgetting {
 
     private static final long serialVersionUID = 1L;
 
-    private static long numInstances = 0;
+    private static Integer numInstances = 0;
 
     @Override
     public String getPurposeString() {
@@ -88,9 +90,9 @@ public class HATADWIN extends VFDT {
 
         public boolean isNullError();
 
-        public void killTreeChilds(HATADWIN ht);
+        public void killTreeChilds(HATADWINEidetic ht);
 
-        public void learnFromInstance(Instance inst, HATADWIN ht, SplitNode parent, int parentBranch);
+        public void learnFromInstance(Instance inst, HATADWINEidetic ht, SplitNode parent, int parentBranch);
 
         public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch, List<FoundNode> foundNodes,
                 boolean updateSplitterCounts);
@@ -239,10 +241,16 @@ public class HATADWIN extends VFDT {
         // LearningNodes can split, but SplitNodes can't
         // Parent nodes are allways SplitNodes
         @Override
-        public void learnFromInstance(Instance inst, HATADWIN ht, SplitNode parent, int parentBranch) {
+        public void learnFromInstance(Instance inst, HATADWINEidetic ht, SplitNode parent, int parentBranch) {
 
 //            System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
-
+        	nodeTime++;
+     
+            /* Instance storage. Store instances. */
+            ht.instanceRepo.put(numInstances, inst);
+            this.addNodeInstance(numInstances);
+            /**/
+        	
             int trueClass = (int) inst.classValue();
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
@@ -369,7 +377,7 @@ public class HATADWIN extends VFDT {
 
 
         @Override
-        public void killTreeChilds(HATADWIN ht) {
+        public void killTreeChilds(HATADWINEidetic ht) {
             for (Node child : this.children) {
                 if (child != null) {
                     //Delete alternate tree if it exists
@@ -534,17 +542,23 @@ public class HATADWIN extends VFDT {
         }
 
         @Override
-        public void killTreeChilds(HATADWIN ht) {
+        public void killTreeChilds(HATADWINEidetic ht) {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, HATADWIN ht, SplitNode parent, int parentBranch) {
+        public void learnFromInstance(Instance inst, HATADWINEidetic ht, SplitNode parent, int parentBranch) {
 //
 //        	if(!this.isAlternate()){
 //        		System.err.println(numInstances);
 //        		// this shows mainline learning nodes stop learning once drift occurs
 //        	}
+        	nodeTime++;
 
+            /* Instance storage. Store instances at leaves. */
+            ht.instanceRepo.put(numInstances, inst);
+            this.addNodeInstance(numInstances);
+            /**/
+        	
             int trueClass = (int) inst.classValue();
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
@@ -593,9 +607,9 @@ public class HATADWIN extends VFDT {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, VFDTUnforgetting ht) {
             double[] dist;
-            int predictionOption = ((HATADWIN) ht).leafpredictionOption.getChosenIndex();
+            int predictionOption = ((HATADWINEidetic) ht).leafpredictionOption.getChosenIndex();
             if (predictionOption == 0) { //MC
                 dist = this.observedClassDistribution.getArrayCopy();
             } else if (predictionOption == 1) { //NB
@@ -811,7 +825,31 @@ public class HATADWIN extends VFDT {
                     	((NewNode)node).getParent().setChild(parentIndex, newSplit);
                     	((NewNode)newSplit).setParent(((NewNode)node).getParent());
                     }
+                    
+                    
+
+                    /* Copy instances to children and learn in order to simulate not forgetting node statistics (no likelihood amnesia)*/
+                    for (Integer instKey : node.nodeInstances) {
+                    	newSplit.copyInstanceToChildAndLearn(instKey, instanceRepo.get(instKey), this);
+                    }
+
+                    /* But this causes each instance to be learned twice- remember, the child has already received an observedClassDistribution */
+                    /* Reset the children's resulting class distributions */
+
+                    double weightSum = 0.0;
+                    for(int i = 0; i < splitDecision.numSplits(); i++){
+                    	Node child = newSplit.getChild(i);
+                    	child.observedClassDistribution = new DoubleVector(splitDecision.resultingClassDistributionFromSplit(i));
+                    	weightSum += ((ActiveLearningNode)child).getWeightSeen();
+                    	//System.out.println(Math.abs(((ActiveLearningNode)child).getWeightSeen() - (child.nodeTime)));
+                        assert(Math.abs(((ActiveLearningNode)child).getWeightSeen() - (child.nodeTime)) <= 1e-6) :
+                        	((ActiveLearningNode)child).getWeightSeen() + " node Weight does not equal node Time " + child.nodeTime;
+                    }
+                    assert(weightSum - node.getWeightSeen() == 0.0) : weightSum + " the sum of child weights does not equal parent weight " + node.getWeightSeen();
+                    /**/
+                       
                 }
+                
                 // manage memory
                 enforceTrackerLimit();
             }

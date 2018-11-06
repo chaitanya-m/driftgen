@@ -123,7 +123,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
 
     private static final long serialVersionUID = 1L;
 
-    private Map<Integer, Instance> instanceRepo = new HashMap<Integer, Instance>();
+    protected Map<Integer, Instance> instanceRepo = new HashMap<Integer, Instance>();
 
     private int i = 0;
 

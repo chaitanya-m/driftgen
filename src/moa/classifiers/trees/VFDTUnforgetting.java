@@ -899,7 +899,7 @@ public class VFDTUnforgetting extends AbstractClassifier {
                         }
                         newSplit.setChild(i, newChild);
                     }
-                    assert(weightSum - node.nodeTime == 0.0) : weightSum + " the sum of child weights does not equal parent weight " + node.nodeTime;
+                    //assert(weightSum - node.nodeTime == 0.0) : weightSum + " the sum of child weights does not equal parent weight " + node.nodeTime;
 //					This is because I want to ensure sum of child distribution weights sum up to weight of parent distribution(they do). Add an assert.
 //                    if(weightSum - node.nodeTime != 0.0){
 //                    	System.err.println(weightSum + " ===== " + node.nodeTime);
@@ -927,10 +927,10 @@ public class VFDTUnforgetting extends AbstractClassifier {
                     	child.observedClassDistribution = new DoubleVector(splitDecision.resultingClassDistributionFromSplit(i));
                     	weightSum += ((ActiveLearningNode)child).getWeightSeen();
                     	//System.out.println(Math.abs(((ActiveLearningNode)child).getWeightSeen() - (child.nodeTime)));
-                        assert(Math.abs(((ActiveLearningNode)child).getWeightSeen() - (child.nodeTime)) <= 1e-6) :
-                        	((ActiveLearningNode)child).getWeightSeen() + " node Weight does not equal node Time " + child.nodeTime;
+                        //assert(Math.abs(((ActiveLearningNode)child).getWeightSeen() - (child.nodeTime)) <= 1e-6) :
+                        	//((ActiveLearningNode)child).getWeightSeen() + " node Weight does not equal node Time " + child.nodeTime;
                     }
-                    assert(weightSum - node.nodeTime == 0.0) : weightSum + " the sum of child weights does not equal parent weight " + node.nodeTime;
+                    //assert(weightSum - node.nodeTime == 0.0) : weightSum + " the sum of child weights does not equal parent weight " + node.nodeTime;
                     /**/
                 }
 

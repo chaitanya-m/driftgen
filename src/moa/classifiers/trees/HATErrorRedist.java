@@ -111,6 +111,10 @@ public class HATErrorRedist extends VFDT {
 
 		public AdaSplitNode getParent();
 
+		public int getLevel();
+
+		public void setLevel(int level);
+
     }
 
     public static class AdaSplitNode extends SplitNode implements NewNode {
@@ -135,6 +139,8 @@ public class HATErrorRedist extends VFDT {
 		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
 
 		private AdaSplitNode parent = null;
+
+		private int level;
 
 		@Override
 		public void setParent(AdaSplitNode parent) {
@@ -262,7 +268,9 @@ public class HATErrorRedist extends VFDT {
                 this.estimationErrorWeight = new ADWIN();
             }
             double oldError = this.getErrorEstimation();
-            this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ? 0.0 : 1.0);
+            if (leaf != null) {
+            	this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ? 0.0 : 1.0*1/(((NewNode)leaf).getLevel() - this.getLevel()));
+            }
             if (this.ErrorChange == true && oldError > this.getErrorEstimation()) {
                 //if error is decreasing, don't do anything
                 this.ErrorChange = false;
@@ -275,6 +283,7 @@ public class HATErrorRedist extends VFDT {
                 this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
                 ((NewNode)this.alternateTree).setMainlineNode(this); // this node is the alternate's attachment point
                 ((NewNode)this.alternateTree).setParent(this.getParent());
+                ((NewNode)this.alternateTree).setLevel(this.getLevel());
                 ht.alternateTrees++;
             } // Check condition to replace tree
 
@@ -443,6 +452,16 @@ public class HATErrorRedist extends VFDT {
 		public AdaSplitNode getMainlineNode() {
 			return this.mainlineNode;
 		}
+
+		@Override
+		public int getLevel() {
+			return this.level;
+		}
+
+		@Override
+		public void setLevel(int level) {
+			this.level = level;
+		}
     }
 
     public static class AdaLearningNode extends LearningNodeNBAdaptive implements NewNode {
@@ -464,6 +483,8 @@ public class HATErrorRedist extends VFDT {
 		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
 
 		private AdaSplitNode parent = null;
+
+		private int level;
 
 		@Override
 		public void setParent(AdaSplitNode parent) {
@@ -649,6 +670,17 @@ public class HATErrorRedist extends VFDT {
 			this.setAlternate(isAlternate);
 		}
 
+
+		@Override
+		public int getLevel() {
+			return this.level;
+		}
+
+		@Override
+		public void setLevel(int level) {
+			this.level = level;
+		}
+
     }
 
     protected int alternateTrees;
@@ -699,6 +731,7 @@ public class HATErrorRedist extends VFDT {
             this.treeRoot = newLearningNode(false); // root cannot be alternate
             ((NewNode) this.treeRoot).setRoot(true);
             ((NewNode) this.treeRoot).setParent(null);
+            ((NewNode) this.treeRoot).setLevel(0);
             this.activeLeafNodeCount = 1;
         }
         ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
@@ -787,6 +820,7 @@ public class HATErrorRedist extends VFDT {
                     for (int i = 0; i < splitDecision.numSplits(); i++) {
                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i), ((NewNode)newSplit).isAlternate());
                         ((NewNode)newChild).setParent((AdaSplitNode)newSplit);
+                    	((NewNode)newChild).setLevel(((NewNode)node).getLevel()+1); // Increment level by 1
 
                     	newChild.usedNominalAttributes = new ArrayList<Integer>(node.usedNominalAttributes); //deep copy
                     	newChild.usedNominalAttributes.add(splitDecision.splitTest.getAttsTestDependsOn()[0]);
@@ -799,15 +833,19 @@ public class HATErrorRedist extends VFDT {
                     if (((NewNode)node).isRoot()) {
                     	((NewNode)newSplit).setRoot(true);
                     	((NewNode)newSplit).setParent(null);
+                    	((NewNode)newSplit).setLevel(((NewNode)node).getLevel());
                         this.treeRoot = newSplit;
                     }
                     else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is alternate
                     	((NewNode)node).getMainlineNode().alternateTree = newSplit;
                     	((NewNode)newSplit).setParent(((NewNode)node).getParent());
+                    	((NewNode)newSplit).setLevel(((NewNode)node).getLevel());
+
                     }
                     else { //if the node is neither root nor an alternate, it must have a mainline split parent
                     	((NewNode)node).getParent().setChild(parentIndex, newSplit);
                     	((NewNode)newSplit).setParent(((NewNode)node).getParent());
+                    	((NewNode)newSplit).setLevel(((NewNode)node).getLevel());
                     }
                 }
                 // manage memory

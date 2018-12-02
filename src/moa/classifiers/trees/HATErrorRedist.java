@@ -264,12 +264,32 @@ public class HATErrorRedist extends VFDT {
 
             boolean blCorrect = (trueClass == ClassPrediction);
 
+            if (!blCorrect){
+                if (k > 0) {
+                    weightedInst.setWeight(inst.weight() * k); // a domino effect of increasing the weight down to the leaf
+                    // subtree boosting
+                }
+            }
+            
             if (this.estimationErrorWeight == null) {
                 this.estimationErrorWeight = new ADWIN();
             }
             double oldError = this.getErrorEstimation();
             if (leaf != null) {
-            	this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ? 0.0 : 1.0*1/(((NewNode)leaf).getLevel() - this.getLevel()));
+            	//simple strategy
+            	//this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ?
+            		//	0.0 : 1.0*1/(((NewNode)leaf).getLevel() - this.getLevel() + 1.0));
+            	// inverted proportions, except for at leaves
+            	//this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ?
+            		//	0.0 : 1.0/(leaf.observedClassDistribution.sumOfAbsoluteValues() 
+            			//		/ this.observedClassDistribution.sumOfAbsoluteValues()));
+            	//proportional
+            	this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ?
+            			0.0 : 1.0*(leaf.observedClassDistribution.sumOfAbsoluteValues() 
+            					/ this.observedClassDistribution.sumOfAbsoluteValues()));
+            	
+            	            	
+            	
             }
             if (this.ErrorChange == true && oldError > this.getErrorEstimation()) {
                 //if error is decreasing, don't do anything

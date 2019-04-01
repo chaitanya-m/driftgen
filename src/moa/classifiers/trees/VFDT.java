@@ -728,7 +728,8 @@ public class VFDT extends AbstractClassifier {
 
             	else { // handle the null attribute
             		double currentSum = node.getInfogainSum().get(-1); // null split
-            		node.getInfogainSum().put(-1, currentSum + bestSplitSuggestions[i].merit);
+            		node.getInfogainSum().put(-1, currentSum + Math.max(0.0, bestSplitSuggestions[i].merit));
+					assert node.getInfogainSum().get(-1) >= 0.0 : "Negative infogain shouldn't be possible here.";
             	}
 
             }

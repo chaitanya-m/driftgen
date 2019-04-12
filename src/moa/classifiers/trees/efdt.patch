@@ -1,0 +1,28 @@
+diff --git a/src/moa/classifiers/trees/EFDT.java b/src/moa/classifiers/trees/EFDT.java
+index 80cb0ec..22d1db0 100644
+--- a/src/moa/classifiers/trees/EFDT.java
++++ b/src/moa/classifiers/trees/EFDT.java
+@@ -369,7 +369,8 @@ public class EFDT extends VFDT{
+ 
+ 				else { // handle the null attribute
+ 					double currentSum = node.getInfogainSum().get(-1); // null split
+-					node.getInfogainSum().put(-1, currentSum + bestSplitSuggestions[i].merit);
++					node.getInfogainSum().put(-1, Math.max(0.0, currentSum + bestSplitSuggestions[i].merit));
++					assert node.getInfogainSum().get(-1) >= 0.0 : "Negative infogain shouldn't be possible here.";
+ 				}
+ 
+ 			}
+diff --git a/src/moa/classifiers/trees/VFDT.java b/src/moa/classifiers/trees/VFDT.java
+index e2f3881..3f93570 100644
+--- a/src/moa/classifiers/trees/VFDT.java
++++ b/src/moa/classifiers/trees/VFDT.java
+@@ -728,7 +728,8 @@ public class VFDT extends AbstractClassifier {
+ 
+             	else { // handle the null attribute
+             		double currentSum = node.getInfogainSum().get(-1); // null split
+-            		node.getInfogainSum().put(-1, currentSum + bestSplitSuggestions[i].merit);
++            		node.getInfogainSum().put(-1, currentSum + Math.max(0.0, bestSplitSuggestions[i].merit));
++					assert node.getInfogainSum().get(-1) >= 0.0 : "Negative infogain shouldn't be possible here.";
+             	}
+ 
+             }

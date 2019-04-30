@@ -18,7 +18,7 @@ public class AbruptDriftGenerator extends DriftGenerator{
 
 	public FloatOption driftMagnitudeConditional = new FloatOption("driftMagnitudeConditional", 'o',
 			"Magnitude of the drift between the starting probability and the one after the drift."
-					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 0.0, 0.9);
+					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 0.0, 1.0);
 
 	public FlagOption driftPriors = new FlagOption("driftPriors", 'p',
 			"States if the drift should apply to the prior distribution p(x). ");
@@ -66,11 +66,52 @@ public class AbruptDriftGenerator extends DriftGenerator{
 		// we are changing px. do we need to also update pygx?? Does it change??
 		// if we assume pure covariate drift, it doesn't...
 
-		double[][] px = (nInstancesGeneratedSoFar <= burnInNInstances
-				.getValue()) ? pxbd : pxad;
-		double[][] pygx = (nInstancesGeneratedSoFar <= burnInNInstances
-				.getValue()) ? pygxbd : pygxad;
+		double[][] px = null;// = new double[pxbd.length][pxbd[0].length]; 
+		double[][] pygx = null;// = new double[pygxbd.length][pygxbd[0].length]; 
 
+		if (recurrentDrift.getChosenLabel() == "NotRecurrent"){
+			if(nInstancesGeneratedSoFar <= burnInNInstances.getValue()){
+				px = new double[pxbd.length][];
+				pygx = new double[pygxbd.length][];
+
+				for (int i = 0; i < pxbd.length; i++)
+						px[i] = pxbd[i];
+				for (int i = 0; i < pygxbd.length; i++)
+						pygx[i] = pygxbd[i];
+								
+			}
+			else {
+				px = new double[pxad.length][];
+				pygx = new double[pygxad.length][];
+
+				for (int i = 0; i < pxad.length; i++)
+						px[i] = pxad[i];
+				for (int i = 0; i < pygxad.length; i++)
+						pygx[i] = pygxad[i];
+			}
+		}
+		else if (recurrentDrift.getChosenLabel() == "Recurrent"){
+			if((nInstancesGeneratedSoFar / burnInNInstances.getValue()) % 2 == 0){
+				px = new double[pxbd.length][];
+				pygx = new double[pygxbd.length][];
+
+				for (int i = 0; i < pxbd.length; i++)
+						px[i] = pxbd[i];
+				for (int i = 0; i < pygxbd.length; i++)
+						pygx[i] = pygxbd[i];
+								
+			}
+			else {
+				px = new double[pxad.length][];
+				pygx = new double[pygxad.length][];
+
+				for (int i = 0; i < pxad.length; i++)
+						px[i] = pxad[i];
+				for (int i = 0; i < pygxad.length; i++)
+						pygx[i] = pygxad[i];
+			}
+				}
+				
 		Instance inst = new DenseInstance(streamHeader.numAttributes());
 		inst.setDataset(streamHeader);
 

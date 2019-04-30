@@ -26,6 +26,9 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 
 	private static final long serialVersionUID = 6853166101160277496L;
 
+	public MultiChoiceOption recurrentDrift = new MultiChoiceOption("driftType", 'd',
+			"Recurrent Drift or not", new String[]{"NotRecurrent", "Recurrent"}, new String[]{"NotReccurentDrift", "RecurrentDrift"}, 0 );
+	
 	public MultiChoiceOption distanceMeasure = new MultiChoiceOption("distanceType", 't',
 			"The distance measure used", new String[]{"Hellinger Distance", "Total Variation Distance"}, new String[]{"L2 distance", "L1 distance"}, 0 );
 

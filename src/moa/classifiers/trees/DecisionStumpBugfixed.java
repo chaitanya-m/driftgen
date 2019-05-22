@@ -118,7 +118,14 @@
 	        if (this.bestSplit != null) {
 	            int branch = this.bestSplit.splitTest.branchForInstance(inst);
 	            if (branch >= 0) {
-	                return this.bestSplit.resultingClassDistributionFromSplit(branch);
+	            	double[] resultingDist;
+	            	try {
+		            	resultingDist = this.bestSplit.resultingClassDistributionFromSplit(branch);	            		
+	            	}
+	            	catch(ArrayIndexOutOfBoundsException e) {
+	            		resultingDist = new double[inst.numClasses()];
+	            	}
+	            	return resultingDist;
 	            }
 	        }
 	        return this.observedClassDistribution.getArrayCopy();

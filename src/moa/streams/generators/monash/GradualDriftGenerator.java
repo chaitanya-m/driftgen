@@ -18,7 +18,7 @@ public class GradualDriftGenerator extends DriftGenerator{
 
 	private static final long serialVersionUID = -3513131640712137498L;
 
-	public IntOption driftDuration = new IntOption("driftDuration", 'd',
+	public IntOption driftDuration = new IntOption("driftDuration", 'l',
 			"How long drift lasts", 10000, 0, Integer.MAX_VALUE);
 	public IntOption nClasses = new IntOption("numClasses", 'z',
 			"How many classes?", 4, 0, Integer.MAX_VALUE);

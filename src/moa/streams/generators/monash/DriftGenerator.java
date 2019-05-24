@@ -46,7 +46,7 @@ public abstract class DriftGenerator extends DriftOptionHandler implements Insta
 	public IntOption seed = new IntOption("seed", 'r', "Seed for random number generator", -1,
 			Integer.MIN_VALUE, Integer.MAX_VALUE);
 
-	public FloatOption driftMagnitudePrior = new FloatOption("driftMagnitudePrior", 'i',
+	public FloatOption driftMagnitudePrior = new FloatOption("driftMagnitudePrior", 'a',
 			"Magnitude of the covariate drift."
 					+ " Magnitude is expressed as the Hellinger or Total Variation distance [0,1]", 0.5, 1e-20, 0.9);
 

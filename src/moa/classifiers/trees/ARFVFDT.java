@@ -45,7 +45,7 @@ import com.yahoo.labs.samoa.instances.Instance;
 public class ARFVFDT extends VFDT implements ARFBaseTree{
 
     private static final long serialVersionUID = 1L;
-    
+  
     public IntOption subspaceSizeOption = new IntOption("subspaceSizeSize", 'k',
             "Number of features per subset for each node split. Negative values = #features - k", 
             2, Integer.MIN_VALUE, Integer.MAX_VALUE);
@@ -184,4 +184,9 @@ public class ARFVFDT extends VFDT implements ARFBaseTree{
     public boolean isRandomizable() {
         return true;
     }
+
+	@Override
+	public void setSubspaceSizeOption(int subspaceSize) {
+		subspaceSizeOption.setValue(subspaceSize);	
+	}
 }

@@ -40,7 +40,7 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 
 import moa.classifiers.trees.ARFBaseTree;
-import moa.classifiers.trees.ARFVFDT;
+import moa.classifiers.trees.ARFBaseTree;
 import moa.evaluation.BasicClassificationPerformanceEvaluator;
 
 import java.util.concurrent.ExecutorService;
@@ -55,7 +55,7 @@ import moa.classifiers.core.driftdetection.ChangeDetector;
  * <p>Adaptive Random Forest (ARF). The 3 most important aspects of this 
  * ensemble classifier are: (1) inducing diversity through resampling;
  * (2) inducing diversity through randomly selecting subsets of features for 
- * node splits (See moa.classifiers.trees.ARFVFDT.java); (3) drift 
+ * node splits (See moa.classifiers.trees.ARFBaseTree.java); (3) drift 
  * detectors per base tree, which cause selective resets in response to drifts. 
  * It also allows training background trees, which start training if a warning
  * is detected and replace the active tree if the warning escalates to a drift. </p>
@@ -66,7 +66,7 @@ import moa.classifiers.core.driftdetection.ChangeDetector;
  * In Machine Learning, DOI: 10.1007/s10994-017-5642-8, Springer, 2017.</p>
  *
  * <p>Parameters:</p> <ul>
- * <li>-l : Classiﬁer to train. Must be set to ARFVFDT</li>
+ * <li>-l : Classiﬁer to train. Must be set to ARFBaseTree</li>
  * <li>-s : The number of trees in the ensemble</li>
  * <li>-o : How the number of features is interpreted (4 options): 
  * "Specified m (integer value)", "sqrt(M)+1", "M-(sqrt(M)+1)"</li>
@@ -280,14 +280,14 @@ public class ARF extends AbstractClassifier implements MultiClassClassifier,
         if(this.subspaceSize > n)
             this.subspaceSize = n;
         
-        ARFVFDT treeLearner = (ARFVFDT) getPreparedClassOption(this.treeLearnerOption);
+        ARFBaseTree treeLearner = (ARFBaseTree) getPreparedClassOption(this.treeLearnerOption);
         treeLearner.resetLearning();
-        
+
         for(int i = 0 ; i < ensembleSize ; ++i) {
-            treeLearner.subspaceSizeOption.setValue(this.subspaceSize);
+            ((ARFBaseTree)treeLearner).setSubspaceSizeOption(this.subspaceSize);
             this.ensemble[i] = new ARFBaseLearner(
                 i, 
-                (ARFVFDT) treeLearner.copy(), 
+                (ARFBaseTree) treeLearner.copy(), 
                 (BasicClassificationPerformanceEvaluator) classificationEvaluator.copy(), 
                 this.instancesSeen, 
                 ! this.disableBackgroundLearnerOption.isSet(),
@@ -315,7 +315,7 @@ public class ARF extends AbstractClassifier implements MultiClassClassifier,
         public long createdOn;
         public long lastDriftOn;
         public long lastWarningOn;
-        public ARFVFDT classifier;
+        public ARFBaseTree classifier;
         public boolean isBackgroundLearner;
         
         // The drift and warning object parameters. 
@@ -336,7 +336,7 @@ public class ARF extends AbstractClassifier implements MultiClassClassifier,
         protected int numberOfDriftsDetected;
         protected int numberOfWarningsDetected;
 
-        private void init(int indexOriginal, ARFVFDT instantiatedClassifier, BasicClassificationPerformanceEvaluator evaluatorInstantiated, 
+        private void init(int indexOriginal, ARFBaseTree instantiatedClassifier, BasicClassificationPerformanceEvaluator evaluatorInstantiated, 
             long instancesSeen, boolean useBkgLearner, boolean useDriftDetector, ClassOption driftOption, ClassOption warningOption, boolean isBackgroundLearner) {
             this.indexOriginal = indexOriginal;
             this.createdOn = instancesSeen;
@@ -364,7 +364,7 @@ public class ARF extends AbstractClassifier implements MultiClassClassifier,
             }
         }
 
-        public ARFBaseLearner(int indexOriginal, ARFVFDT instantiatedClassifier, BasicClassificationPerformanceEvaluator evaluatorInstantiated, 
+        public ARFBaseLearner(int indexOriginal, ARFBaseTree instantiatedClassifier, BasicClassificationPerformanceEvaluator evaluatorInstantiated, 
                     long instancesSeen, boolean useBkgLearner, boolean useDriftDetector, ClassOption driftOption, ClassOption warningOption, boolean isBackgroundLearner) {
             init(indexOriginal, instantiatedClassifier, evaluatorInstantiated, instancesSeen, useBkgLearner, useDriftDetector, driftOption, warningOption, isBackgroundLearner);
         }
@@ -408,7 +408,7 @@ public class ARF extends AbstractClassifier implements MultiClassClassifier,
                         this.lastWarningOn = instancesSeen;
                         this.numberOfWarningsDetected++;
                         // Create a new bkgTree classifier
-                        ARFVFDT bkgClassifier = (ARFVFDT) this.classifier.copy();
+                        ARFBaseTree bkgClassifier = (ARFBaseTree) this.classifier.copy();
                         bkgClassifier.resetLearning();
                         
                         // Resets the evaluator

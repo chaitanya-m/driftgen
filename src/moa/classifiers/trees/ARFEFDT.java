@@ -56,7 +56,7 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
                 + "Base learner for AdaptiveRandomForest.";
     }
 
-    public static class RandomLearningNode extends ActiveLearningNode {
+    public class RandomLearningNode extends EFDTLearningNode {
         
         private static final long serialVersionUID = 1L;
 
@@ -103,7 +103,7 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
         }
     }
 
-    public static class LearningNodeNB extends RandomLearningNode {
+    public class LearningNodeNB extends RandomLearningNode {
 
         private static final long serialVersionUID = 1L;
 
@@ -127,7 +127,7 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
         }
     }
 
-    public static class LearningNodeNBAdaptive extends LearningNodeNB {
+    public class LearningNodeNBAdaptive extends LearningNodeNB {
 
         private static final long serialVersionUID = 1L;
 
@@ -184,4 +184,9 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
     public boolean isRandomizable() {
         return true;
     }
+    
+	@Override
+	public void setSubspaceSizeOption(int subspaceSize) {
+		subspaceSizeOption.setValue(subspaceSize);	
+	}
 }

@@ -1,5 +1,9 @@
 package moa.classifiers.trees;
 
-public interface ARFBaseTree {
+import com.github.javacliparser.IntOption;
 
+import moa.classifiers.Classifier;
+
+public interface ARFBaseTree extends Classifier{
+	void setSubspaceSizeOption(int subspaceSize);
 }

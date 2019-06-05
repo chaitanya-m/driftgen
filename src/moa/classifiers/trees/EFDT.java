@@ -6,6 +6,12 @@
  * There is a lot of code repetition from VFDT.java. This needs to be fixed as per DRY principles.
  *
  * Research code written to test the EFDT idea.
+ * 
+ * Note that while VFDT calls attemptToSplit from trainOnInstanceImpl, EFDT does not. 
+ * 
+ * VFDT find the leaf in trainOnInstanceImpl, and checks if it should split upon grace period coming around.
+ * 
+ * EFDT needs split nodes to learn as well, so it outsources this to learnFromInstance.
  *
  */
 
@@ -140,7 +146,7 @@ public class EFDT extends VFDT{
 		@Override
 		public void learnFromInstance(Instance inst, EFDT ht, EFDTSplitNode parent, int parentBranch) {
 
-			nodeTime++;
+			nodeTime++; // because you're not calling super's learnFromInstance because VFDT split nodes don't learn or increase nodeTime
 			//// Update node statistics and class distribution
 
 			this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight()); // update prior (predictor)
@@ -532,20 +538,19 @@ public class EFDT extends VFDT{
 		@Override
 		public void learnFromInstance(Instance inst, VFDT ht) {
 			super.learnFromInstance(inst, ht);
-
 		}
 
 		@Override
 		public void learnFromInstance(Instance inst, EFDT ht, EFDTSplitNode parent, int parentBranch) {
 			learnFromInstance(inst, ht);
-
+			// this reaches all the way back to LearningNode in VFDT which calls nodeTime++
 			if (ht.growthAllowed
 					&& (this instanceof ActiveLearningNode)) {
 				ActiveLearningNode activeLearningNode = this;
 				double weightSeen = activeLearningNode.getWeightSeen();
 				if (activeLearningNode.nodeTime % ht.gracePeriodOption.getValue() == 0) {
 					attemptToSplit(activeLearningNode, parent,
-							parentBranch);
+							parentBranch); // each learning node takes care of attempting to split itself, while VFDT does this in trainOnInstanceImpl
 					activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen);
 				}
 			}

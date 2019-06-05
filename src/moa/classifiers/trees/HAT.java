@@ -235,14 +235,9 @@ public class HAT extends VFDT {
             return (this.estimationErrorWeight == null);
         }
 
-        // SplitNodes can have alternative trees, but LearningNodes can't
-        // LearningNodes can split, but SplitNodes can't
-        // Parent nodes are allways SplitNodes
-        @Override
-        public void learnFromInstance(Instance inst, HAT ht, SplitNode parent, int parentBranch) {
 
-//            System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
-
+		public Instance computeErrorChangeAndWeightInst(Instance inst, HAT ht, SplitNode parent, int parentBranch) {
+			
             int trueClass = (int) inst.classValue();
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
@@ -263,8 +258,21 @@ public class HAT extends VFDT {
             if (this.estimationErrorWeight == null) {
                 this.estimationErrorWeight = new ADWIN();
             }
-            double oldError = this.getErrorEstimation();
             this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ? 0.0 : 1.0);
+            
+            return weightedInst;
+		}
+        
+        // SplitNodes can have alternative trees, but LearningNodes can't
+        // LearningNodes can split, but SplitNodes can't
+        // Parent nodes are allways SplitNodes
+        @Override
+        public void learnFromInstance(Instance inst, HAT ht, SplitNode parent, int parentBranch) {
+
+//            System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
+
+        	Instance weightedInst = computeErrorChangeAndWeightInst(inst, ht, parent, parentBranch);
+            double oldError = this.getErrorEstimation();
             if (this.ErrorChange == true && oldError > this.getErrorEstimation()) {
                 //if error is decreasing, don't do anything
                 this.ErrorChange = false;
@@ -445,6 +453,7 @@ public class HAT extends VFDT {
 		public AdaSplitNode getMainlineNode() {
 			return this.mainlineNode;
 		}
+
     }
 
     public static class AdaLearningNode extends LearningNodeNBAdaptive implements NewNode {

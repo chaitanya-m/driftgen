@@ -562,8 +562,10 @@ public class HAT extends VFDT {
             if (this.estimationErrorWeight == null) {
                 this.estimationErrorWeight = new ADWIN();
             }
-            double oldError = this.getErrorEstimation();
             this.ErrorChange = this.estimationErrorWeight.setInput(blCorrect == true ? 0.0 : 1.0);
+
+            
+            double oldError = this.getErrorEstimation();
             if (this.ErrorChange == true && oldError > this.getErrorEstimation()) {
                 this.ErrorChange = false;
             }

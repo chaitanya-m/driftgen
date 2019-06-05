@@ -64,6 +64,17 @@ import com.yahoo.labs.samoa.instances.Instance;
  *
  * Bug2: splitting was occurring when the top attribute had no IG, and splitting was occurring on the same attribute. This was also fixed.
  *
+ * Bug 3: Nodetime fixes a bug in which attempt tp split was not happening at grace period intervals but at weight changed = grace period,
+ * which doesn't translate as Naive Bayes doesn't do a +1 count when learning
+ * 
+ * If learnFromInstance is overridden, always increment nodetime if super's learnFromInstance using VFDT learnFromInstance is not called!
+ * 
+ * VFDT fixes this for learning nodes only; split nodes don't learn at all. Split nodes come in a large number of varieties,
+ * so implement nodeTime++ individually for split nodes as rquired. Anything that derives from Learning node, as long as it calls
+ * super's learnFromInstance is called that leads back to LearningNode
+ * 
+ 
+ * 
  * The correct reference is:
  *  * Domingos, P., & Hulten, G. (2000, August). Mining high-speed data streams. In Proceedings of the sixth ACM SIGKDD international conference on Knowledge discovery and data mining (pp. 71-80). ACM.
  *
@@ -441,6 +452,7 @@ public class VFDT extends AbstractClassifier {
 
         @Override
         public void learnFromInstance(Instance inst, VFDT ht) {
+        	this.nodeTime++;
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
         }
@@ -470,7 +482,7 @@ public class VFDT extends AbstractClassifier {
 
         @Override
         public void learnFromInstance(Instance inst, VFDT ht) {
-        	nodeTime++;
+        	this.nodeTime++;
 
             if (this.isInitialized == false) {
                 this.attributeObservers = new AutoExpandVector<AttributeClassObserver>(inst.numAttributes());

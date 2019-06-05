@@ -29,6 +29,8 @@ import moa.classifiers.core.conditionaltests.NominalAttributeBinaryTest;
 import moa.classifiers.core.conditionaltests.NominalAttributeMultiwayTest;
 import moa.classifiers.core.conditionaltests.NumericAttributeBinaryTest;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.VFDT.ActiveLearningNode;
+import moa.classifiers.trees.VFDT.SplitNode;
 import moa.core.AutoExpandVector;
 
 
@@ -340,7 +342,111 @@ public class EFDT extends VFDT{
 		}
 	}
 
+	@Override
+    protected boolean decideToSplitAndPrune(ActiveLearningNode node, SplitNode parent,
+            int parentIndex, AttributeSplitSuggestion[] bestSplitSuggestions,
+            SplitCriterion splitCriterion) {
+    	
+		Arrays.sort(bestSplitSuggestions);
+		boolean shouldSplit = false;
 
+		for (int i = 0; i < bestSplitSuggestions.length; i++){
+
+			if (bestSplitSuggestions[i].splitTest != null){
+				if (!node.getInfogainSum().containsKey((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0])))
+				{
+					node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), 0.0);
+				}
+				double currentSum = node.getInfogainSum().get((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]));
+				node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), currentSum + bestSplitSuggestions[i].merit);
+			}
+
+			else { // handle the null attribute
+				double currentSum = node.getInfogainSum().get(-1); // null split
+				node.getInfogainSum().put(-1, Math.max(0.0, currentSum + bestSplitSuggestions[i].merit));
+				assert node.getInfogainSum().get(-1) >= 0.0 : "Negative infogain shouldn't be possible here.";
+			}
+
+		}
+
+		if (bestSplitSuggestions.length < 2) {
+			shouldSplit = bestSplitSuggestions.length > 0;
+		}
+
+		else {
+			double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
+					this.splitConfidenceOption.getValue(), node.getWeightSeen());
+			AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+
+			double bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
+			double currentAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
+
+			// because this is an unsplit leaf. current average merit should be always zero on the null split.
+
+			if(bestSuggestion.splitTest == null){ // if you have a null split
+				bestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
+			} else{
+				bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
+			}
+
+			if(bestSuggestion.merit < 1e-10){
+				shouldSplit = false; // we don't use average here
+			}
+
+			else if ((bestSuggestionAverageMerit-currentAverageMerit)  >
+			hoeffdingBound
+			|| (hoeffdingBound < this.tieThresholdOption.getValue()))
+			{
+				if(bestSuggestionAverageMerit-currentAverageMerit  < hoeffdingBound){
+					// Placeholder to list this possibility
+				}
+				shouldSplit = true;
+			}
+
+			if(shouldSplit){
+				for(Integer i : node.usedNominalAttributes){
+					if(bestSuggestion.splitTest.getAttsTestDependsOn()[0] == i){
+						shouldSplit = false;
+						break;
+					}
+				}
+			}
+
+			// }
+			if ((this.removePoorAttsOption != null)
+					&& this.removePoorAttsOption.isSet()) {
+				Set<Integer> poorAtts = new HashSet<Integer>();
+				// scan 1 - add any poor to set
+				for (int i = 0; i < bestSplitSuggestions.length; i++) {
+					if (bestSplitSuggestions[i].splitTest != null) {
+						int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
+						if (splitAtts.length == 1) {
+							if (bestSuggestion.merit
+									- bestSplitSuggestions[i].merit > hoeffdingBound) {
+								poorAtts.add(new Integer(splitAtts[0]));
+							}
+						}
+					}
+				}
+				// scan 2 - remove good ones from set
+				for (int i = 0; i < bestSplitSuggestions.length; i++) {
+					if (bestSplitSuggestions[i].splitTest != null) {
+						int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
+						if (splitAtts.length == 1) {
+							if (bestSuggestion.merit
+									- bestSplitSuggestions[i].merit < hoeffdingBound) {
+								poorAtts.remove(new Integer(splitAtts[0]));
+							}
+						}
+					}
+				}
+				for (int poorAtt : poorAtts) {
+					node.disableAttribute(poorAtt);
+				}
+			}
+		}
+		return shouldSplit;
+    }
 
 
 	@Override
@@ -348,110 +454,12 @@ public class EFDT extends VFDT{
 			int parentIndex) {
 
 		if (!node.observedClassDistributionIsPure()) {
+			
 			node.addToSplitAttempts(1); // even if we don't actually attempt to split, we've computed infogains
-
-
 			SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
 			AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
-			Arrays.sort(bestSplitSuggestions);
-			boolean shouldSplit = false;
-
-			for (int i = 0; i < bestSplitSuggestions.length; i++){
-
-				if (bestSplitSuggestions[i].splitTest != null){
-					if (!node.getInfogainSum().containsKey((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0])))
-					{
-						node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), 0.0);
-					}
-					double currentSum = node.getInfogainSum().get((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]));
-					node.getInfogainSum().put((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0]), currentSum + bestSplitSuggestions[i].merit);
-				}
-
-				else { // handle the null attribute
-					double currentSum = node.getInfogainSum().get(-1); // null split
-					node.getInfogainSum().put(-1, Math.max(0.0, currentSum + bestSplitSuggestions[i].merit));
-					assert node.getInfogainSum().get(-1) >= 0.0 : "Negative infogain shouldn't be possible here.";
-				}
-
-			}
-
-			if (bestSplitSuggestions.length < 2) {
-				shouldSplit = bestSplitSuggestions.length > 0;
-			}
-
-			else {
-				double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
-						this.splitConfidenceOption.getValue(), node.getWeightSeen());
-				AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
-
-				double bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
-				double currentAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
-
-				// because this is an unsplit leaf. current average merit should be always zero on the null split.
-
-				if(bestSuggestion.splitTest == null){ // if you have a null split
-					bestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
-				} else{
-					bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
-				}
-
-				if(bestSuggestion.merit < 1e-10){
-					shouldSplit = false; // we don't use average here
-				}
-
-				else if ((bestSuggestionAverageMerit-currentAverageMerit)  >
-				hoeffdingBound
-				|| (hoeffdingBound < this.tieThresholdOption.getValue()))
-				{
-					if(bestSuggestionAverageMerit-currentAverageMerit  < hoeffdingBound){
-						// Placeholder to list this possibility
-					}
-					shouldSplit = true;
-				}
-
-				if(shouldSplit){
-					for(Integer i : node.usedNominalAttributes){
-						if(bestSuggestion.splitTest.getAttsTestDependsOn()[0] == i){
-							shouldSplit = false;
-							break;
-						}
-					}
-				}
-
-				// }
-				if ((this.removePoorAttsOption != null)
-						&& this.removePoorAttsOption.isSet()) {
-					Set<Integer> poorAtts = new HashSet<Integer>();
-					// scan 1 - add any poor to set
-					for (int i = 0; i < bestSplitSuggestions.length; i++) {
-						if (bestSplitSuggestions[i].splitTest != null) {
-							int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
-							if (splitAtts.length == 1) {
-								if (bestSuggestion.merit
-										- bestSplitSuggestions[i].merit > hoeffdingBound) {
-									poorAtts.add(new Integer(splitAtts[0]));
-								}
-							}
-						}
-					}
-					// scan 2 - remove good ones from set
-					for (int i = 0; i < bestSplitSuggestions.length; i++) {
-						if (bestSplitSuggestions[i].splitTest != null) {
-							int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
-							if (splitAtts.length == 1) {
-								if (bestSuggestion.merit
-										- bestSplitSuggestions[i].merit < hoeffdingBound) {
-									poorAtts.remove(new Integer(splitAtts[0]));
-								}
-							}
-						}
-					}
-					for (int poorAtt : poorAtts) {
-						node.disableAttribute(poorAtt);
-					}
-				}
-			}
-			if (shouldSplit) {
+			
+            if (decideToSplitAndPrune(node, parent, parentIndex, bestSplitSuggestions, splitCriterion)) {
 				splitCount++;
 
 				AttributeSplitSuggestion splitDecision = bestSplitSuggestions[bestSplitSuggestions.length - 1];

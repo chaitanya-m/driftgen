@@ -704,14 +704,11 @@ public class VFDT extends AbstractClassifier {
     protected boolean decideToSplitAndPrune(ActiveLearningNode node, SplitNode parent,
             int parentIndex, AttributeSplitSuggestion[] bestSplitSuggestions,
             SplitCriterion splitCriterion) {
-    	
+
         Arrays.sort(bestSplitSuggestions);
         boolean shouldSplit = false;
 
         for (int i = 0; i < bestSplitSuggestions.length; i++){
-
-        	node.addToSplitAttempts(1); // even if we don't actually attempt to split, we've computed infogains
-
 
         	if (bestSplitSuggestions[i].splitTest != null){
         		if (!node.getInfogainSum().containsKey((bestSplitSuggestions[i].splitTest.getAttsTestDependsOn()[0])))
@@ -822,6 +819,7 @@ public class VFDT extends AbstractClassifier {
             int parentIndex) {
     	
         if (!node.observedClassDistributionIsPure()) {
+        	node.addToSplitAttempts(1); // even if we don't actually attempt to split, we've computed infogains
             SplitCriterion splitCriterion = (SplitCriterion) getPreparedClassOption(this.splitCriterionOption);
             AttributeSplitSuggestion[] bestSplitSuggestions = node.getBestSplitSuggestions(splitCriterion, this);
 	

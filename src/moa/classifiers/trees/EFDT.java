@@ -162,7 +162,7 @@ public class EFDT extends VFDT{
 			}
 
 			// check if a better split is available. if so, chop the tree at this point, copying likelihood. predictors for children are from parent likelihood.
-			if(ht.numInstances % ht.reEvalPeriodOption.getValue() == 0){
+			if(this.nodeTime % ht.reEvalPeriodOption.getValue() == 0){
 				this.reEvaluateBestSplit(this, parent, parentBranch);
 			}
 

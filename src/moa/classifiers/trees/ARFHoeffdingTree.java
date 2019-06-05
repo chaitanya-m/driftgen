@@ -42,21 +42,21 @@ import com.yahoo.labs.samoa.instances.Instance;
  * @author Heitor Murilo Gomes (heitor_murilo_gomes at yahoo dot com dot br)
  * @version $Revision: 1 $
  */
-public class ARFEFDT extends EFDT implements ARFBaseTree{
+public class ARFHoeffdingTree extends HoeffdingTree {
 
     private static final long serialVersionUID = 1L;
     
     public IntOption subspaceSizeOption = new IntOption("subspaceSizeSize", 'k',
             "Number of features per subset for each node split. Negative values = #features - k", 
             2, Integer.MIN_VALUE, Integer.MAX_VALUE);
-   
+    
     @Override
     public String getPurposeString() {
         return "Adaptive Random Forest Hoeffding Tree for data streams. "
                 + "Base learner for AdaptiveRandomForest.";
     }
 
-    public class RandomLearningNode extends EFDTLearningNode {
+    public static class RandomLearningNode extends ActiveLearningNode {
         
         private static final long serialVersionUID = 1L;
 
@@ -70,7 +70,7 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {            
+        public void learnFromInstance(Instance inst, HoeffdingTree ht) {            
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
             if (this.listAttributes == null) {
@@ -103,7 +103,7 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
         }
     }
 
-    public class LearningNodeNB extends RandomLearningNode {
+    public static class LearningNodeNB extends RandomLearningNode {
 
         private static final long serialVersionUID = 1L;
 
@@ -112,7 +112,7 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, HoeffdingTree ht) {
             if (getWeightSeen() >= ht.nbThresholdOption.getValue()) {
                 return NaiveBayes.doNaiveBayesPrediction(inst,
                         this.observedClassDistribution,
@@ -127,7 +127,7 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
         }
     }
 
-    public class LearningNodeNBAdaptive extends LearningNodeNB {
+    public static class LearningNodeNBAdaptive extends LearningNodeNB {
 
         private static final long serialVersionUID = 1L;
 
@@ -140,7 +140,7 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {
+        public void learnFromInstance(Instance inst, HoeffdingTree ht) {
             int trueClass = (int) inst.classValue();
             if (this.observedClassDistribution.maxIndex() == trueClass) {
                 this.mcCorrectWeight += inst.weight();
@@ -153,7 +153,7 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, VFDT ht) {
+        public double[] getClassVotes(Instance inst, HoeffdingTree ht) {
             if (this.mcCorrectWeight > this.nbCorrectWeight) {
                 return this.observedClassDistribution.getArrayCopy();
             }
@@ -162,7 +162,7 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
         }
     }
 
-    public ARFEFDT() {
+    public ARFHoeffdingTree() {
         this.removePoorAttsOption = null;
     }
     
@@ -184,9 +184,4 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
     public boolean isRandomizable() {
         return true;
     }
-    
-	@Override
-	public void setSubspaceSizeOption(int subspaceSize) {
-		subspaceSizeOption.setValue(subspaceSize);	
-	}
 }

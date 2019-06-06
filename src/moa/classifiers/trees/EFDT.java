@@ -15,6 +15,22 @@
  * 
  * EFDT was not splitting often enough due to using numInstances instead of nodeTime... fixed with no loss of performance, looks like a gain.
  *
+ *
+ *
+ *
+ * In VFDT, we are able to use static nested classes for nodes because they never seem to use the options. 
+ * 
+ * But in EFDT, which extends VFDT, we obviously need to use our only new option for split reevaluation period in a node.
+ * 
+ * But that is not the only reason. We are giving nodes a lot more control over their own actions. 
+ * 
+ * They need the other options also that are derived from VFDT. We are node-centric, just the way VFDT code tries to be.
+ * 
+ * But EFDT goes all out with the node-centrism, handling split reevaluation and attempts in nodes. 
+ * 
+ * It is not a bad idea to associate each EFDTNode with a particular EFDT instance. It makes for more OO design.
+ *
+ *
  */
 
 

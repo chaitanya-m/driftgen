@@ -12,6 +12,8 @@
  * VFDT find the leaf in trainOnInstanceImpl, and checks if it should split upon grace period coming around.
  * 
  * EFDT needs split nodes to learn as well, so it outsources this to learnFromInstance.
+ * 
+ * EFDT was not splitting often enough due to using numInstances instead of nodeTime... fixed with no loss of performance, looks like a gain.
  *
  */
 

@@ -22,6 +22,10 @@ package moa.classifiers.trees;
 import com.github.javacliparser.IntOption;
 import moa.classifiers.bayes.NaiveBayes;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
+import moa.classifiers.trees.EFDT.EFDTNode;
+import moa.classifiers.trees.EFDT.EFDTSplitNode;
+import moa.classifiers.trees.VFDT.ActiveLearningNode;
+import moa.classifiers.trees.VFDT.LearningNodeNBAdaptive;
 import moa.core.Utils;
 import com.yahoo.labs.samoa.instances.Instance;
 
@@ -41,6 +45,8 @@ import com.yahoo.labs.samoa.instances.Instance;
  *
  * @author Heitor Murilo Gomes (heitor_murilo_gomes at yahoo dot com dot br)
  * @version $Revision: 1 $
+ * 
+ * Note that EFDT ONLY allows NBAdaptive!!
  */
 public class ARFEFDT extends EFDT implements ARFBaseTree{
 
@@ -56,7 +62,7 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
                 + "Base learner for AdaptiveRandomForest.";
     }
 
-    public class RandomLearningNode extends EFDTLearningNode {
+    public class RandomLearningNode extends ActiveLearningNode {
         
         private static final long serialVersionUID = 1L;
 
@@ -70,7 +76,10 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
         }
 
         @Override
-        public void learnFromInstance(Instance inst, VFDT ht) {            
+        public void learnFromInstance(Instance inst, VFDT ht) { 
+        	this.nodeTime++; 
+        	// this makes a major difference- otherwise 0%graceperiod is always 0 and you always attempt to split!
+        	// we're overriding and not called the super function in LearningNode which usually does this
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
             if (this.listAttributes == null) {
@@ -161,6 +170,68 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
                     this.observedClassDistribution, this.attributeObservers);
         }
     }
+    
+
+
+	public class RandomEFDTLearningNode extends LearningNodeNBAdaptive implements EFDTNode{
+
+		public RandomEFDTLearningNode(double[] initialClassObservations, int subspaceSize) {
+			super(initialClassObservations, subspaceSize);
+		}
+
+
+		private boolean isRoot;
+
+		private EFDTSplitNode parent = null;
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = -2525042202040084035L;
+
+		@Override
+		public boolean isRoot() {
+			return isRoot;
+		}
+
+		@Override
+		public void setRoot(boolean isRoot) {
+			this.isRoot = isRoot;
+		}
+
+		@Override
+		public void learnFromInstance(Instance inst, VFDT ht) {
+			super.learnFromInstance(inst, ht);
+		}
+
+		@Override
+		public void learnFromInstance(Instance inst, EFDT ht, EFDTSplitNode parent, int parentBranch) {
+			learnFromInstance(inst, ht);
+			// this reaches all the way back to LearningNode in VFDT which calls nodeTime++
+			if (ht.growthAllowed
+					&& (this instanceof ActiveLearningNode)) {
+				ActiveLearningNode activeLearningNode = this;
+				double weightSeen = activeLearningNode.getWeightSeen();
+				if (activeLearningNode.nodeTime % ht.gracePeriodOption.getValue() == 0) {
+					attemptToSplit(activeLearningNode, parent,
+							parentBranch); // each learning node takes care of attempting to split itself, while VFDT does this in trainOnInstanceImpl
+					activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen);
+				}
+			}
+		}
+
+		@Override
+		public void setParent(EFDTSplitNode parent) {
+			this.parent = parent;
+		}
+
+		@Override
+		public EFDTSplitNode getParent() {
+			return this.parent;
+		}
+
+
+	}
 
     public ARFEFDT() {
         this.removePoorAttsOption = null;
@@ -169,14 +240,10 @@ public class ARFEFDT extends EFDT implements ARFBaseTree{
     @Override
     protected LearningNode newLearningNode(double[] initialClassObservations) {
         LearningNode ret;
-        int predictionOption = this.leafpredictionOption.getChosenIndex();
-        if (predictionOption == 0) { //MC
-            ret = new RandomLearningNode(initialClassObservations, this.subspaceSizeOption.getValue());
-        } else if (predictionOption == 1) { //NB
-            ret = new LearningNodeNB(initialClassObservations, this.subspaceSizeOption.getValue());
-        } else { //NBAdaptive
-            ret = new LearningNodeNBAdaptive(initialClassObservations, this.subspaceSizeOption.getValue());
-        }
+
+            ret = new RandomEFDTLearningNode(initialClassObservations, this.subspaceSizeOption.getValue());
+            // Note that EFDT ONLY allows NBAdaptive!!
+
         return ret;
     }
 

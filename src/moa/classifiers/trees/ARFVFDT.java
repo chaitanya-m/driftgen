@@ -71,8 +71,9 @@ public class ARFVFDT extends VFDT implements ARFBaseTree{
 
         @Override
         public void learnFromInstance(Instance inst, VFDT ht) {
-        	this.nodeTime++; // this makes a major difference- otherwise 0%graceperiod is always 0 and you always attempt to split!
-        	
+        	this.nodeTime++; 
+        	// this makes a major difference- otherwise 0%graceperiod is always 0 and you always attempt to split!
+        	// we're overriding and not called the super function in LearningNode which usually does this
             this.observedClassDistribution.addToValue((int) inst.classValue(),
                     inst.weight());
             if (this.listAttributes == null) {

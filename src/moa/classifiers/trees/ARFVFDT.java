@@ -22,6 +22,7 @@ package moa.classifiers.trees;
 import com.github.javacliparser.IntOption;
 import moa.classifiers.bayes.NaiveBayes;
 import moa.classifiers.core.attributeclassobservers.AttributeClassObserver;
+import moa.core.AutoExpandVector;
 import moa.core.Utils;
 import com.yahoo.labs.samoa.instances.Instance;
 
@@ -74,8 +75,15 @@ public class ARFVFDT extends VFDT implements ARFBaseTree{
         	this.nodeTime++; 
         	// this makes a major difference- otherwise 0%graceperiod is always 0 and you always attempt to split!
         	// we're overriding and not called the super function in LearningNode which usually does this
-            this.observedClassDistribution.addToValue((int) inst.classValue(),
-                    inst.weight());
+        	
+            if (this.isInitialized == false) {
+                this.attributeObservers = new AutoExpandVector<AttributeClassObserver>(inst.numAttributes());
+                this.isInitialized = true;
+            }
+        	// Fixed from original AdaptiveRandomForest code, this initialization was missing.
+            
+            this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
+            
             if (this.listAttributes == null) {
                 this.listAttributes = new int[this.numAttributes];
                 for (int j = 0; j < this.numAttributes; j++) {

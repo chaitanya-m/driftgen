@@ -35,6 +35,9 @@ public class AbruptDriftGenerator extends DriftGenerator{
 	/* TODO: Do we really need a serializable object, and to set the UID
 	 * explicitly rather than let JDK handle it?*/
 
+	double[][] px;//Temporary container, maybe move into method = new double[pxbd.length][pxbd[0].length]; 
+	double[][] pygx;//Temporary container, maybe move into method = new double[pygxbd.length][pygxbd[0].length]; 
+	
 	/**
 	 * p(x) before drift
 	 */
@@ -66,51 +69,27 @@ public class AbruptDriftGenerator extends DriftGenerator{
 		// we are changing px. do we need to also update pygx?? Does it change??
 		// if we assume pure covariate drift, it doesn't...
 
-		double[][] px = null;// = new double[pxbd.length][pxbd[0].length]; 
-		double[][] pygx = null;// = new double[pygxbd.length][pygxbd[0].length]; 
 
-		if (recurrentDrift.getChosenLabel() == "NotRecurrent"){
+		if (recurrentDrift.getChosenLabel().compareTo("NotRecurrent") == 0){
 			if(nInstancesGeneratedSoFar <= burnInNInstances.getValue()){
-				px = new double[pxbd.length][];
-				pygx = new double[pygxbd.length][];
-
-				for (int i = 0; i < pxbd.length; i++)
-						px[i] = pxbd[i];
-				for (int i = 0; i < pygxbd.length; i++)
-						pygx[i] = pygxbd[i];
-								
+				px = pxbd;
+				pygx = pygxbd;								
 			}
 			else {
-				px = new double[pxad.length][];
-				pygx = new double[pygxad.length][];
-
-				for (int i = 0; i < pxad.length; i++)
-						px[i] = pxad[i];
-				for (int i = 0; i < pygxad.length; i++)
-						pygx[i] = pygxad[i];
+				px = pxad;
+				pygx = pygxad;
 			}
 		}
-		else if (recurrentDrift.getChosenLabel() == "Recurrent"){
+		if (recurrentDrift.getChosenLabel().compareTo("Recurrent") == 0){
 			if((nInstancesGeneratedSoFar / burnInNInstances.getValue()) % 2 == 0){
-				px = new double[pxbd.length][];
-				pygx = new double[pygxbd.length][];
-
-				for (int i = 0; i < pxbd.length; i++)
-						px[i] = pxbd[i];
-				for (int i = 0; i < pygxbd.length; i++)
-						pygx[i] = pygxbd[i];
-								
+				px = pxbd;
+				pygx = pygxbd;						
 			}
 			else {
-				px = new double[pxad.length][];
-				pygx = new double[pygxad.length][];
-
-				for (int i = 0; i < pxad.length; i++)
-						px[i] = pxad[i];
-				for (int i = 0; i < pygxad.length; i++)
-						pygx[i] = pygxad[i];
+				px = pxad;
+				pygx = pygxad;
 			}
-				}
+		}
 				
 		Instance inst = new DenseInstance(streamHeader.numAttributes());
 		inst.setDataset(streamHeader);
@@ -123,6 +102,15 @@ public class AbruptDriftGenerator extends DriftGenerator{
 			double rand = r.nextUniform(0.0, 1.0, true);
 			// pick seed for distribution from interface, but to spit out a different sequence using timeinmillis, use r2. For consistent sequences, use r.
 			int chosenVal = 0;
+			if(pxad==null) {
+				System.err.println ("NULL PXAD");
+			}
+			if(pxbd==null) {
+				System.err.println ("NULL PXBD");
+			}
+			if(px==null) {
+				System.err.println ("NULL PX");
+			}
 			double sumProba = px[a][chosenVal];
 
 			while (rand > sumProba) { //pick one of the nAttributes based on the rand

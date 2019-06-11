@@ -73,7 +73,7 @@ import com.yahoo.labs.samoa.instances.Instance;
  * so implement nodeTime++ individually for split nodes as rquired. Anything that derives from Learning node, as long as it calls
  * super's learnFromInstance is called that leads back to LearningNode
  * 
- 
+ *
  * 
  * The correct reference is:
  *  * Domingos, P., & Hulten, G. (2000, August). Mining high-speed data streams. In Proceedings of the sixth ACM SIGKDD international conference on Knowledge discovery and data mining (pp. 71-80). ACM.
@@ -129,8 +129,6 @@ import com.yahoo.labs.samoa.instances.Instance;
 public class VFDT extends AbstractClassifier {
 
     private static final long serialVersionUID = 1L;
-
-    private int i = 0;
 
     protected int numInstances = 0;
 
@@ -488,8 +486,7 @@ public class VFDT extends AbstractClassifier {
                 this.attributeObservers = new AutoExpandVector<AttributeClassObserver>(inst.numAttributes());
                 this.isInitialized = true;
             }
-            this.observedClassDistribution.addToValue((int) inst.classValue(),
-                    inst.weight());
+            this.observedClassDistribution.addToValue((int) inst.classValue(), inst.weight());
             for (int i = 0; i < inst.numAttributes() - 1; i++) {
                 int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
                 AttributeClassObserver obs = this.attributeObservers.get(i);
@@ -625,8 +622,6 @@ public class VFDT extends AbstractClassifier {
     	//System.out.println(this.measureTreeDepth());
 
         numInstances++;
-
-		//System.out.println(numInstances);
 
     }
 
@@ -773,8 +768,7 @@ public class VFDT extends AbstractClassifier {
             	shouldSplit = false;
             }
 
-            else
-            	if ((bestSuggestionAverageMerit - secondBestSuggestionAverageMerit > hoeffdingBound)
+            else if ((bestSuggestionAverageMerit - secondBestSuggestionAverageMerit > hoeffdingBound)
                     || (hoeffdingBound < this.tieThresholdOption.getValue()))
                 	{
                 shouldSplit = true;
@@ -784,6 +778,7 @@ public class VFDT extends AbstractClassifier {
             	for(Integer i : node.usedNominalAttributes){
             		if(bestSuggestion.splitTest.getAttsTestDependsOn()[0] == i){
             			shouldSplit = false;
+
             			break;
             		}
             	}
@@ -859,6 +854,7 @@ public class VFDT extends AbstractClassifier {
                         }
                         newSplit.setChild(i, newChild);
                     }
+                    
                     this.activeLeafNodeCount--;
                     this.decisionNodeCount++;
                     this.activeLeafNodeCount += splitDecision.numSplits();
@@ -867,7 +863,6 @@ public class VFDT extends AbstractClassifier {
                     } else {
                         parent.setChild(parentIndex, newSplit);
                     }
-
                 }
 
                 // manage memory

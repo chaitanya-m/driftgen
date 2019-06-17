@@ -1,0 +1,553 @@
+21a22
+> import java.util.ArrayList;
+34,35d34
+< import moa.classifiers.trees.HoeffdingTree.ActiveLearningNode;
+< import moa.classifiers.trees.HoeffdingTree.SplitNode;
+39,40d37
+< import moa.streams.generators.monash.Node;
+< 
+62c59
+< public class HATOriginal extends HoeffdingTree {
+---
+> public class HAT extends VFDT {
+86c83,85
+<         public double getErrorEstimation();
+---
+>         void setAlternateStatusForSubtreeNodes(boolean isAlternate);
+> 
+> 		public double getErrorEstimation();
+92c91
+<         public void killTreeChilds(HATOriginal ht);
+---
+>         public void killTreeChilds(HAT ht);
+94c93
+<         public void learnFromInstance(Instance inst, HATOriginal ht, SplitNode parent, int parentBranch);
+---
+>         public void learnFromInstance(Instance inst, HAT ht, SplitNode parent, int parentBranch);
+97a97,113
+> 
+>         public boolean isAlternate();
+> 
+>         public void setAlternate(boolean isAlternate);
+> 
+> 		public boolean isRoot();
+> 
+> 		public void setRoot(boolean isRoot);
+> 
+> 		public void setMainlineNode(AdaSplitNode parent);
+> 
+> 		public AdaSplitNode getMainlineNode();
+> 
+> 		public void setParent(AdaSplitNode parent);
+> 
+> 		public AdaSplitNode getParent();
+> 
+114a131,162
+>         private boolean isAlternate = false;
+> 
+>         private boolean isRoot = false;
+> 
+> 		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
+> 
+> 		private AdaSplitNode parent = null;
+> 
+> 		@Override
+> 		public void setParent(AdaSplitNode parent) {
+> 			this.parent = parent;
+> 
+> 		}
+> 
+> 		@Override
+> 		public AdaSplitNode getParent() {
+> 			return this.parent;
+> 		}
+> 
+> 
+> 		@Override
+> 		public boolean isAlternate() {
+> 			return this.isAlternate;
+> 		}
+> 
+> 		@Override
+> 		public void setAlternate(boolean isAlternate) {
+> 			this.isAlternate = isAlternate;
+> 		}
+> 
+> 
+> 
+135a184,197
+>                 double[] classObservations, int size, boolean isAlternate) {
+>             super(splitTest, classObservations, size);
+>             this.classifierRandom = new Random(this.randomSeed);
+>             this.setAlternate(isAlternate);
+>         }
+> 
+>         public AdaSplitNode(InstanceConditionalTest splitTest,
+>                 double[] classObservations, boolean isAlternate) {
+>             super(splitTest, classObservations);
+>             this.classifierRandom = new Random(this.randomSeed);
+>             this.setAlternate(isAlternate);
+>         }
+> 
+>         public AdaSplitNode(InstanceConditionalTest splitTest,
+146d207
+< 
+177,184c238,240
+<         // SplitNodes can have alternative trees, but LearningNodes can't
+<         // LearningNodes can split, but SplitNodes can't
+<         // Parent nodes are allways SplitNodes
+<         /* (non-Javadoc)
+<          * @see moa.classifiers.trees.HATADWINOriginal.NewNode#learnFromInstance(com.yahoo.labs.samoa.instances.Instance, moa.classifiers.trees.HATADWINOriginal, moa.classifiers.trees.HoeffdingTree.SplitNode, int)
+<          */
+<         @Override
+<         public void learnFromInstance(Instance inst, HATOriginal ht, SplitNode parent, int parentBranch) {
+---
+> 
+> 		public Instance computeErrorChangeAndWeightInst(Instance inst, HAT ht, SplitNode parent, int parentBranch) {
+> 			
+195,196c251,253
+<             if (filterInstanceToLeaf(inst, parent, parentBranch).node != null) {
+<                 ClassPrediction = Utils.maxIndex(filterInstanceToLeaf(inst, parent, parentBranch).node.getClassVotes(inst, ht));
+---
+>             Node leaf = filterInstanceToLeaf(inst, this.getParent(), parentBranch).node;
+>             if (leaf != null) {
+>                 ClassPrediction = Utils.maxIndex(leaf.getClassVotes(inst, ht));
+204d260
+<             double oldError = this.getErrorEstimation();
+205a262,275
+>             
+>             return weightedInst;
+> 		}
+>         
+>         // SplitNodes can have alternative trees, but LearningNodes can't
+>         // LearningNodes can split, but SplitNodes can't
+>         // Parent nodes are allways SplitNodes
+>         @Override
+>         public void learnFromInstance(Instance inst, HAT ht, SplitNode parent, int parentBranch) {
+> 
+> //            System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
+> 
+>         	Instance weightedInst = computeErrorChangeAndWeightInst(inst, ht, parent, parentBranch);
+>             double oldError = this.getErrorEstimation();
+212,213c282,283
+<             //if (this.isAlternateTree == false) {
+<             if (this.ErrorChange == true) {//&& this.alternateTree == null) {
+---
+>             if (this.ErrorChange && !this.isAlternate()) {// disabling alternates of alternates
+> 
+215,216c285,287
+<                 this.alternateTree = ht.newLearningNode();
+<                 //this.alternateTree.isAlternateTree = true;
+---
+>                 this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
+>                 ((NewNode)this.alternateTree).setMainlineNode(this); // this node is the alternate's attachment point
+>                 ((NewNode)this.alternateTree).setParent(this.getParent());
+218a290
+> 
+220c292
+<                 if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) {
+---
+>                 if (this.getErrorWidth() > 300 && ((NewNode) this.alternateTree).getErrorWidth() > 300) { // magic number...
+228c300,310
+<                     System.out.println(this.alternateTree.subtreeDepth() + " " + this.subtreeDepth() + " " + (parent==null));
+---
+> //                    System.out.print(this.alternateTree.subtreeDepth()
+> //                    		+ " " + this.subtreeDepth() +
+> //                    		" " + this.isRoot() +
+> //                    		" " + this.isAlternate());
+> //
+> //                    if(this.getParent() == null){
+> //                    	System.out.print(" ||parent is null; root level node||");
+> //                    }
+> //
+> //                    System.out.println();
+> 
+230a313
+>                     		  //&& this.subtreeDepth() < 4
+231a315,316
+>                         //System.out.println("Main Tree is of depth " + ht.treeRoot.subtreeDepth());
+> 
+235c320,322
+<                         killTreeChilds(ht);
+---
+>                         this.killTreeChilds(ht);
+>                         ((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
+>                         ((NewNode)(this.alternateTree)).setMainlineNode(null);
+238,239c325,328
+<                         if (parent != null) {
+<                             parent.setChild(parentBranch, this.alternateTree);
+---
+>                         if (!this.isRoot()) {
+>                             this.getParent().setChild(parentBranch, this.alternateTree);
+>                         	((NewNode)(this.alternateTree)).setRoot(false);
+>                             ((NewNode)this.alternateTree).setParent(this.getParent());
+243c332,334
+<                             ht.treeRoot = ((AdaSplitNode) ht.treeRoot).alternateTree;
+---
+>                         	((NewNode)(this.alternateTree)).setRoot(true);
+>                         	((NewNode)(this.alternateTree)).setParent(null);
+>                             ht.treeRoot = this.alternateTree;
+244a336
+>                         this.alternateTree = null;
+264c356
+<                 ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, parent, parentBranch);
+---
+>                 ((NewNode) this.alternateTree).learnFromInstance(weightedInst, ht, this.getParent(), parentBranch);
+272a365,378
+> 		@Override
+>         public void setAlternateStatusForSubtreeNodes(boolean isAlternate) {
+> 
+>           this.setAlternate(isAlternate);
+> 
+>           for (Node child : this.children) {
+>             if (child != null) {
+>               ((NewNode)child).setAlternateStatusForSubtreeNodes(isAlternate);
+>             }
+>           }
+>         }
+> 
+> 
+> 
+274c380
+<         public void killTreeChilds(HATOriginal ht) {
+---
+>         public void killTreeChilds(HAT ht) {
+311a418,419
+>                     // this will usually just take you down one path until you hit a learning node. Unless you are overextending
+>                     // your tree without pruning
+313a422
+>                     // Only killTreeChilds would create null child nodes
+317,318c426,432
+<                 ((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999,
+<                         foundNodes, updateSplitterCounts);
+---
+>                 ((NewNode) this.alternateTree).filterInstanceToLeaves(inst, this, -999, foundNodes, updateSplitterCounts);
+>                 // the -999 used to launch this subtree filter becomes inutile immediately following
+>                 // the top node of the subtree. Only the immediate children of a split will see this as a parentBranch
+>                 // So a foundnode created further down cannot be distinguished from the mainline thing
+>                 // Using this to separate out the alternate found nodes from the mainline ones won't work.
+>                 // But that is how it seems to be used...
+> 
+320a435,456
+> 
+> 		@Override
+> 		public boolean isRoot() {
+> 			return this.isRoot;
+> 		}
+> 
+> 		@Override
+> 		public void setRoot(boolean isRoot) {
+> 			this.isRoot = isRoot;
+> 
+> 		}
+> 
+> 		@Override
+> 		public void setMainlineNode(AdaSplitNode mainlineNode) {
+> 			this.mainlineNode  = mainlineNode;
+> 		}
+> 
+> 		@Override
+> 		public AdaSplitNode getMainlineNode() {
+> 			return this.mainlineNode;
+> 		}
+> 
+334a471,500
+>         private boolean isAlternate = false;
+> 
+> 		private boolean isRoot = false;
+> 
+> 		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
+> 
+> 		private AdaSplitNode parent = null;
+> 
+> 		@Override
+> 		public void setParent(AdaSplitNode parent) {
+> 			this.parent = parent;
+> 
+> 		}
+> 
+> 		@Override
+> 		public AdaSplitNode getParent() {
+> 			return this.parent;
+> 		}
+> 
+> 
+> 		@Override
+> 		public boolean isAlternate() {
+> 			return this.isAlternate;
+> 		}
+> 
+> 		@Override
+> 		public void setAlternate(boolean isAlternate) {
+> 			this.isAlternate = isAlternate;
+> 		}
+> 
+348a515,520
+>         public AdaLearningNode(double[] initialClassObservations, boolean isAlternate) {
+>             super(initialClassObservations);
+>             this.classifierRandom = new Random(this.randomSeed);
+>             this.setAlternate(isAlternate);
+>         }
+> 
+374c546
+<         public void killTreeChilds(HATOriginal ht) {
+---
+>         public void killTreeChilds(HAT ht) {
+378c550,556
+<         public void learnFromInstance(Instance inst, HATOriginal ht, SplitNode parent, int parentBranch) {
+---
+>         public void learnFromInstance(Instance inst, HAT ht, SplitNode parent, int parentBranch) {
+> //
+> //        	if(!this.isAlternate()){
+> //        		System.err.println(numInstances);
+> //        		// this shows mainline learning nodes stop learning once drift occurs
+> //        	}
+> 
+383,385c561,565
+<             if (k > 0) {
+<                 weightedInst.setWeight(inst.weight() * k);
+<             }
+---
+>             //if (k > 0 && this.isAlternate()) {
+>             	// use weighted instance if necessary for asymmetric alternate weighting
+>                 //weightedInst.setWeight(inst.weight() * k);
+>                 // this wasn't in the paper
+>             //}
+394d573
+<             double oldError = this.getErrorEstimation();
+395a575,577
+> 
+>             
+>             double oldError = this.getErrorEstimation();
+403c585
+<             //Check for Split condition
+---
+>             //Check for split condition
+407c589
+<                 ht.attemptToSplit(this, parent,
+---
+>                 ht.attemptToSplit(this, this.getParent(),
+425c607
+<         public double[] getClassVotes(Instance inst, HoeffdingTree ht) {
+---
+>         public double[] getClassVotes(Instance inst, VFDT ht) {
+427c609
+<             int predictionOption = ((HATOriginal) ht).leafpredictionOption.getChosenIndex();
+---
+>             int predictionOption = ((HAT) ht).leafpredictionOption.getChosenIndex();
+453a636
+> 
+455a639,664
+> 
+> 		@Override
+> 		public boolean isRoot() {
+> 			return this.isRoot ;
+> 		}
+> 
+> 		@Override
+> 		public void setRoot(boolean isRoot) {
+> 			this.isRoot = isRoot;
+> 
+> 		}
+> 		@Override
+> 		public void setMainlineNode(AdaSplitNode mainlineNode) {
+> 			this.mainlineNode  = mainlineNode;
+> 		}
+> 
+> 		@Override
+> 		public AdaSplitNode getMainlineNode() {
+> 			return this.mainlineNode;
+> 		}
+> 
+> 		@Override
+> 		public void setAlternateStatusForSubtreeNodes(boolean isAlternate) {
+> 			this.setAlternate(isAlternate);
+> 		}
+> 
+463a673,680
+> 
+>     protected LearningNode newLearningNode(boolean isAlternate) {
+>         return new AdaLearningNode(new double[0], isAlternate);
+>     }
+>     protected LearningNode newLearningNode(double[] initialClassObservations, boolean isAlternate) {
+>         return new AdaLearningNode(initialClassObservations, isAlternate);
+>     }
+> 
+469a687,696
+>     protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
+>             double[] classObservations, int size, boolean isAlternate) {
+>     	return new AdaSplitNode(splitTest, classObservations, size, isAlternate);
+>     }
+> 
+> 	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
+>             double[] classObservations, boolean isAlternate) {
+>     	return new AdaSplitNode(splitTest, classObservations, isAlternate);
+>     	}
+> 
+485c712,714
+<             this.treeRoot = newLearningNode();
+---
+>             this.treeRoot = newLearningNode(false); // root cannot be alternate
+>             ((NewNode) this.treeRoot).setRoot(true);
+>             ((NewNode) this.treeRoot).setParent(null);
+502a732,733
+>     	
+>     	
+503a735,736
+>         	
+> 			node.addToSplitAttempts(1); // even if we don't actually attempt to split, we've computed infogains
+506,552c739,742
+<             Arrays.sort(bestSplitSuggestions);
+<             boolean shouldSplit = false;
+<             if (bestSplitSuggestions.length < 2) {
+<                 shouldSplit = bestSplitSuggestions.length > 0;
+<             } else {
+<                 double hoeffdingBound = computeHoeffdingBound(splitCriterion.getRangeOfMerit(node.getObservedClassDistribution()),
+<                         this.splitConfidenceOption.getValue(), node.getWeightSeen());
+<                 AttributeSplitSuggestion bestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 1];
+<                 AttributeSplitSuggestion secondBestSuggestion = bestSplitSuggestions[bestSplitSuggestions.length - 2];
+<                 if ((bestSuggestion.merit - secondBestSuggestion.merit > hoeffdingBound)
+<                         || (hoeffdingBound < this.tieThresholdOption.getValue())) {
+<                     shouldSplit = true;
+<                 }
+<                 // }
+<                 if ((this.removePoorAttsOption != null)
+<                         && this.removePoorAttsOption.isSet()) {
+<                     Set<Integer> poorAtts = new HashSet<Integer>();
+<                     // scan 1 - add any poor to set
+<                     for (int i = 0; i < bestSplitSuggestions.length; i++) {
+<                         if (bestSplitSuggestions[i].splitTest != null) {
+<                             int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
+<                             if (splitAtts.length == 1) {
+<                                 if (bestSuggestion.merit
+<                                         - bestSplitSuggestions[i].merit > hoeffdingBound) {
+<                                     poorAtts.add(new Integer(splitAtts[0]));
+<                                 }
+<                             }
+<                         }
+<                     }
+<                     // scan 2 - remove good ones from set
+<                     for (int i = 0; i < bestSplitSuggestions.length; i++) {
+<                         if (bestSplitSuggestions[i].splitTest != null) {
+<                             int[] splitAtts = bestSplitSuggestions[i].splitTest.getAttsTestDependsOn();
+<                             if (splitAtts.length == 1) {
+<                                 if (bestSuggestion.merit
+<                                         - bestSplitSuggestions[i].merit < hoeffdingBound) {
+<                                     poorAtts.remove(new Integer(splitAtts[0]));
+<                                 }
+<                             }
+<                         }
+<                     }
+<                     for (int poorAtt : poorAtts) {
+<                         node.disableAttribute(poorAtt);
+<                     }
+<                 }
+<             }
+<             if (shouldSplit) {
+---
+>             
+> 
+>             if (decideToSplitAndPrune(node, parent, parentIndex, bestSplitSuggestions, splitCriterion)) {
+>             	splitCount++;
+556c746
+<                     deactivateLearningNode(node, parent, parentIndex);
+---
+>                     deactivateLearningNode(node, ((NewNode)node).getParent(), parentIndex);
+559c749
+<                             node.getObservedClassDistribution(),splitDecision.numSplits() );
+---
+>                             node.getObservedClassDistribution(),splitDecision.numSplits(), ((NewNode)(node)).isAlternate());
+561c751,756
+<                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i));
+---
+>                         Node newChild = newLearningNode(splitDecision.resultingClassDistributionFromSplit(i), ((NewNode)newSplit).isAlternate());
+>                         ((NewNode)newChild).setParent((AdaSplitNode)newSplit);
+> 
+>                     	newChild.usedNominalAttributes = new ArrayList<Integer>(node.usedNominalAttributes); //deep copy
+>                     	newChild.usedNominalAttributes.add(splitDecision.splitTest.getAttsTestDependsOn()[0]);
+> 
+567,572c762,764
+<                     if (parent == null) {
+<                     	if(this.treeRoot.getClass() != AdaLearningNode.class){
+<                     		System.err.println("Tree Root has already been split. So it must be the root's alternate that is being set to root here... in the split function!!!"
+<                     				+ "Because parent is null");
+<                     	}
+< 
+---
+>                     if (((NewNode)node).isRoot()) {
+>                     	((NewNode)newSplit).setRoot(true);
+>                     	((NewNode)newSplit).setParent(null);
+574,575c766,773
+<                     } else {
+<                         parent.setChild(parentIndex, newSplit);
+---
+>                     }
+>                     else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is alternate
+>                     	((NewNode)node).getMainlineNode().alternateTree = newSplit;
+>                     	((NewNode)newSplit).setParent(((NewNode)node).getParent());
+>                     }
+>                     else { //if the node is neither root nor an alternate, it must have a mainline split parent
+>                     	((NewNode)node).getParent().setChild(parentIndex, newSplit);
+>                     	((NewNode)newSplit).setParent(((NewNode)node).getParent());
+584d781
+< 
+587c784,790
+<     	numInstances++;
+---
+>     	if (this.treeRoot != null) {
+>     		numInstances++;
+>     		FoundNode[] foundNodes = filterInstanceToLeaves(inst,
+>     				null, -1, false);
+>     		DoubleVector result = new DoubleVector();
+>     		int predictionPaths = 0;
+>     		for (FoundNode foundNode : foundNodes) {
+589,615c792,812
+<         if (this.treeRoot != null) {
+<             FoundNode[] foundNodes = filterInstanceToLeaves(inst,
+<                     null, -1, false);
+<             DoubleVector result = new DoubleVector();
+<             int predictionPaths = 0;
+<             for (FoundNode foundNode : foundNodes) {
+<                 if (foundNode.parentBranch != -999) {
+<                     Node leafNode = foundNode.node;
+<                     if (leafNode == null) {
+<                         leafNode = foundNode.parent;
+<                     }
+<                     double[] dist = leafNode.getClassVotes(inst, this);
+<                     //Albert: changed for weights
+<                     //double distSum = Utils.sum(dist);
+<                     //if (distSum > 0.0) {
+<                     //	Utils.normalize(dist, distSum);
+<                     //}
+<                     result.addValues(dist);
+<                     //predictionPaths++;
+<                 }
+<             }
+<             //if (predictionPaths > this.maxPredictionPaths) {
+<             //	this.maxPredictionPaths++;
+<             //}
+<             return result.getArrayRef();
+<         }
+<         return new double[0];
+---
+>     					Node leafNode = foundNode.node;
+>     					if (leafNode == null) {
+>     						leafNode = foundNode.parent;
+>     					}
+>     					double[] dist = leafNode.getClassVotes(inst, this);
+> 
+>     					if(!((NewNode)leafNode).isAlternate()){
+> 
+>     						// count only votes from non-alternates... alternates shouldn't be voting
+>     						result.addValues(dist);
+> 
+>     					}
+> 
+>     					predictionPaths++;
+> 
+>     					return result.getArrayRef();
+> 
+>     		}
+> 
+>     	}
+>     	return new double[0];

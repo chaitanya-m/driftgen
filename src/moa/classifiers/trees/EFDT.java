@@ -278,7 +278,7 @@ public class EFDT extends VFDT{
 			if (deltaG > hoeffdingBound
 					|| (hoeffdingBound < tieThreshold && deltaG > tieThreshold / 2)) {
 
-				System.err.println(numInstances);
+				//System.err.println(numInstances);
 
 				AttributeSplitSuggestion splitDecision = bestSuggestion;
 

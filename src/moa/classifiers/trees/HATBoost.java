@@ -2,27 +2,46 @@ package moa.classifiers.trees;
 
 import com.yahoo.labs.samoa.instances.Instance;
 
+import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
-import moa.classifiers.trees.VFDT.Node;
 import moa.classifiers.trees.VFDT.SplitNode;
 import moa.core.MiscUtils;
 import moa.core.Utils;
 
 public class HATBoost extends HATEFDT{
 
-	public static class HATBoostAdaLearningNode extends AdaLearningNode{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
-		public HATBoostAdaLearningNode(double[] initialClassObservations, boolean isAlternate) {
-			super(initialClassObservations, isAlternate);
-			// TODO Auto-generated constructor stub
+
+	public static class HATBoostAdaSplitNode extends AdaSplitNode{
+
+		public HATBoostAdaSplitNode(InstanceConditionalTest splitTest, double[] classObservations) {
+			super(splitTest, classObservations);
+		}	
+		public HATBoostAdaSplitNode(InstanceConditionalTest splitTest, double[] classObservations,
+				int size) {
+			super(splitTest, classObservations, size);
+		}	
+		
+		public HATBoostAdaSplitNode(InstanceConditionalTest splitTest, double[] classObservations,
+				boolean isAlternate) {
+			super(splitTest, classObservations, isAlternate);
+		}
+		public HATBoostAdaSplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size,
+				boolean isAlternate) {
+			super(splitTest, classObservations, size, isAlternate);
 		}
 
 		/**
 		 * 
 		 */
 		private static final long serialVersionUID = 1L;
-
-		public Instance computeErrorChangeAndWeightInst(Instance inst, HAT ht, SplitNode parent, int parentBranch) {
+		
+		@Override
+		public Instance computeErrorChangeAndWeightInst(Instance inst, HATEFDT ht, SplitNode parent, int parentBranch) {
 
 			int trueClass = (int) inst.classValue();
 			//New option vore
@@ -55,4 +74,5 @@ public class HATBoost extends HATEFDT{
 			return weightedInst;
 		}
 	}
+	
 }

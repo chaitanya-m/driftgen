@@ -9,6 +9,13 @@ import moa.classifiers.core.attributeclassobservers.NominalAttributeClassObserve
 import moa.classifiers.core.attributeclassobservers.DiscreteAttributeClassObserver;
 import moa.classifiers.core.attributeclassobservers.NullAttributeClassObserver;
 import moa.classifiers.core.attributeclassobservers.NumericAttributeClassObserver;
+import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
+import moa.classifiers.trees.EFDT.EFDTNode;
+import moa.classifiers.trees.EFDT.EFDTSplitNode;
+import moa.classifiers.trees.VFDT.LearningNode;
+import moa.classifiers.trees.VFDT.Node;
+import moa.classifiers.trees.VFDT.SplitNode;
+import moa.classifiers.trees.VFDTLeafWindow.AdaLearningNode;
 import moa.core.AutoExpandVector;
 import moa.core.DoubleVector;
 
@@ -31,69 +38,123 @@ public class EFDTDecay extends EFDT{
 	public FlagOption archiveAmnesia = new FlagOption("archiveAmnesia", 'A',
 			"Whether counts n_{ijk} forget");
 
-	public static class DecayNode extends ActiveLearningNode{
+	public class DecayLearningNode extends EFDTLearningNode{
 
 		/**
 		 * 
 		 */
 		private static final long serialVersionUID = 1L;
 
-		public DecayNode(double[] initialClassObservations) {
+		public DecayLearningNode(double[] initialClassObservations) {
 			super(initialClassObservations);
 			// TODO Auto-generated constructor stub
 		}
 
-		public void learnFromInstance(Instance inst, EFDTDecay ht) {
-			nodeTime++;
+		@Override
+		public void learnFromInstance(Instance inst, EFDT ht, EFDTSplitNode parent, int parentBranch) {
 
-			if (this.isInitialized == false) {
-				this.attributeObservers = new AutoExpandVector<AttributeClassObserver>(inst.numAttributes());
-				this.isInitialized = true;
-			}
+			super.learnFromInstance(inst, ht, parent, parentBranch);
+			System.err.println("Decay Node!!!");
 
-			if(ht.voterAmnesia.isSet()){
+			if(((EFDTDecay)ht).voterAmnesia.isSet()){
 				//decay
-				if(ht.exponentialDecayOption.isSet()){
-					this.observedClassDistribution.scaleValues(Math.exp(-ht.decayOption.getValue()));
+				if(((EFDTDecay)ht).exponentialDecayOption.isSet()){
+					this.observedClassDistribution.scaleValues(Math.exp(-((EFDTDecay)ht).decayOption.getValue()));
 				}else{
-					this.observedClassDistribution.scaleValues(ht.decayOption.getValue());
+					this.observedClassDistribution.scaleValues(((EFDTDecay)ht).decayOption.getValue());
 				}
 			}
 
-			this.observedClassDistribution.addToValue((int) inst.classValue(),
-					inst.weight());
-
-			if(ht.archiveAmnesia.isSet()){
+			if(((EFDTDecay)ht).archiveAmnesia.isSet()){
 
 				// for every attribute observer, for every class, get it's attvaldists and and scale them (effectively scaling counts n_ijk)
 				for(AttributeClassObserver obs: this.attributeObservers){
 					for (int i = 0; i < ( (NominalAttributeClassObserver)obs).attValDistPerClass.size(); i++) {
 						DoubleVector attValDist = ((NominalAttributeClassObserver)obs).attValDistPerClass.get(i);
 						if (attValDist != null) {
-							if(ht.exponentialDecayOption.isSet()){
-								attValDist.scaleValues(Math.exp(-ht.decayOption.getValue()));
+							if(((EFDTDecay)ht).exponentialDecayOption.isSet()){
+								attValDist.scaleValues(Math.exp(-((EFDTDecay)ht).decayOption.getValue()));
 							}
 							else{
-								attValDist.scaleValues(ht.decayOption.getValue());
+								attValDist.scaleValues(((EFDTDecay)ht).decayOption.getValue());
 							}
 						}
 					}
 				}
 			}
-
-			for (int i = 0; i < inst.numAttributes() - 1; i++) {
-				int instAttIndex = modelAttIndexToInstanceAttIndex(i, inst);
-				AttributeClassObserver obs = this.attributeObservers.get(i);
-				if (obs == null) {
-					obs = inst.attribute(instAttIndex).isNominal() ? ht.newNominalClassObserver() : ht.newNumericClassObserver();
-					this.attributeObservers.set(i, obs);
-				}
-				obs.observeAttributeClass(inst.value(instAttIndex), (int) inst.classValue(), inst.weight());
-			}
-
 		}
 
 	}
+
+	public class DecaySplitNode extends EFDTSplitNode{
+
+		private static final long serialVersionUID = 1L;
+
+		public DecaySplitNode(InstanceConditionalTest splitTest, double[] classObservations, int size) {
+			super(splitTest, classObservations, size);
+		}
+
+		public DecaySplitNode(InstanceConditionalTest splitTest, double[] classObservations) {
+			super(splitTest, classObservations);
+		}
+
+		@Override
+		public void learnFromInstance(Instance inst, EFDT ht, EFDTSplitNode parent, int parentBranch) {
+
+			super.learnFromInstance(inst, ht, parent, parentBranch);
+
+			if(((EFDTDecay)ht).voterAmnesia.isSet()){
+				//decay
+				if(((EFDTDecay)ht).exponentialDecayOption.isSet()){
+					this.observedClassDistribution.scaleValues(Math.exp(-((EFDTDecay)ht).decayOption.getValue()));
+				}else{
+					this.observedClassDistribution.scaleValues(((EFDTDecay)ht).decayOption.getValue());
+				}
+			}
+
+			if(((EFDTDecay)ht).archiveAmnesia.isSet()){
+
+				// for every attribute observer, for every class, get it's attvaldists and and scale them (effectively scaling counts n_ijk)
+				for(AttributeClassObserver obs: this.attributeObservers){
+					for (int i = 0; i < ( (NominalAttributeClassObserver)obs).attValDistPerClass.size(); i++) {
+						DoubleVector attValDist = ((NominalAttributeClassObserver)obs).attValDistPerClass.get(i);
+						if (attValDist != null) {
+							if(((EFDTDecay)ht).exponentialDecayOption.isSet()){
+								attValDist.scaleValues(Math.exp(-((EFDTDecay)ht).decayOption.getValue()));
+							}
+							else{
+								attValDist.scaleValues(((EFDTDecay)ht).decayOption.getValue());
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	@Override
+	protected LearningNode newLearningNode() {
+		return new DecayLearningNode(new double[0]);
+	}
+
+	@Override
+	protected LearningNode newLearningNode(double[] initialClassObservations) {
+		return new DecayLearningNode(initialClassObservations);
+	}
+
+	@Override
+	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
+			double[] classObservations, int size) {
+		return new DecaySplitNode(splitTest, classObservations, size);
+	}
+
+	@Override
+	protected SplitNode newSplitNode(InstanceConditionalTest splitTest,
+			double[] classObservations) {
+		return new DecaySplitNode(splitTest, classObservations);
+	}
+
 
 }
 

@@ -967,10 +967,6 @@ public class HAT extends VFDT {
         else if (parent == null && newLeaf.isRoot() && !newLeaf.isAlternate()) {
             this.treeRoot = newLeaf;
         } else {
-        	System.out.println("xxxxxxxxxxxxxx");
-        	System.out.println(newLeaf.isAlternate());
-        	System.out.println(newLeaf.isRoot());
-        	System.out.println(parent==null);
         	
             parent.setChild(parentBranch, newLeaf);
         }

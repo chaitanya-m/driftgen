@@ -54,7 +54,6 @@ public class EFDTDecay extends EFDT{
 		public void learnFromInstance(Instance inst, EFDT ht, EFDTSplitNode parent, int parentBranch) {
 
 			super.learnFromInstance(inst, ht, parent, parentBranch);
-			System.err.println("Decay Node!!!");
 
 			if(((EFDTDecay)ht).voterAmnesia.isSet()){
 				//decay
@@ -69,14 +68,17 @@ public class EFDTDecay extends EFDT{
 
 				// for every attribute observer, for every class, get it's attvaldists and and scale them (effectively scaling counts n_ijk)
 				for(AttributeClassObserver obs: this.attributeObservers){
-					for (int i = 0; i < ( (NominalAttributeClassObserver)obs).attValDistPerClass.size(); i++) {
-						DoubleVector attValDist = ((NominalAttributeClassObserver)obs).attValDistPerClass.get(i);
-						if (attValDist != null) {
-							if(((EFDTDecay)ht).exponentialDecayOption.isSet()){
-								attValDist.scaleValues(Math.exp(-((EFDTDecay)ht).decayOption.getValue()));
-							}
-							else{
-								attValDist.scaleValues(((EFDTDecay)ht).decayOption.getValue());
+					if(obs.getClass() == NominalAttributeClassObserver.class) {
+						// It doesn't make much sense to decay a Gaussian where history isn't stored... just decay nominal counts
+						for (int i = 0; i < ( (NominalAttributeClassObserver)obs).attValDistPerClass.size(); i++) {
+							DoubleVector attValDist = ((NominalAttributeClassObserver)obs).attValDistPerClass.get(i);
+							if (attValDist != null) {
+								if(((EFDTDecay)ht).exponentialDecayOption.isSet()){
+									attValDist.scaleValues(Math.exp(-((EFDTDecay)ht).decayOption.getValue()));
+								}
+								else{
+									attValDist.scaleValues(((EFDTDecay)ht).decayOption.getValue());
+								}
 							}
 						}
 					}
@@ -116,14 +118,18 @@ public class EFDTDecay extends EFDT{
 
 				// for every attribute observer, for every class, get it's attvaldists and and scale them (effectively scaling counts n_ijk)
 				for(AttributeClassObserver obs: this.attributeObservers){
-					for (int i = 0; i < ( (NominalAttributeClassObserver)obs).attValDistPerClass.size(); i++) {
-						DoubleVector attValDist = ((NominalAttributeClassObserver)obs).attValDistPerClass.get(i);
-						if (attValDist != null) {
-							if(((EFDTDecay)ht).exponentialDecayOption.isSet()){
-								attValDist.scaleValues(Math.exp(-((EFDTDecay)ht).decayOption.getValue()));
-							}
-							else{
-								attValDist.scaleValues(((EFDTDecay)ht).decayOption.getValue());
+					if(obs.getClass() == NominalAttributeClassObserver.class) {
+						// It doesn't make much sense to decay a Gaussian where history isn't stored... just decay nominal counts
+
+						for (int i = 0; i < ( (NominalAttributeClassObserver)obs).attValDistPerClass.size(); i++) {
+							DoubleVector attValDist = ((NominalAttributeClassObserver)obs).attValDistPerClass.get(i);
+							if (attValDist != null) {
+								if(((EFDTDecay)ht).exponentialDecayOption.isSet()){
+									attValDist.scaleValues(Math.exp(-((EFDTDecay)ht).decayOption.getValue()));
+								}
+								else{
+									attValDist.scaleValues(((EFDTDecay)ht).decayOption.getValue());
+								}
 							}
 						}
 					}

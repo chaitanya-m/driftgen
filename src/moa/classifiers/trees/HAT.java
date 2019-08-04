@@ -32,6 +32,10 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.VFDT.InactiveLearningNode;
+import moa.classifiers.trees.VFDT.LearningNode;
+import moa.classifiers.trees.VFDT.Node;
+import moa.classifiers.trees.VFDT.SplitNode;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
@@ -765,10 +769,12 @@ public class HAT extends VFDT {
                         this.treeRoot = newSplit;
                     }
                     else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is alternate
+
                     	((NewNode)node).getMainlineNode().alternateTree = newSplit;
                     	((NewNode)newSplit).setParent(((NewNode)node).getParent());
                     }
                     else { //if the node is neither root nor an alternate, it must have a mainline split parent
+
                     	((NewNode)node).getParent().setChild(parentIndex, newSplit);
                     	((NewNode)newSplit).setParent(((NewNode)node).getParent());
                     }
@@ -779,6 +785,199 @@ public class HAT extends VFDT {
         }
     }
 
+    
+    public static class AdaInactiveLearningNode extends InactiveLearningNode implements NewNode {
+
+        public AdaInactiveLearningNode(double[] initialClassObservations, 
+        		boolean isAlternate, boolean isRoot, AdaSplitNode mainLineNode, AdaSplitNode parent) {
+			super(initialClassObservations);
+			this.setRoot(isRoot);
+			this.setAlternate(isAlternate);
+			this.setMainlineNode(mainLineNode);
+			this.setParent(parent);
+
+		}
+        private boolean isAlternate = false;
+
+        private boolean isRoot = false;
+
+		private AdaSplitNode mainlineNode = null; //null by default unless there is an attachment point
+
+		private AdaSplitNode parent = null;
+
+
+		private static final long serialVersionUID = 1L;
+
+
+        @Override
+        public void learnFromInstance(Instance inst, VFDT ht) {
+        	this.nodeTime++;
+            this.observedClassDistribution.addToValue((int) inst.classValue(),
+                    inst.weight());
+        }
+
+
+		@Override
+		public int numberLeaves() {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+
+		@Override
+		public void setAlternateStatusForSubtreeNodes(boolean isAlternate) {
+			// TODO Auto-generated method stub
+			
+		}
+
+
+		@Override
+		public double getErrorEstimation() {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+
+		@Override
+		public double getErrorWidth() {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+
+		@Override
+		public boolean isNullError() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+
+		@Override
+		public void killTreeChilds(HAT ht) {
+			// TODO Auto-generated method stub
+			
+		}
+
+
+		@Override
+		public void learnFromInstance(Instance inst, HAT ht, SplitNode parent, int parentBranch) {
+			// TODO Auto-generated method stub
+			
+		}
+
+
+		@Override
+		public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch,
+				List<FoundNode> foundNodes, boolean updateSplitterCounts) {
+			// TODO Auto-generated method stub
+			
+		}
+
+
+		@Override
+		public boolean isAlternate() {
+			return this.isAlternate;
+		}
+
+
+		@Override
+		public void setAlternate(boolean isAlternate) {
+			this.isAlternate = isAlternate;
+		}
+
+
+		@Override
+		public boolean isRoot() {
+			return this.isRoot;
+		}
+
+
+		@Override
+		public void setRoot(boolean isRoot) {
+			this.isRoot = isRoot;			
+		}
+
+
+		@Override
+		public void setMainlineNode(AdaSplitNode mainLineNode) {
+			this.mainlineNode = mainLineNode;
+		}
+
+
+		@Override
+		public AdaSplitNode getMainlineNode() {
+			return this.mainlineNode;
+		}
+
+
+		@Override
+		public void setParent(AdaSplitNode parent) {
+			this.parent = parent;
+		}
+
+
+		@Override
+		public AdaSplitNode getParent() {
+			return this.parent;
+		}
+
+    }
+    @Override
+    protected void activateLearningNode(InactiveLearningNode toActivate,
+            SplitNode parent, int parentBranch) {
+    	// Note that deactivated nodes lose their ADWINs etc. 
+    	//This is not in the spec so there is room for interpretation.
+    	LearningNode newLeaf = newLearningNode(toActivate.getObservedClassDistribution(), 
+    			((NewNode)toActivate).isAlternate());
+    	((NewNode)(newLeaf)).setRoot(((NewNode)toActivate).isRoot());
+    	((NewNode)(newLeaf)).setParent(((NewNode)toActivate).getParent());    	
+    	((NewNode)(newLeaf)).setMainlineNode(((NewNode)toActivate).getMainlineNode());   	
+
+        // if node is alternate and is top of subtree reattach to mainline
+        if(((NewNode)(newLeaf)).isAlternate() && ((NewNode)(newLeaf)).getMainlineNode() != null) {
+        	((NewNode)(newLeaf)).getMainlineNode().alternateTree = newLeaf; // attach newLeaf to its mainline
+        }
+        // if node is root then set to treeRoot
+        else if (parent == null && ((NewNode)(newLeaf)).isRoot() && !((NewNode)(newLeaf)).isAlternate()) {
+            this.treeRoot = newLeaf;
+        } else {
+            parent.setChild(parentBranch, newLeaf);
+        }
+        this.activeLeafNodeCount--;
+        this.inactiveLeafNodeCount++;
+    }
+
+    @Override
+    protected void deactivateLearningNode(ActiveLearningNode toDeactivate,
+            SplitNode parent, int parentBranch) {
+    	// Note that deactivated nodes lose their ADWINs etc. 
+    	//This is not in the spec so there is room for interpretation.
+        AdaInactiveLearningNode newLeaf = new AdaInactiveLearningNode(
+        		toDeactivate.getObservedClassDistribution(),
+        		((NewNode)(toDeactivate)).isAlternate(), 
+        		((NewNode)(toDeactivate)).isRoot(),
+        		((NewNode)(toDeactivate)).getMainlineNode(),
+        		((NewNode)(toDeactivate)).getParent()
+        		);
+        // if node is alternate and is top of subtree reattach to mainline
+        if(newLeaf.isAlternate() && newLeaf.getMainlineNode() != null) {
+        	newLeaf.getMainlineNode().alternateTree = newLeaf; // attach newLeaf to its mainline
+        }
+        // if node is root then set to treeRoot
+        else if (parent == null && newLeaf.isRoot() && !newLeaf.isAlternate()) {
+            this.treeRoot = newLeaf;
+        } else {
+        	System.out.println("xxxxxxxxxxxxxx");
+        	System.out.println(newLeaf.isAlternate());
+        	System.out.println(newLeaf.isRoot());
+        	System.out.println(parent==null);
+        	
+            parent.setChild(parentBranch, newLeaf);
+        }
+        this.activeLeafNodeCount--;
+        this.inactiveLeafNodeCount++;
+    }
+    
     @Override
     public double[] getVotesForInstance(Instance inst) {
     	if (this.treeRoot != null) {

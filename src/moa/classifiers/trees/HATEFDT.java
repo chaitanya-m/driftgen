@@ -43,6 +43,8 @@ import moa.classifiers.trees.VFDT.SplitNode;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
+
+import com.github.javacliparser.FlagOption;
 import com.yahoo.labs.samoa.instances.Instance;
 
 /**
@@ -66,6 +68,9 @@ import com.yahoo.labs.samoa.instances.Instance;
  */
 public class HATEFDT extends EFDT {
 
+    public FlagOption alternateVoterOption = new FlagOption("alternatesVote", 'A',
+            "Allow alternates to vote");
+	
     private static final long serialVersionUID = 1L;
 
     private static long numInstances = 0;
@@ -1007,8 +1012,7 @@ public class HATEFDT extends EFDT {
     					}
     					double[] dist = leafNode.getClassVotes(inst, this);
 
-    					if(!((NewNode)leafNode).isAlternate()){
-
+    					if(!((NewNode)leafNode).isAlternate() || alternateVoterOption.isSet()){
     						// count only votes from non-alternates... alternates shouldn't be voting
     						result.addValues(dist);
 

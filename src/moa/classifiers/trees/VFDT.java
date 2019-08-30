@@ -200,6 +200,10 @@ public class VFDT extends AbstractClassifier {
     public FlagOption noPrePruneOption = new FlagOption("noPrePrune", 'p',
             "Disable pre-pruning.");
 
+    public FlagOption nominalAttributeReuseBug = new FlagOption("nominalAttributeReuseBug", 'C',
+            "Simulate original code bug");
+    
+    
     public static class FoundNode {
 
         public Node node;
@@ -763,8 +767,8 @@ public class VFDT extends AbstractClassifier {
             	secondBestSuggestionAverageMerit = node.getInfogainSum().get((secondBestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
             }
 
-            //comment this if statement to get VFDT bug
-            if(bestSuggestion.merit < 1e-10){ // we don't use average here
+            // VFDT bug option; don't split on no merit - nominal attributes not reused
+            if(bestSuggestion.merit < 1e-10 && !nominalAttributeReuseBug.isSet()){ // we don't use average here
             	shouldSplit = false;
             }
 

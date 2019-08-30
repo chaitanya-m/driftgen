@@ -66,6 +66,9 @@ public class HAT extends VFDT {
 
     public FlagOption alternateVoterOption = new FlagOption("alternatesVote", 'A',
             "Allow alternates to vote");
+    public FlagOption allowAlternatesofAlternatesOption = new FlagOption("alternatesHaveAlternates", 'B',
+            "Allow alternates to sprout their own alternates");
+    
     private static final long serialVersionUID = 1L;
 
     private static long numInstances = 0;
@@ -287,7 +290,9 @@ public class HAT extends VFDT {
             }
 
             // Check condition to build a new alternate tree
-            if (this.ErrorChange && !this.isAlternate()) {// disabling alternates of alternates
+            if ((this.ErrorChange && !this.isAlternate()) || 
+            		(this.ErrorChange && ht.allowAlternatesofAlternatesOption.isSet())){
+            	// disabling alternates of alternates unless so specified
 
                 //Start a new alternative tree : learning node
                 this.alternateTree = ht.newLearningNode(true); // isAlternate is set to true
@@ -994,7 +999,7 @@ public class HAT extends VFDT {
     					}
     					double[] dist = leafNode.getClassVotes(inst, this);
 
-    					if(!((NewNode)leafNode).isAlternate() || alternateVoterOption.isSet()){
+    					if( !((NewNode)leafNode).isAlternate() || alternateVoterOption.isSet()){
 
     						// count only votes from non-alternates... alternates shouldn't be voting
     						result.addValues(dist);

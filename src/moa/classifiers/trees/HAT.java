@@ -331,14 +331,33 @@ public class HAT extends VFDT {
                         ht.activeLeafNodeCount -= this.numberLeaves();
                         ht.activeLeafNodeCount += ((NewNode) this.alternateTree).numberLeaves();
                         this.killTreeChilds(ht);
-                        ((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
-                        ((NewNode)(this.alternateTree)).setMainlineNode(null);
-
+                        
+                        // if alternates of alternates are enabled, replacement takes alternate status of this node 
+                        if (ht.allowAlternatesofAlternatesOption.isSet()) {
+                        	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(this.isAlternate());
+                        	if(this.isAlternate() == false) { // no mainline for mainline nodes
+                        		((NewNode)(this.alternateTree)).setMainlineNode(null);
+                        	}
+                        }
+                        else {
+                        	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
+                        	((NewNode)(this.alternateTree)).setMainlineNode(null);
+                        }
 
                         if (!this.isRoot()) {
-                            this.getParent().setChild(parentBranch, this.alternateTree);
-                        	((NewNode)(this.alternateTree)).setRoot(false);
-                            ((NewNode)this.alternateTree).setParent(this.getParent());
+                        	
+                        	if(ht.allowAlternatesofAlternatesOption.isSet() 
+                        		&& this.getParent() == null) { // alternate of a top level alternate
+                        		((NewNode)(this.alternateTree)).setRoot(false);
+                        		((NewNode)this.alternateTree).setParent(null);
+                        			this.getMainlineNode().alternateTree = this.alternateTree;
+                        		}
+                        	else {
+                        		this.getParent().setChild(parentBranch, this.alternateTree);
+                        		((NewNode)(this.alternateTree)).setRoot(false);
+                        		((NewNode)this.alternateTree).setParent(this.getParent());
+                        	}
+                            
                             //((AdaSplitNode) parent.getChild(parentBranch)).alternateTree = null;
                         } else {
                             // Switch root tree
@@ -346,7 +365,9 @@ public class HAT extends VFDT {
                         	((NewNode)(this.alternateTree)).setParent(null);
                             ht.treeRoot = this.alternateTree;
                         }
-                        this.alternateTree = null;
+                        if(!ht.allowAlternatesofAlternatesOption.isSet()) {
+                        	this.alternateTree = null;
+                        }
                         ht.switchedAlternateTrees++;
                     } else if (Bound < altErrorRate - oldErrorRate) {
                         // Erase alternate tree

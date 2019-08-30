@@ -299,6 +299,8 @@ public class HAT extends VFDT {
                 ((NewNode)this.alternateTree).setMainlineNode(this); // this node is the alternate's attachment point
                 ((NewNode)this.alternateTree).setParent(this.getParent());
                 ht.alternateTrees++;
+        		assert ((NewNode)(this.alternateTree)).getMainlineNode() != null;           
+                
             } // Check condition to replace tree
 
             else if (this.alternateTree != null && ((NewNode) this.alternateTree).isNullError() == false) {
@@ -335,8 +337,20 @@ public class HAT extends VFDT {
                         // if alternates of alternates are enabled, replacement takes alternate status of this node 
                         if (ht.allowAlternatesofAlternatesOption.isSet()) {
                         	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(this.isAlternate());
+                        	
                         	if(this.isAlternate() == false) { // no mainline for mainline nodes
+                        		System.err.println("Substitution on mainline");
+                        		assert ((NewNode)(this.alternateTree)).isAlternate() == false;
+                        		
                         		((NewNode)(this.alternateTree)).setMainlineNode(null);
+
+                        	}
+                        	else {
+                        		System.err.println("Substitution on alternate");
+                        		//assert ((NewNode)(this.alternateTree)).isAlternate() == true;
+                        		//assert ((NewNode)(this.alternateTree)).getMainlineNode() != null;
+
+
                         	}
                         }
                         else {
@@ -347,10 +361,13 @@ public class HAT extends VFDT {
                         if (!this.isRoot()) {
                         	
                         	if(ht.allowAlternatesofAlternatesOption.isSet() 
-                        		&& this.getParent() == null) { // alternate of a top level alternate
+                        		&& this.getParent() == null
+                        		&& this.isAlternate()) { // alternate of a top level alternate
                         		((NewNode)(this.alternateTree)).setRoot(false);
                         		((NewNode)this.alternateTree).setParent(null);
-                        			this.getMainlineNode().alternateTree = this.alternateTree;
+                        		System.err.println(this.isAlternate());
+                        		System.err.println(this.getMainlineNode() == null);
+                        		this.getMainlineNode().alternateTree = this.alternateTree;
                         		}
                         	else {
                         		this.getParent().setChild(parentBranch, this.alternateTree);
@@ -798,15 +815,20 @@ public class HAT extends VFDT {
                     	((NewNode)newSplit).setParent(null);
                         this.treeRoot = newSplit;
                     }
-                    else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is alternate
+                    else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is toplevel alternate
 
                     	((NewNode)node).getMainlineNode().alternateTree = newSplit;
                     	((NewNode)newSplit).setParent(((NewNode)node).getParent());
                     }
-                    else { //if the node is neither root nor an alternate, it must have a mainline split parent
+                    else { //if the node is neither root nor an alternate top level, it must have a split parent
 
                     	((NewNode)node).getParent().setChild(parentIndex, newSplit);
                     	((NewNode)newSplit).setParent(((NewNode)node).getParent());
+                    }
+                    if(allowAlternatesofAlternatesOption.isSet()) {
+                    	if (((NewNode)node).getMainlineNode() != null) {
+                    		((NewNode)newSplit).setMainlineNode(((NewNode)node).getMainlineNode());
+                    	}
                     }
                 }
                 // manage memory
@@ -950,8 +972,8 @@ public class HAT extends VFDT {
 		public AdaSplitNode getParent() {
 			return this.parent;
 		}
-
     }
+    
     @Override
     protected void activateLearningNode(InactiveLearningNode toActivate,
             SplitNode parent, int parentBranch) {
@@ -961,7 +983,7 @@ public class HAT extends VFDT {
     			((NewNode)toActivate).isAlternate());
     	((NewNode)(newLeaf)).setRoot(((NewNode)toActivate).isRoot());
     	((NewNode)(newLeaf)).setParent(((NewNode)toActivate).getParent());    	
-    	((NewNode)(newLeaf)).setMainlineNode(((NewNode)toActivate).getMainlineNode());   	
+    	((NewNode)(newLeaf)).setMainlineNode(((NewNode)toActivate).getMainlineNode()); 	
 
         // if node is alternate and is top of subtree reattach to mainline
         if(((NewNode)(newLeaf)).isAlternate() && ((NewNode)(newLeaf)).getMainlineNode() != null) {
@@ -975,6 +997,11 @@ public class HAT extends VFDT {
         }
         this.activeLeafNodeCount--;
         this.inactiveLeafNodeCount++;
+        if ( ((NewNode)(newLeaf)).isAlternate() 
+        		&& ((NewNode)(newLeaf)).getMainlineNode() == null
+        		&& ((NewNode)(newLeaf)).getParent() == null){
+        	System.err.println("Node activation causing orphaned nodes?");
+        }
     }
 
     @Override

@@ -203,7 +203,7 @@ public class VFDT extends AbstractClassifier {
     public FlagOption nominalAttributeReuseBug = new FlagOption("nominalAttributeReuseBug", 'C',
             "Simulate original code bug");
 
-    public FlagOption noAveragingInfogain = new FlagOption("nominalAttributeReuseBug", 'D',
+    public FlagOption noAveragingInfogain = new FlagOption("noAveragingInfogain", 'D',
             "Dont Average Infogain");    
     
     public static class FoundNode {
@@ -768,18 +768,14 @@ public class VFDT extends AbstractClassifier {
             } else{
             	secondBestSuggestionAverageMerit = node.getInfogainSum().get((secondBestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
             }
-
-            // VFDT bug option; don't split on no merit - nominal attributes not reused
-            if(bestSuggestion.merit < 1e-10 && !nominalAttributeReuseBug.isSet()){ // we don't use average here
-            	shouldSplit = false;
-            }
-            
             if(noAveragingInfogain.isSet()) {
             	bestSuggestionAverageMerit = bestSuggestion.merit;
             	secondBestSuggestionAverageMerit = secondBestSuggestion.merit;
             }
-
-            else if ((bestSuggestionAverageMerit - secondBestSuggestionAverageMerit > hoeffdingBound)
+            // VFDT bug option; don't split on no merit - nominal attributes not reused
+            if(bestSuggestion.merit < 1e-10 && !nominalAttributeReuseBug.isSet()){ // we don't use average here
+            	shouldSplit = false;
+            } else if ((bestSuggestionAverageMerit - secondBestSuggestionAverageMerit > hoeffdingBound)
                     || (hoeffdingBound < this.tieThresholdOption.getValue()))
                 	{
                 shouldSplit = true;

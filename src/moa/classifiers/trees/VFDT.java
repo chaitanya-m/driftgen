@@ -616,6 +616,7 @@ public class VFDT extends AbstractClassifier {
                     && (learningNode instanceof ActiveLearningNode)) {
                 ActiveLearningNode activeLearningNode = (ActiveLearningNode) learningNode;
                 double weightSeen = activeLearningNode.getWeightSeen();
+                //noNodeTime.isSet() && 
                 if (noNodeTime.isSet() && weightSeen
                         - activeLearningNode.getWeightSeenAtLastSplitEvaluation() >= this.gracePeriodOption.getValue()) {
                     attemptToSplit(activeLearningNode, foundNode.parent,
@@ -623,11 +624,12 @@ public class VFDT extends AbstractClassifier {
                     activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen);
                 }
    
-                else if (activeLearningNode.nodeTime % this.gracePeriodOption.getValue() == 0) {
+                else if (!noNodeTime.isSet() && activeLearningNode.nodeTime % this.gracePeriodOption.getValue() == 0) {
                     attemptToSplit(activeLearningNode, foundNode.parent,
                             foundNode.parentBranch);
                     activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen);
                 }
+                
             }
         }
 
@@ -641,7 +643,7 @@ public class VFDT extends AbstractClassifier {
         numInstances++;
 
     }
-
+    
     @Override
     public double[] getVotesForInstance(Instance inst) {
         if (this.treeRoot != null) {
@@ -845,7 +847,7 @@ public class VFDT extends AbstractClassifier {
     
     
     
-    protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
+   protected void attemptToSplit(ActiveLearningNode node, SplitNode parent,
             int parentIndex) {
     	
         if (!node.observedClassDistributionIsPure()) {
@@ -894,6 +896,9 @@ public class VFDT extends AbstractClassifier {
         }
     }
 
+     
+
+    
     public void enforceTrackerLimit() {
         if ((this.inactiveLeafNodeCount > 0)
                 || ((this.activeLeafNodeCount * this.activeLeafByteSizeEstimate + this.inactiveLeafNodeCount

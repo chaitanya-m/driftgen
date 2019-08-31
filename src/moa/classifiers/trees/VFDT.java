@@ -205,6 +205,10 @@ public class VFDT extends AbstractClassifier {
 
     public FlagOption noAveragingInfogain = new FlagOption("noAveragingInfogain", 'D',
             "Dont Average Infogain");    
+
+    public FlagOption noNodeTime = new FlagOption("noNodeTime", 'E',
+            "Use getWeightSeen instead of nodeTime");    
+
     
     public static class FoundNode {
 
@@ -612,7 +616,14 @@ public class VFDT extends AbstractClassifier {
                     && (learningNode instanceof ActiveLearningNode)) {
                 ActiveLearningNode activeLearningNode = (ActiveLearningNode) learningNode;
                 double weightSeen = activeLearningNode.getWeightSeen();
-                if (activeLearningNode.nodeTime % this.gracePeriodOption.getValue() == 0) {
+                if (noNodeTime.isSet() && weightSeen
+                        - activeLearningNode.getWeightSeenAtLastSplitEvaluation() >= this.gracePeriodOption.getValue()) {
+                    attemptToSplit(activeLearningNode, foundNode.parent,
+                            foundNode.parentBranch);
+                    activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen);
+                }
+   
+                else if (activeLearningNode.nodeTime % this.gracePeriodOption.getValue() == 0) {
                     attemptToSplit(activeLearningNode, foundNode.parent,
                             foundNode.parentBranch);
                     activeLearningNode.setWeightSeenAtLastSplitEvaluation(weightSeen);
@@ -757,21 +768,26 @@ public class VFDT extends AbstractClassifier {
             double bestSuggestionAverageMerit = 0.0;
             double secondBestSuggestionAverageMerit = 0.0;
 
-            if(bestSuggestion.splitTest == null){ // if you have a null split
-            	bestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
-            } else{
-            	bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
-            }
-
-            if(secondBestSuggestion.splitTest == null){ // if you have a null split
-            	secondBestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
-            } else{
-            	secondBestSuggestionAverageMerit = node.getInfogainSum().get((secondBestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
-            }
+            
             if(noAveragingInfogain.isSet()) {
             	bestSuggestionAverageMerit = bestSuggestion.merit;
             	secondBestSuggestionAverageMerit = secondBestSuggestion.merit;
+            } else {
+            	
+                if(bestSuggestion.splitTest == null){ // if you have a null split
+                	bestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
+                } else{
+                	bestSuggestionAverageMerit = node.getInfogainSum().get((bestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
+                }
+
+                if(secondBestSuggestion.splitTest == null){ // if you have a null split
+                	secondBestSuggestionAverageMerit = node.getInfogainSum().get(-1) / node.getNumSplitAttempts();
+                } else{
+                	secondBestSuggestionAverageMerit = node.getInfogainSum().get((secondBestSuggestion.splitTest.getAttsTestDependsOn()[0])) / node.getNumSplitAttempts();
+                }
             }
+            
+            
             // VFDT bug option; don't split on no merit - nominal attributes not reused
             if(bestSuggestion.merit < 1e-10 && !nominalAttributeReuseBug.isSet()){ // we don't use average here
             	shouldSplit = false;
@@ -781,7 +797,7 @@ public class VFDT extends AbstractClassifier {
                 shouldSplit = true;
             }
 
-            if(shouldSplit){
+            if(shouldSplit && !nominalAttributeReuseBug.isSet()){
             	for(Integer i : node.usedNominalAttributes){
             		if(bestSuggestion.splitTest.getAttsTestDependsOn()[0] == i){
             			shouldSplit = false;

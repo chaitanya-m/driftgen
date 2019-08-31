@@ -826,6 +826,7 @@ public class HAT extends VFDT {
                     	((NewNode)newSplit).setParent(((NewNode)node).getParent());
                     }
                     if(allowAlternatesofAlternatesOption.isSet()) {
+                    	// where an alternate of an alternate is being split, it must have the correct attachment point backreference
                     	if (((NewNode)node).getMainlineNode() != null) {
                     		((NewNode)newSplit).setMainlineNode(((NewNode)node).getMainlineNode());
                     	}

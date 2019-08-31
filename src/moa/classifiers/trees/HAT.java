@@ -68,7 +68,9 @@ public class HAT extends VFDT {
             "Allow alternates to vote");
     public FlagOption allowAlternatesofAlternatesOption = new FlagOption("alternatesHaveAlternates", 'B',
             "Allow alternates to sprout their own alternates");
-    
+    public FlagOption topLevelBug = new FlagOption("topLevelBug", 'F',
+            "Top level: an alternate of an alternate (or so on) substitutes the root");
+        
     private static final long serialVersionUID = 1L;
 
     private static long numInstances = 0;
@@ -276,7 +278,7 @@ public class HAT extends VFDT {
         
         // SplitNodes can have alternative trees, but LearningNodes can't
         // LearningNodes can split, but SplitNodes can't
-        // Parent nodes are allways SplitNodes
+        // Parent nodes are always SplitNodes
         @Override
         public void learnFromInstance(Instance inst, HAT ht, SplitNode parent, int parentBranch) {
 
@@ -333,7 +335,7 @@ public class HAT extends VFDT {
                         ht.activeLeafNodeCount -= this.numberLeaves();
                         ht.activeLeafNodeCount += ((NewNode) this.alternateTree).numberLeaves();
                         this.killTreeChilds(ht);
-                        
+                       /* 
                         // if alternates of alternates are enabled, replacement takes alternate status of this node 
                         if (ht.allowAlternatesofAlternatesOption.isSet()) {
                         	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(this.isAlternate());
@@ -349,18 +351,93 @@ public class HAT extends VFDT {
                         		System.err.println("Substitution on alternate");
                         		//assert ((NewNode)(this.alternateTree)).isAlternate() == true;
                         		//assert ((NewNode)(this.alternateTree)).getMainlineNode() != null;
-
-
                         	}
                         }
                         else {
                         	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
                         	((NewNode)(this.alternateTree)).setMainlineNode(null);
-                        }
+                        }*/
+                        // Done preparing alternate substitute's status, move on to the substitution
+                        // If alternates can have alternates, and we are simulating the top level bug
+                        // wherein an alternate of an alternate may replace root...
+                        // Or if we are not simulating it and the alternate just replaces the alternate or mainline it is replacing
+                        // Or neither of these is set. In each case, whether the node is top level or not, root or not.
+                    	if(ht.allowAlternatesofAlternatesOption.isSet()) {
+                    		if (ht.topLevelBug.isSet()) {
+                                if ( (!this.isRoot() && this.getParent() == null && this.isAlternate()) || this.isRoot() ) { 
+                                	// top level alternate of this top level alternate replacing root directly instead of this node
+                            		((NewNode)(this.alternateTree)).setRoot(true);
+                            		((NewNode)this.alternateTree).setParent(null);
+                            		((NewNode)(this.alternateTree)).setMainlineNode(null);
+                            		((NewNode)(this.alternateTree)).setAlternate(false);
+                                	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
 
-                        if (!this.isRoot()) {
+                                    ht.treeRoot = this.alternateTree;
+                                } else { // top level bug is set but we are replacing a non-top-level node
+                            		((NewNode)(this.alternateTree)).setRoot(false);
+                            		((NewNode)this.alternateTree).setParent(this.getParent());
+                            		((NewNode)(this.alternateTree)).setMainlineNode(this.getMainlineNode());
+                            		((NewNode)(this.alternateTree)).setAlternate(this.isAlternate());
+                                	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(this.isAlternate());
+
+                            		this.getParent().setChild(parentBranch, this.alternateTree);
+                                }
+                    		}
+                    		else { // topLevel Bug is not set
+                    			if ( (!this.isRoot() && this.getParent() == null && this.isAlternate()) || this.isRoot() ) {
+                    				// this is a top level alternate and not root, so don't change root
+                    			
+                            		((NewNode)(this.alternateTree)).setRoot(this.isRoot());
+                            		((NewNode)this.alternateTree).setParent(this.getParent());
+                            		((NewNode)(this.alternateTree)).setMainlineNode(this.getMainlineNode());
+                            		((NewNode)(this.alternateTree)).setAlternate(this.isAlternate());
+                                	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(this.isAlternate());
+
+                    			}
+                    			else if (this.isRoot()){
+                    				// this is root
+                            		((NewNode)(this.alternateTree)).setRoot(true);
+                               		((NewNode)this.alternateTree).setParent(null);
+                            		((NewNode)(this.alternateTree)).setMainlineNode(null);
+                            		((NewNode)(this.alternateTree)).setAlternate(false);
+                                	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
+
+                                    ht.treeRoot = this.alternateTree;
+                    			} else { // not top level
+                            		((NewNode)(this.alternateTree)).setRoot(false);
+                            		((NewNode)this.alternateTree).setParent(this.getParent());
+                            		((NewNode)(this.alternateTree)).setMainlineNode(this.getMainlineNode());
+                            		((NewNode)(this.alternateTree)).setAlternate(this.isAlternate());
+                                	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(this.isAlternate());
+
+                            		this.getParent().setChild(parentBranch, this.alternateTree);
+                    			}
+                    			
+                    		}
+                    	} else { // alternates may not have alternates
+                    		if(!this.isRoot()) {// in the single alternate case there will be a parent
+                        		((NewNode)(this.alternateTree)).setRoot(false);
+                        		((NewNode)this.alternateTree).setParent(this.getParent());
+                        		((NewNode)(this.alternateTree)).setMainlineNode(null);
+                        		((NewNode)(this.alternateTree)).setAlternate(false);
+                            	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
+
+                        		this.getParent().setChild(parentBranch, this.alternateTree);
+
+                    		} else { // this is the Root and only a single alternate exists
+                            	((NewNode)(this.alternateTree)).setRoot(true);
+                            	((NewNode)(this.alternateTree)).setParent(null);
+                            	((NewNode)(this.alternateTree)).setMainlineNode(null);
+                        		((NewNode)(this.alternateTree)).setAlternate(false);
+                            	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
+
+                                ht.treeRoot = this.alternateTree;
+                    		}
+                    	}
+
+                        /*if (!this.isRoot()) {
                         	
-                        	if(ht.allowAlternatesofAlternatesOption.isSet() 
+                        	if(ht.allowAlternatesofAlternatesOption.isSet()) { 
                         		&& this.getParent() == null
                         		&& this.isAlternate()) { // alternate of a top level alternate
                         		((NewNode)(this.alternateTree)).setRoot(false);
@@ -369,7 +446,7 @@ public class HAT extends VFDT {
                         		System.err.println(this.getMainlineNode() == null);
                         		this.getMainlineNode().alternateTree = this.alternateTree;
                         		}
-                        	else {
+                        	else { // in the single alternate case there will be a parent
                         		this.getParent().setChild(parentBranch, this.alternateTree);
                         		((NewNode)(this.alternateTree)).setRoot(false);
                         		((NewNode)this.alternateTree).setParent(this.getParent());
@@ -384,7 +461,7 @@ public class HAT extends VFDT {
                         }
                         if(!ht.allowAlternatesofAlternatesOption.isSet()) {
                         	this.alternateTree = null;
-                        }
+                        }*/
                         ht.switchedAlternateTrees++;
                     } else if (Bound < altErrorRate - oldErrorRate) {
                         // Erase alternate tree

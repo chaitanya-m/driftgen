@@ -70,6 +70,8 @@ public class HAT extends VFDT {
             "Allow alternates to sprout their own alternates");
     public FlagOption topLevelBug = new FlagOption("topLevelBug", 'F',
             "Top level: an alternate of an alternate (or so on) substitutes the root");
+    public FlagOption parentBug = new FlagOption("parentBug", 'G',
+            "When an alternate is split, it's parent replaces the mainline child with the alternate");
         
     private static final long serialVersionUID = 1L;
 
@@ -893,8 +895,8 @@ public class HAT extends VFDT {
                     this.decisionNodeCount++;
                     this.activeLeafNodeCount += splitDecision.numSplits();
                     
-                    if(topLevelBug.isSet()) { // top level split reassigns to root, even if an alternate was split
-                    	if (((NewNode)node).isRoot() || ((NewNode)node).getParent()==null) {
+                    if(topLevelBug.isSet() && ((NewNode)node).getParent()==null) { // top level split reassigns to root, even if an alternate was split
+                    	if (((NewNode)node).isRoot() ) {
                     		((NewNode)newSplit).setRoot(true);
                     		((NewNode)newSplit).setParent(null);
                         	((NewNode)newSplit).setMainlineNode(null);
@@ -903,28 +905,46 @@ public class HAT extends VFDT {
 
                     		this.treeRoot = newSplit;
                     	}
-                    } else { // toplevel bug is not set
+                    } else if(parentBug.isSet() 
+                    		&& ((NewNode)node).getParent()!=null 
+                    		&& ((NewNode)node).getMainlineNode() != null
+                    		&& ((NewNode)node).isAlternate()
+                    		){
+                    	// splitting an alternate causes parent to replace it's mainline child with the alternate
+                		((NewNode)newSplit).setParent(((NewNode)node).getParent());                    	
+                    	((NewNode)newSplit).setMainlineNode(null);
+                		((NewNode)newSplit).setAlternate(false); 
+                    	((NewNode)newSplit).setAlternateStatusForSubtreeNodes(false);
+                    	
+                		((NewNode)node).getParent().setChild(parentIndex, newSplit);
+                    } else {
                     	if (((NewNode)node).isRoot()) {
                     		((NewNode)newSplit).setRoot(true);
                     		((NewNode)newSplit).setParent(null);
+                        	((NewNode)newSplit).setMainlineNode(null);
+                    		
                     		this.treeRoot = newSplit;
                     	}
-                    	else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is toplevel alternate
-
-                    		((NewNode)node).getMainlineNode().alternateTree = newSplit;
+                    	else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to be an alternate with an attachment point(i.e. at the top of the subtree)
+                        	
+                    		((NewNode)newSplit).setMainlineNode(((NewNode)node).getMainlineNode());
                     		((NewNode)newSplit).setParent(((NewNode)node).getParent());
+                    		
+                    		((NewNode)node).getMainlineNode().alternateTree = newSplit;
+                    		
+
                     	}
                     	else { //if the node is neither root nor an alternate top level, it must have a split parent
 
                     		((NewNode)node).getParent().setChild(parentIndex, newSplit);
                     		((NewNode)newSplit).setParent(((NewNode)node).getParent());
                     	}
-                    	if(allowAlternatesofAlternatesOption.isSet()) {
+                    	/*if(allowAlternatesofAlternatesOption.isSet()) {
                     		// where an alternate of an alternate is being split, it must have the correct attachment point backreference
                     		if (((NewNode)node).getMainlineNode() != null) {
                     			((NewNode)newSplit).setMainlineNode(((NewNode)node).getMainlineNode());
                     		}
-                    	}
+                    	}*/
                 }
                 }
                 // manage memory
@@ -1150,7 +1170,7 @@ public class HAT extends VFDT {
 
     					}
 
-    					predictionPaths++;
+    					//predictionPaths++;
 
     					return result.getArrayRef();
 

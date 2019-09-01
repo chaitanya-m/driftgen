@@ -49,7 +49,7 @@ import com.yahoo.labs.samoa.instances.Instance;
  * @author Albert Bifet (abifet at cs dot waikato dot ac dot nz)
  * @version $Revision: 7 $
  */
-public class HATOriginal extends HoeffdingTree {
+public class HATBugOptions extends HoeffdingTree {
 
     private static final long serialVersionUID = 1L;
 
@@ -77,9 +77,9 @@ public class HATOriginal extends HoeffdingTree {
 
         public boolean isNullError();
 
-        public void killTreeChilds(HATOriginal ht);
+        public void killTreeChilds(HATBugOptions ht);
 
-        public void learnFromInstance(Instance inst, HATOriginal ht, SplitNode parent, int parentBranch);
+        public void learnFromInstance(Instance inst, HATBugOptions ht, SplitNode parent, int parentBranch);
 
         public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch, List<FoundNode> foundNodes,
                 boolean updateSplitterCounts);
@@ -166,7 +166,7 @@ public class HATOriginal extends HoeffdingTree {
         // LearningNodes can split, but SplitNodes can't
         // Parent nodes are allways SplitNodes
         @Override
-        public void learnFromInstance(Instance inst, HATOriginal ht, SplitNode parent, int parentBranch) {
+        public void learnFromInstance(Instance inst, HATBugOptions ht, SplitNode parent, int parentBranch) {
             int trueClass = (int) inst.classValue();
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
@@ -250,7 +250,7 @@ public class HATOriginal extends HoeffdingTree {
         }
 
         @Override
-        public void killTreeChilds(HATOriginal ht) {
+        public void killTreeChilds(HATBugOptions ht) {
             for (Node child : this.children) {
                 if (child != null) {
                     //Delete alternate tree if it exists
@@ -349,11 +349,11 @@ public class HATOriginal extends HoeffdingTree {
         }
 
         @Override
-        public void killTreeChilds(HATOriginal ht) {
+        public void killTreeChilds(HATBugOptions ht) {
         }
 
         @Override
-        public void learnFromInstance(Instance inst, HATOriginal ht, SplitNode parent, int parentBranch) {
+        public void learnFromInstance(Instance inst, HATBugOptions ht, SplitNode parent, int parentBranch) {
             int trueClass = (int) inst.classValue();
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
@@ -402,7 +402,7 @@ public class HATOriginal extends HoeffdingTree {
         @Override
         public double[] getClassVotes(Instance inst, HoeffdingTree ht) {
             double[] dist;
-            int predictionOption = ((HATOriginal) ht).leafpredictionOption.getChosenIndex();
+            int predictionOption = ((HATBugOptions) ht).leafpredictionOption.getChosenIndex();
             if (predictionOption == 0) { //MC
                 dist = this.observedClassDistribution.getArrayCopy();
             } else if (predictionOption == 1) { //NB

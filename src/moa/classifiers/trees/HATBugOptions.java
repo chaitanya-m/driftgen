@@ -15,19 +15,25 @@
  *
  *    You should have received a copy of the GNU General Public License
  *    along with this program. If not, see <http://www.gnu.org/licenses/>.
- *    
+ *
  */
 package moa.classifiers.trees;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+
 import moa.classifiers.bayes.NaiveBayes;
+import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
+import moa.classifiers.core.splitcriteria.SplitCriterion;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
+
+import com.github.javacliparser.FlagOption;
 import com.yahoo.labs.samoa.instances.Instance;
 
 /**
@@ -49,15 +55,26 @@ import com.yahoo.labs.samoa.instances.Instance;
  * @author Albert Bifet (abifet at cs dot waikato dot ac dot nz)
  * @version $Revision: 7 $
  */
-public class HATBugOptions extends HoeffdingTree {
+public class HATBugOptions extends VFDT {
 
+    public FlagOption alternateVoterOption = new FlagOption("alternatesVote", 'A',
+            "Allow alternates to vote");
+    public FlagOption allowAlternatesofAlternatesOption = new FlagOption("alternatesHaveAlternates", 'B',
+            "Allow alternates to sprout their own alternates");
+    public FlagOption topLevelBug = new FlagOption("topLevelBug", 'F',
+            "Top level: an alternate of an alternate (or so on) substitutes the root");
+    public FlagOption parentBug = new FlagOption("parentBug", 'G',
+            "When an alternate is split, it's parent replaces the mainline child with the alternate");
+        
     private static final long serialVersionUID = 1L;
+
+    private static long numInstances = 0;
 
     @Override
     public String getPurposeString() {
         return "Hoeffding Adaptive Tree for evolving data streams that uses ADWIN to replace branches for new ones.";
     }
-    
+
  /*   public MultiChoiceOption leafpredictionOption = new MultiChoiceOption(
             "leafprediction", 'l', "Leaf prediction to use.", new String[]{
                 "MC", "NB", "NBAdaptive"}, new String[]{
@@ -71,7 +88,9 @@ public class HATBugOptions extends HoeffdingTree {
         //public boolean getErrorChange();
         public int numberLeaves();
 
-        public double getErrorEstimation();
+        void setAlternateStatusForSubtreeNodes(boolean isAlternate);
+
+		public double getErrorEstimation();
 
         public double getErrorWidth();
 
@@ -83,6 +102,23 @@ public class HATBugOptions extends HoeffdingTree {
 
         public void filterInstanceToLeaves(Instance inst, SplitNode myparent, int parentBranch, List<FoundNode> foundNodes,
                 boolean updateSplitterCounts);
+
+        public boolean isAlternate();
+
+        public void setAlternate(boolean isAlternate);
+
+		public boolean isRoot();
+
+		public void setRoot(boolean isRoot);
+
+		public void setMainlineNode(AdaSplitNode parent);
+
+		public AdaSplitNode getMainlineNode();
+
+		public void setParent(AdaSplitNode parent);
+
+		public AdaSplitNode getParent();
+
     }
 
     public static class AdaSplitNode extends SplitNode implements NewNode {
@@ -296,6 +332,60 @@ public class HATBugOptions extends HoeffdingTree {
                         foundNodes, updateSplitterCounts);
             }
         }
+
+		@Override
+		public void setAlternateStatusForSubtreeNodes(boolean isAlternate) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean isAlternate() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void setAlternate(boolean isAlternate) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean isRoot() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void setRoot(boolean isRoot) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void setMainlineNode(AdaSplitNode parent) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public AdaSplitNode getMainlineNode() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void setParent(AdaSplitNode parent) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public AdaSplitNode getParent() {
+			// TODO Auto-generated method stub
+			return null;
+		}
     }
 
     public static class AdaLearningNode extends LearningNodeNBAdaptive implements NewNode {
@@ -400,7 +490,7 @@ public class HATBugOptions extends HoeffdingTree {
         }
 
         @Override
-        public double[] getClassVotes(Instance inst, HoeffdingTree ht) {
+        public double[] getClassVotes(Instance inst, VFDT ht) {
             double[] dist;
             int predictionOption = ((HATBugOptions) ht).leafpredictionOption.getChosenIndex();
             if (predictionOption == 0) { //MC
@@ -431,6 +521,60 @@ public class HATBugOptions extends HoeffdingTree {
                 List<FoundNode> foundNodes, boolean updateSplitterCounts) {
             foundNodes.add(new FoundNode(this, splitparent, parentBranch));
         }
+
+		@Override
+		public void setAlternateStatusForSubtreeNodes(boolean isAlternate) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean isAlternate() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void setAlternate(boolean isAlternate) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean isRoot() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void setRoot(boolean isRoot) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void setMainlineNode(AdaSplitNode parent) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public AdaSplitNode getMainlineNode() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void setParent(AdaSplitNode parent) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public AdaSplitNode getParent() {
+			// TODO Auto-generated method stub
+			return null;
+		}
     }
 
     protected int alternateTrees;

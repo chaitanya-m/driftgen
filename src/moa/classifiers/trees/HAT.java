@@ -20,22 +20,15 @@
 package moa.classifiers.trees;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 import moa.classifiers.bayes.NaiveBayes;
 import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
-import moa.classifiers.trees.VFDT.InactiveLearningNode;
-import moa.classifiers.trees.VFDT.LearningNode;
-import moa.classifiers.trees.VFDT.Node;
-import moa.classifiers.trees.VFDT.SplitNode;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;

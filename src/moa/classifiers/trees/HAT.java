@@ -686,6 +686,9 @@ public class HAT extends VFDT {
             //New option vore
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
+            if (k > 0) {
+                weightedInst.setWeight(inst.weight() * k);
+            }
             //if (k > 0 && this.isAlternate()) {
             	// use weighted instance if necessary for asymmetric alternate weighting
                 //weightedInst.setWeight(inst.weight() * k);
@@ -840,6 +843,8 @@ public class HAT extends VFDT {
             this.treeRoot = newLearningNode(false); // root cannot be alternate
             ((NewNode) this.treeRoot).setRoot(true);
             ((NewNode) this.treeRoot).setParent(null);
+            ((NewNode) this.treeRoot).setMainlineNode(null);
+
             this.activeLeafNodeCount = 1;
         }
         ((NewNode) this.treeRoot).learnFromInstance(inst, this, null, -1);
@@ -887,27 +892,40 @@ public class HAT extends VFDT {
                     this.activeLeafNodeCount--;
                     this.decisionNodeCount++;
                     this.activeLeafNodeCount += splitDecision.numSplits();
-                    if (((NewNode)node).isRoot()) {
-                    	((NewNode)newSplit).setRoot(true);
-                    	((NewNode)newSplit).setParent(null);
-                        this.treeRoot = newSplit;
-                    }
-                    else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is toplevel alternate
+                    
+                    if(topLevelBug.isSet()) { // top level split reassigns to root, even if an alternate was split
+                    	if (((NewNode)node).isRoot() || ((NewNode)node).getParent()==null) {
+                    		((NewNode)newSplit).setRoot(true);
+                    		((NewNode)newSplit).setParent(null);
+                        	((NewNode)newSplit).setMainlineNode(null);
+                    		((NewNode)newSplit).setAlternate(false); 
+                        	((NewNode)newSplit).setAlternateStatusForSubtreeNodes(false);
 
-                    	((NewNode)node).getMainlineNode().alternateTree = newSplit;
-                    	((NewNode)newSplit).setParent(((NewNode)node).getParent());
-                    }
-                    else { //if the node is neither root nor an alternate top level, it must have a split parent
-
-                    	((NewNode)node).getParent().setChild(parentIndex, newSplit);
-                    	((NewNode)newSplit).setParent(((NewNode)node).getParent());
-                    }
-                    if(allowAlternatesofAlternatesOption.isSet()) {
-                    	// where an alternate of an alternate is being split, it must have the correct attachment point backreference
-                    	if (((NewNode)node).getMainlineNode() != null) {
-                    		((NewNode)newSplit).setMainlineNode(((NewNode)node).getMainlineNode());
+                    		this.treeRoot = newSplit;
                     	}
-                    }
+                    } else { // toplevel bug is not set
+                    	if (((NewNode)node).isRoot()) {
+                    		((NewNode)newSplit).setRoot(true);
+                    		((NewNode)newSplit).setParent(null);
+                    		this.treeRoot = newSplit;
+                    	}
+                    	else if (((NewNode)node).getMainlineNode() != null) { // if the node happens to have a mainline attachment, i.e it is toplevel alternate
+
+                    		((NewNode)node).getMainlineNode().alternateTree = newSplit;
+                    		((NewNode)newSplit).setParent(((NewNode)node).getParent());
+                    	}
+                    	else { //if the node is neither root nor an alternate top level, it must have a split parent
+
+                    		((NewNode)node).getParent().setChild(parentIndex, newSplit);
+                    		((NewNode)newSplit).setParent(((NewNode)node).getParent());
+                    	}
+                    	if(allowAlternatesofAlternatesOption.isSet()) {
+                    		// where an alternate of an alternate is being split, it must have the correct attachment point backreference
+                    		if (((NewNode)node).getMainlineNode() != null) {
+                    			((NewNode)newSplit).setMainlineNode(((NewNode)node).getMainlineNode());
+                    		}
+                    	}
+                }
                 }
                 // manage memory
                 enforceTrackerLimit();

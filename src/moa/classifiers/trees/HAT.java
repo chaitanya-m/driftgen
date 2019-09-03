@@ -29,6 +29,8 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.HoeffdingTree.FoundNode;
+import moa.classifiers.trees.HoeffdingTree.Node;
 import moa.core.DoubleVector;
 import moa.core.MiscUtils;
 import moa.core.Utils;
@@ -1107,9 +1109,8 @@ public class HAT extends VFDT {
         this.activeLeafNodeCount--;
         this.inactiveLeafNodeCount++;
         if ( ((NewNode)(newLeaf)).isAlternate() 
-        		&& ((NewNode)(newLeaf)).getMainlineNode() == null
         		&& ((NewNode)(newLeaf)).getParent() == null){
-        	System.err.println("Node activation causing orphaned nodes?");
+        	System.err.println("Node activation causing perf diff?");
         }
     }
 
@@ -1140,6 +1141,9 @@ public class HAT extends VFDT {
         this.inactiveLeafNodeCount++;
     }
     
+    
+    
+    
     @Override
     public double[] getVotesForInstance(Instance inst) {
     	if (this.treeRoot != null) {
@@ -1149,27 +1153,30 @@ public class HAT extends VFDT {
     		DoubleVector result = new DoubleVector();
     		int predictionPaths = 0;
     		for (FoundNode foundNode : foundNodes) {
+                //if (foundNode.parentBranch != -999) {
 
     					Node leafNode = foundNode.node;
-    					if (leafNode == null) {
-    						leafNode = foundNode.parent;
-    					}
+
+    						if (leafNode == null) {
+    							leafNode = foundNode.parent;
+    						}
+        					if( !(((NewNode)leafNode).isAlternate()) || 
+    							((alternateVoterOption.isSet() && (((NewNode)leafNode).getMainlineNode()==null))) 
+    							){
+    					
     					double[] dist = leafNode.getClassVotes(inst, this);
 
-    					if( !((NewNode)leafNode).isAlternate() || alternateVoterOption.isSet()){
 
     						// count only votes from non-alternates... alternates shouldn't be voting
+    						// also, according to the -999 bug, single-leaf alternates won't vote, but others will.
     						result.addValues(dist);
-
-    					}
-
-    					//predictionPaths++;
-
-    					return result.getArrayRef();
-
+    					}//predictionPaths++;
     		}
+			return result.getArrayRef();
 
     	}
     	return new double[0];
     }
+        
+    
 }

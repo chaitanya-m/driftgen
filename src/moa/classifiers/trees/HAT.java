@@ -63,11 +63,14 @@ public class HAT extends VFDT {
             "Allow alternates to vote");
     public FlagOption allowAlternatesofAlternatesOption = new FlagOption("alternatesHaveAlternates", 'B',
             "Allow alternates to sprout their own alternates");
-    public FlagOption topLevelBug = new FlagOption("topLevelBug", 'F',
-            "Top level: an alternate of an alternate (or so on) substitutes the root");
+    public FlagOption rootLevelBug = new FlagOption("rootLevelBug", 'F',
+            "Top level: an alternate of an alternate (or so on) substitutes the root in ADWIN substitution");
     public FlagOption parentBug = new FlagOption("parentBug", 'G',
-            "When an alternate is split, it's parent replaces the mainline child with the alternate");
-        
+            "When an alternate is split, its parent replaces the mainline child with the alternate");
+    public FlagOption singleLeafAlternateDoesntVote = new FlagOption("singleLeafAlternateDoesntVote", 'H',
+            "In the original code, though the intention seems to be not to let alternates vote, only single leaf alternates don't do so because of -999");
+
+    
     private static final long serialVersionUID = 1L;
 
     private static long numInstances = 0;
@@ -360,7 +363,7 @@ public class HAT extends VFDT {
                         // Or if we are not simulating it and the alternate just replaces the alternate or mainline it is replacing
                         // Or neither of these is set. In each case, whether the node is top level or not, root or not.
                     	if(ht.allowAlternatesofAlternatesOption.isSet()) {
-                    		if (ht.topLevelBug.isSet()) {
+                    		if (ht.rootLevelBug.isSet()) {
                                 if ( (!this.isRoot() && this.getParent() == null && this.isAlternate()) || this.isRoot() ) { 
                                 	// top level alternate of this top level alternate replacing root directly instead of this node
                             		((NewNode)(this.alternateTree)).setRoot(true);
@@ -890,7 +893,7 @@ public class HAT extends VFDT {
                     this.decisionNodeCount++;
                     this.activeLeafNodeCount += splitDecision.numSplits();
                     
-                    if(topLevelBug.isSet() && ((NewNode)node).getParent()==null) { // top level split reassigns to root, even if an alternate was split
+                    if(rootLevelBug.isSet() && ((NewNode)node).getParent()==null) { // top level split reassigns to root, even if an alternate was split
                     	if (((NewNode)node).isRoot() ) {
                     		((NewNode)newSplit).setRoot(true);
                     		((NewNode)newSplit).setParent(null);
@@ -1155,24 +1158,31 @@ public class HAT extends VFDT {
     		for (FoundNode foundNode : foundNodes) {
                 //if (foundNode.parentBranch != -999) {
 
-    					Node leafNode = foundNode.node;
+    			Node leafNode = foundNode.node;
 
-    						if (leafNode == null) {
-    							leafNode = foundNode.parent;
-    						}
-        					if( !(((NewNode)leafNode).isAlternate()) || 
-    							((alternateVoterOption.isSet() && (((NewNode)leafNode).getMainlineNode()==null))) 
-    							){
-    					
+    			if (leafNode == null) {
+    				leafNode = foundNode.parent;
+    			}
+
+				// count only votes from non-alternates... alternates shouldn't be voting
+				// also, according to the -999 bug, single-leaf alternates won't vote, but others will.
+
+    			if( !(((NewNode)leafNode).isAlternate()) || alternateVoterOption.isSet() ){
+
+    				if (alternateVoterOption.isSet() 
+    						&& singleLeafAlternateDoesntVote.isSet()
+    						&& ((NewNode)leafNode).getMainlineNode()!=null // if null it is single level alternate
+    						&& ((NewNode)leafNode).isAlternate()
+    						) {
+    				}
+    				else {			
     					double[] dist = leafNode.getClassVotes(inst, this);
-
-
-    						// count only votes from non-alternates... alternates shouldn't be voting
-    						// also, according to the -999 bug, single-leaf alternates won't vote, but others will.
-    						result.addValues(dist);
-    					}//predictionPaths++;
+    					result.addValues(dist);
+    				}
+    			}
+    			//predictionPaths++;
     		}
-			return result.getArrayRef();
+    		return result.getArrayRef();
 
     	}
     	return new double[0];

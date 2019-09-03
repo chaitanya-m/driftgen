@@ -29,6 +29,7 @@ import moa.classifiers.core.AttributeSplitSuggestion;
 import moa.classifiers.core.conditionaltests.InstanceConditionalTest;
 import moa.classifiers.core.driftdetection.ADWIN;
 import moa.classifiers.core.splitcriteria.SplitCriterion;
+import moa.classifiers.trees.HATOriginal.AdaSplitNode;
 import moa.classifiers.trees.HoeffdingTree.FoundNode;
 import moa.classifiers.trees.HoeffdingTree.Node;
 import moa.core.DoubleVector;
@@ -358,22 +359,26 @@ public class HAT extends VFDT {
                         	((NewNode)(this.alternateTree)).setMainlineNode(null);
                         }*/
                         // Done preparing alternate substitute's status, move on to the substitution
-                        // If alternates can have alternates, and we are simulating the top level bug
+                        // If alternates can have alternates, and we are simulating the root level bug
                         // wherein an alternate of an alternate may replace root...
                         // Or if we are not simulating it and the alternate just replaces the alternate or mainline it is replacing
                         // Or neither of these is set. In each case, whether the node is top level or not, root or not.
+                        
+                        //no, actually what is happening is when root level alternate has root level alternate and 
+                        //needs to be replaced by it, treeroot is replaced instead by its alternate
                     	if(ht.allowAlternatesofAlternatesOption.isSet()) {
                     		if (ht.rootLevelBug.isSet()) {
                                 if ( (!this.isRoot() && this.getParent() == null && this.isAlternate()) || this.isRoot() ) { 
                                 	// top level alternate of this top level alternate replacing root directly instead of this node
-                            		((NewNode)(this.alternateTree)).setRoot(true);
-                            		((NewNode)this.alternateTree).setParent(null);
-                            		((NewNode)(this.alternateTree)).setMainlineNode(null);
-                            		((NewNode)(this.alternateTree)).setAlternate(false);
-                                	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(false);
+                                    ht.treeRoot = ((AdaSplitNode) ht.treeRoot).alternateTree;
 
-                                    ht.treeRoot = this.alternateTree;
-                                } else { // top level bug is set but we are replacing a non-top-level node
+                            		((NewNode)(ht.treeRoot)).setRoot(true);
+                            		((NewNode)(ht.treeRoot)).setParent(null);
+                            		((NewNode)(ht.treeRoot)).setMainlineNode(null);
+                            		((NewNode)(ht.treeRoot)).setAlternate(false);
+                                	((NewNode)(ht.treeRoot)).setAlternateStatusForSubtreeNodes(false);
+
+                                } else { // root level bug is set but we are replacing a non-top-level node
                             		((NewNode)(this.alternateTree)).setRoot(false);
                             		((NewNode)this.alternateTree).setParent(this.getParent());
                             		((NewNode)(this.alternateTree)).setMainlineNode(this.getMainlineNode());
@@ -383,8 +388,8 @@ public class HAT extends VFDT {
                             		this.getParent().setChild(parentBranch, this.alternateTree);
                                 }
                     		}
-                    		else { // topLevel Bug is not set
-                    			if ( (!this.isRoot() && this.getParent() == null && this.isAlternate()) || this.isRoot() ) {
+                    		else { // rootLevelBug is not set
+                    			if ( (!this.isRoot() && this.getParent() == null && this.isAlternate())) {
                     				// this is a top level alternate and not root, so don't change root
                     			
                             		((NewNode)(this.alternateTree)).setRoot(this.isRoot());
@@ -392,6 +397,8 @@ public class HAT extends VFDT {
                             		((NewNode)(this.alternateTree)).setMainlineNode(this.getMainlineNode());
                             		((NewNode)(this.alternateTree)).setAlternate(this.isAlternate());
                                 	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(this.isAlternate());
+                                	
+                                	this.getMainlineNode().alternateTree = this.alternateTree; //replace the mainline's alternate with this.
 
                     			}
                     			else if (this.isRoot()){
@@ -410,11 +417,12 @@ public class HAT extends VFDT {
                             		((NewNode)(this.alternateTree)).setAlternate(this.isAlternate());
                                 	((NewNode)this.alternateTree).setAlternateStatusForSubtreeNodes(this.isAlternate());
 
-                            		this.getParent().setChild(parentBranch, this.alternateTree);
+                                	this.getParent().setChild(parentBranch, this.alternateTree);
                     			}
                     			
                     		}
                     	} else { // alternates may not have alternates
+
                     		if(!this.isRoot()) {// in the single alternate case there will be a parent
                         		((NewNode)(this.alternateTree)).setRoot(false);
                         		((NewNode)this.alternateTree).setParent(this.getParent());
@@ -893,7 +901,30 @@ public class HAT extends VFDT {
                     this.decisionNodeCount++;
                     this.activeLeafNodeCount += splitDecision.numSplits();
                     
-                    if(rootLevelBug.isSet() && ((NewNode)node).getParent()==null) { // top level split reassigns to root, even if an alternate was split
+//                    if (parent == null) {
+//                        this.treeRoot = newSplit;
+//                        ((NewNode)newSplit).setRoot(true);
+//                        ((NewNode)newSplit).setParent(null);
+//                    	((NewNode)newSplit).setMainlineNode(null);
+//                		((NewNode)newSplit).setAlternate(false); 
+//                    	((NewNode)newSplit).setAlternateStatusForSubtreeNodes(false);
+//                        this.treeRoot = newSplit;
+//
+//                    } else {
+//                        //parent.setChild(parentIndex, newSplit);
+//                        
+//                		((NewNode)newSplit).setParent(((NewNode)node).getParent());                    	
+//                    	((NewNode)newSplit).setMainlineNode(null);
+//                		((NewNode)newSplit).setAlternate(false); 
+//                    	((NewNode)newSplit).setAlternateStatusForSubtreeNodes(false);
+//                    	
+//                		((NewNode)node).getParent().setChild(parentIndex, newSplit);
+//                        
+//                        
+//                    }
+//                }
+                    
+                    if(rootLevelBug.isSet() && ((NewNode)node).getParent()==null) { // root level split reassigns to root, even if an alternate was split
                     	if (((NewNode)node).isRoot() ) {
                     		((NewNode)newSplit).setRoot(true);
                     		((NewNode)newSplit).setParent(null);

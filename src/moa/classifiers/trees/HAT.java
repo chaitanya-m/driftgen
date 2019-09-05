@@ -1129,7 +1129,6 @@ public class HAT extends VFDT {
     	((NewNode)(newLeaf)).setRoot(((NewNode)toActivate).isRoot());
     	((NewNode)(newLeaf)).setParent(((NewNode)toActivate).getParent());    	
     	((NewNode)(newLeaf)).setMainlineNode(((NewNode)toActivate).getMainlineNode()); 	
-    	((NewNode)(newLeaf)).setAlternate(((NewNode)toActivate).isAlternate()); 
     	
         // if node is alternate and is top of subtree reattach to mainline
         if(((NewNode)(newLeaf)).isAlternate() && ((NewNode)(newLeaf)).getMainlineNode() != null) {

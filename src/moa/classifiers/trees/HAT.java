@@ -70,7 +70,8 @@ public class HAT extends VFDT {
             "When an alternate is split, its parent replaces the mainline child with the alternate");
     public FlagOption singleLeafAlternateDoesntVote = new FlagOption("singleLeafAlternateDoesntVote", 'H',
             "In the original code, though the intention seems to be not to let alternates vote, only single leaf alternates don't do so because of -999");
-
+    public FlagOption leafWeighting = new FlagOption("leafWeighting", 'I',
+            "In the original code, learnFromInstance weights at leaves with a Poisson");
     
     private static final long serialVersionUID = 1L;
 
@@ -695,7 +696,9 @@ public class HAT extends VFDT {
             int k = MiscUtils.poisson(1.0, this.classifierRandom);
             Instance weightedInst = inst.copy();
             if (k > 0) {
-                weightedInst.setWeight(inst.weight() * k);
+            	if(ht.leafWeighting.isSet()) {
+            		weightedInst.setWeight(inst.weight() * k);
+            	}
             }
             //if (k > 0 && this.isAlternate()) {
             	// use weighted instance if necessary for asymmetric alternate weighting

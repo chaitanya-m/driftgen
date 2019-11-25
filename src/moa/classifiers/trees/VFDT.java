@@ -830,6 +830,20 @@ public class VFDT extends AbstractClassifier {
             	// it keeps the class distribution though and gets rid of it on the next resplit
             	// so clear class distribution also as there will be no more re-re-splitting
             	// we also need to clear infogain--- may as well make a new child node and clear everything
+                // else if: merit is not necessarily negative, but an attribute is being repeated...
+            } else if (shouldSplit 
+            		&& nominalAttributeReuseBug.isSet() // set this in conjunction always!
+            		&& clearNodeInsteadOfResplitFeature.isSet()) {
+            	for(Integer i : node.usedNominalAttributes){
+            		if(bestSuggestion.splitTest.getAttsTestDependsOn()[0] == i){
+            			shouldSplit = false;
+            			
+                        Node newChild = newLearningNode();
+                        parent.setChild(parentIndex, newChild);
+                        
+            			break;
+            		}
+            	}
             }
 
             

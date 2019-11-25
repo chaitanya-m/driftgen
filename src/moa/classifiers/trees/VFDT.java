@@ -209,6 +209,9 @@ public class VFDT extends AbstractClassifier {
     public FlagOption noNodeTime = new FlagOption("noNodeTime", 'E',
             "Use getWeightSeen instead of nodeTime");    
 
+    public FlagOption clearNodeInsteadOfResplitFeature = new FlagOption("clearNodeInsteadOfResplitFeature", 'J',
+            "Simply clear node instead of \"resplitting\". Use with nominalAttributeReuseBug. ");    
+
     
     public static class FoundNode {
 
@@ -798,6 +801,7 @@ public class VFDT extends AbstractClassifier {
                 	{
                 shouldSplit = true;
             }
+               
 
             if(shouldSplit && !nominalAttributeReuseBug.isSet()){
             	for(Integer i : node.usedNominalAttributes){
@@ -808,7 +812,29 @@ public class VFDT extends AbstractClassifier {
             		}
             	}
             }
+            
+            // clearing child node instead of resplitting when no / negative merit causes resplit
+            // if clear node option is set and a resplit is locked in
+            if(bestSuggestion.merit < 1e-10 
+            		&& shouldSplit 
+            		&& nominalAttributeReuseBug.isSet() // set this in conjunction always!
+            		&& clearNodeInsteadOfResplitFeature.isSet()
+            		) {
+            	shouldSplit = false;
 
+                Node newChild = newLearningNode();
+                parent.setChild(parentIndex, newChild);
+                
+            	// clear node statistics
+            	// so next time it attempts to learn it will clear attributeObservers
+            	// it keeps the class distribution though and gets rid of it on the next resplit
+            	// so clear class distribution also as there will be no more re-re-splitting
+            	// we also need to clear infogain--- may as well make a new child node and clear everything
+            }
+
+            
+            
+            
             // }
             if ((this.removePoorAttsOption != null)
                     && this.removePoorAttsOption.isSet()) {

@@ -550,6 +550,15 @@ public class VFDT extends AbstractClassifier {
             this.attributeObservers.set(attIndex,
                     new NullAttributeClassObserver());
         }
+
+		public void reInitialise() {
+            this.observedClassDistribution = new DoubleVector(new double[0]);
+            this.classDistributionAtTimeOfCreation = new DoubleVector(new double[0]);
+            this.setInfogainSum(new HashMap<Integer, Double>());
+            this.getInfogainSum().put(-1, 0.0); // Initialize for null split
+            this.weightSeenAtLastSplitEvaluation = 0.0;
+            this.isInitialized = false; //set this to false because you want attributeObservers reset in learnFromInstance	
+		}
     }
 
     protected Node treeRoot = null;
@@ -821,10 +830,11 @@ public class VFDT extends AbstractClassifier {
             		&& clearNodeInsteadOfResplitFeature.isSet()
             		) {
             	shouldSplit = false;
+            	
+                //LearningNode newChild = newLearningNode();
+                //parent.setChild(parentIndex, newChild);
+            	node.reInitialise();
 
-                Node newChild = newLearningNode();
-                parent.setChild(parentIndex, newChild);
-                
             	// clear node statistics
             	// so next time it attempts to learn it will clear attributeObservers
             	// it keeps the class distribution though and gets rid of it on the next resplit
@@ -836,11 +846,14 @@ public class VFDT extends AbstractClassifier {
             		&& clearNodeInsteadOfResplitFeature.isSet()) {
             	for(Integer i : node.usedNominalAttributes){
             		if(bestSuggestion.splitTest.getAttsTestDependsOn()[0] == i){
-            			shouldSplit = false;
             			
-                        Node newChild = newLearningNode();
-                        parent.setChild(parentIndex, newChild);
-                        
+            			shouldSplit = false;	
+            			
+                        //Node newChild = newLearningNode();
+                        //parent.setChild(parentIndex, newChild);
+            			
+                        node.reInitialise();
+            			
             			break;
             		}
             	}

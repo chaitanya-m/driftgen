@@ -969,7 +969,10 @@ public class HAT extends VFDT {
                     	else { //if the node is neither root nor an alternate top level, it must have a split parent
 
                     		//assert(((NewNode)node).getParent() != null) : "parent is null";
-                    		// node evisceration will have to be written separately for HAT so parent is not null
+                    		// node evisceration will have to be revised so it works with hat
+                    		// just reinitialize, don't create new object in VFDT
+                    		// if you try to set node's parent... you won't change the parent of the object VFDT(it's not returned)
+                    		// VFDT code would be fine either way, but to extend to HAT, just reinitialize
                     		
                     		((NewNode)node).getParent().setChild(parentIndex, newSplit);
                     		((NewNode)newSplit).setParent(((NewNode)node).getParent());

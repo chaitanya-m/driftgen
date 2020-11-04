@@ -212,6 +212,9 @@ public class VFDT extends AbstractClassifier {
     public FlagOption clearNodeInsteadOfResplitFeature = new FlagOption("clearNodeInsteadOfResplitFeature", 'J',
             "Simply clear node instead of \"resplitting\". Use with nominalAttributeReuseBug. ");    
 
+    public FlagOption eagerSplitting = new FlagOption("eagerSplitting", 'K',
+            "Split as soon as an attribute is better than no split");    
+
     
     public static class FoundNode {
 
@@ -781,7 +784,6 @@ public class VFDT extends AbstractClassifier {
 
             double bestSuggestionAverageMerit = 0.0;
             double secondBestSuggestionAverageMerit = 0.0;
-
             
             if(noAveragingInfogain.isSet()) {
             	bestSuggestionAverageMerit = bestSuggestion.merit;
@@ -801,6 +803,9 @@ public class VFDT extends AbstractClassifier {
                 }
             }
             
+            if(eagerSplitting.isSet()) {
+            	secondBestSuggestionAverageMerit = 0.0;
+            }         
             
             // VFDT bug option; don't split on no merit - nominal attributes not reused
             if(bestSuggestion.merit < 1e-10 && !nominalAttributeReuseBug.isSet()){ // we don't use average here
